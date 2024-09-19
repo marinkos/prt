@@ -19,7 +19,7 @@ function lerp(start, end, t) {
 
 let imgIndex = 0;
 const images = [
-    'https://uploads-ssl.webflow.com/60f007b4ffba6aa104bcca7c/64c3f38445fa828cc4d0b077_yd.webp',
+    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/66ec4eac5f629c4d9039b98a_vocai.avif',
     'https://uploads-ssl.webflow.com/60f007b4ffba6aa104bcca7c/653927b984b0ce3e4fb60d0e_ss.webp',
     'https://uploads-ssl.webflow.com/60f007b4ffba6aa104bcca7c/65392a1b7e50ad39963dc626_rs.webp',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/66dac944c9fd3bbdefaf0feb_coastal.avif',
