@@ -227,15 +227,15 @@ for (let i = 0; i < links.length; i++) {
             } else {
                 links[j].style.opacity = 1;
                 links[j].style.zIndex = 3; // Set high z-index for hovered item
-                canvas.style.zIndex = 2;  // Set canvas z-index between hovered and others
             }
         }
+        canvas.style.zIndex = 2; // Ensure canvas is below the hovered item
     });
 
     links[i].addEventListener('mouseleave', () => {
         for (let j = 0; j < links.length; j++) {
             links[j].style.opacity = 1;
-            links[j].style.zIndex = 1; // Reset z-index
+            links[j].style.zIndex = 1; // Reset z-index for all items
         }
         canvas.style.zIndex = 0; // Reset canvas z-index
     });
