@@ -26,7 +26,7 @@ const images = [
     'https://uploads-ssl.webflow.com/60f007b4ffba6aa104bcca7c/64c3f384562524d89fe25ed6_bn.webp',
     'https://uploads-ssl.webflow.com/60f007b4ffba6aa104bcca7c/64c3f384fcdee9a3a646734c_fq.webp',
     'https://uploads-ssl.webflow.com/60f007b4ffba6aa104bcca7c/64c3f384562524d89fe25e89_ct.webp',
-    'https://uploads-ssl.webflow.com/60f007b4ffba6aa104bcca7c/64c3f384562524d89fe25e94_rc.webp',
+    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/6756768053dc4e4e07dbcb0a_eon.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/66ec5059a9c617332c05a46b_amiti.avif',
 ]
 
