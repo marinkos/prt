@@ -314,7 +314,9 @@ function initSimulation() {
       }
     });
   
-    Engine.run(engine);
+    var Runner = Matter.Runner;
+var runner = Runner.create();
+Runner.run(runner, engine);
   
     Render.run(render);
   }
