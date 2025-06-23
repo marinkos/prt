@@ -1,7 +1,16 @@
 // Magnetic Project Image Reveal (Canvas Version)
 // Update the image URLs below to match your project order
 
-const canvas = document.querySelector('canvas');
+let canvas = document.querySelector('canvas');
+if (!canvas) {
+  canvas = document.createElement('canvas');
+  canvas.style.position = 'fixed';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.pointerEvents = 'none';
+  canvas.style.zIndex = '1000';
+  document.body.appendChild(canvas);
+}
 const ctx = canvas.getContext('2d');
 const links = [...document.querySelectorAll('.project_item')];
 
