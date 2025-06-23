@@ -93,6 +93,8 @@ function drawImage(idx) {
     }
 }
 
+canvas.style.zIndex = 1000;
+
 for (let i = 0; i < links.length; i++) {
     links[i].addEventListener('mouseover', () => {
         for (let j = 0; j < links.length; j++) {
@@ -115,18 +117,13 @@ for (let i = 0; i < links.length; i++) {
     links[i].addEventListener('mouseenter', () => {
         imgIndex = i;
         target = 1;
-        imgArr.forEach((img, idx) => {
-            img.style.display = idx === i ? 'block' : 'none';
-            img.style.zIndex = 25;
-        });
         links.forEach((link, idx) => {
-            link.style.zIndex = idx === i ? 30 : 1;
+            link.style.zIndex = idx === i ? 1001 : 1;
         });
     });
 
     links[i].addEventListener('mouseleave', () => {
         target = 0;
-        imgArr.forEach(img => img.style.display = 'none');
         links.forEach(link => link.style.zIndex = 1);
     });
 }
