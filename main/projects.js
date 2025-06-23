@@ -8,7 +8,7 @@ if (!canvas) {
   canvas.style.top = '0';
   canvas.style.left = '0';
   canvas.style.pointerEvents = 'none';
-  canvas.style.zIndex = '10';
+  canvas.style.zIndex = '1000';
   document.body.appendChild(canvas);
 }
 const ctx = canvas.getContext('2d');
@@ -40,16 +40,11 @@ window.addEventListener('mousemove', (e) => {
     targetY = e.clientY;
 });
 
-let loadedCount = 0;
 images.forEach((image, idx) => {
-    let elImage = new window.Image();
+    let elImage = new Image(300);
     elImage.src = image;
-    elImage.onload = () => {
-        loadedCount++;
-        if (loadedCount === images.length) {
-            animate(); // Start animation only when all images are loaded
-        }
-    };
+    elImage.classList.add('project-image');
+    document.body.append(elImage);
     imgArr.push(elImage);
 });
 
@@ -57,10 +52,7 @@ let percent = 0.001;
 let target = 0;
 
 function drawImage(idx) {
-    let width = imgArr[idx].naturalWidth;
-    let height = imgArr[idx].naturalHeight;
-
-    if (width === 0 || height === 0) return; // Don't draw if not loaded
+    let { width, height } = imgArr[idx].getBoundingClientRect();
 
     canvas.width = width * window.devicePixelRatio;
     canvas.height = height * window.devicePixelRatio;
@@ -102,24 +94,21 @@ function drawImage(idx) {
 }
 
 for (let i = 0; i < links.length; i++) {
-    links[i].style.zIndex = 1;
-
     links[i].addEventListener('mouseover', () => {
         for (let j = 0; j < links.length; j++) {
             if (j !== i) {
                 links[j].style.opacity = 0.2;
-                links[j].style.zIndex = 1;
+                links[j].style.zIndex = 0;
             } else {
                 links[j].style.opacity = 1;
-                links[j].style.zIndex = 20;
+                links[j].style.zIndex = 3;
             }
         }
     });
 
     links[i].addEventListener('mouseleave', () => {
-        for (let k = 0; k < links.length; k++) {
-            links[k].style.opacity = 1;
-            links[k].style.zIndex = 1;
+        for (let i = 0; i < links.length; i++) {
+            links[i].style.opacity = 1;
         }
     });
 
@@ -141,3 +130,5 @@ function animate() {
     drawImage(imgIndex);
     window.requestAnimationFrame(animate);
 }
+
+animate();
