@@ -8,7 +8,7 @@ if (!canvas) {
   canvas.style.top = '0';
   canvas.style.left = '0';
   canvas.style.pointerEvents = 'none';
-  canvas.style.zIndex = '1000';
+  canvas.style.zIndex = '10';
   document.body.appendChild(canvas);
 }
 const ctx = canvas.getContext('2d');
@@ -92,21 +92,24 @@ function drawImage(idx) {
 }
 
 for (let i = 0; i < links.length; i++) {
+    links[i].style.zIndex = 1;
+
     links[i].addEventListener('mouseover', () => {
         for (let j = 0; j < links.length; j++) {
             if (j !== i) {
                 links[j].style.opacity = 0.2;
-                links[j].style.zIndex = 0;
+                links[j].style.zIndex = 1;
             } else {
                 links[j].style.opacity = 1;
-                links[j].style.zIndex = 3;
+                links[j].style.zIndex = 20;
             }
         }
     });
 
     links[i].addEventListener('mouseleave', () => {
-        for (let i = 0; i < links.length; i++) {
-            links[i].style.opacity = 1;
+        for (let k = 0; k < links.length; k++) {
+            links[k].style.opacity = 1;
+            links[k].style.zIndex = 1;
         }
     });
 
