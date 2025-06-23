@@ -94,37 +94,34 @@ function drawImage(idx) {
 canvas.style.zIndex = 1000;
 
 for (let i = 0; i < links.length; i++) {
-    links[i].addEventListener('mouseover', () => {
-        for (let j = 0; j < links.length; j++) {
-            if (j !== i) {
-                links[j].style.opacity = 0.2;
-                links[j].style.zIndex = 0;
-            } else {
-                links[j].style.opacity = 1;
-                links[j].style.zIndex = 3;
-            }
-        }
-    });
-
-    links[i].addEventListener('mouseleave', () => {
-        for (let i = 0; i < links.length; i++) {
-            links[i].style.opacity = 1;
-        }
-    });
-
     links[i].addEventListener('mouseenter', () => {
-        imgIndex = i;
-        target = 1;
-        links.forEach((link, idx) => {
-            link.style.zIndex = idx === i ? 3 : 1;
-        });
+      imgIndex = i;
+      target = 1;
+  
+      links.forEach((link, idx) => {
+        if (idx === i) {
+          link.style.zIndex = '3';   // on top
+          link.style.opacity = '1';
+        } else {
+          link.style.zIndex = '1';   // below canvas
+          link.style.opacity = '0.2';
+        }
+      });
+  
+      canvas.style.zIndex = '2';     // canvas in the middle
     });
-
+  
     links[i].addEventListener('mouseleave', () => {
-        target = 0;
-        links.forEach(link => link.style.zIndex = 1);
+      target = 0;
+  
+      links.forEach(link => {
+        link.style.zIndex = '1';
+        link.style.opacity = '1';
+      });
+  
+      canvas.style.zIndex = '0';     // optional: hide canvas behind all
     });
-}
+  }
 
 function animate() {
     currentX = lerp(currentX, targetX, 0.075);
