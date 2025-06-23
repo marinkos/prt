@@ -40,9 +40,16 @@ window.addEventListener('mousemove', (e) => {
     targetY = e.clientY;
 });
 
+let loadedCount = 0;
 images.forEach((image, idx) => {
-    let elImage = new window.Image(300);
+    let elImage = new window.Image();
     elImage.src = image;
+    elImage.onload = () => {
+        loadedCount++;
+        if (loadedCount === images.length) {
+            animate(); // Start animation only when all images are loaded
+        }
+    };
     imgArr.push(elImage);
 });
 
@@ -134,5 +141,3 @@ function animate() {
     drawImage(imgIndex);
     window.requestAnimationFrame(animate);
 }
-
-animate();
