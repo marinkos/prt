@@ -1,3 +1,6 @@
+// Magnetic Project Image Reveal (Canvas Version)
+// Update the image URLs below to match your project order
+
 let canvas = document.querySelector('canvas');
 if (!canvas) {
     canvas = document.createElement('canvas');
@@ -5,7 +8,7 @@ if (!canvas) {
     canvas.style.top = '0';
     canvas.style.left = '0';
     canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '2';
+    canvas.style.zIndex = '1000';
     document.body.appendChild(canvas);
 }
 
@@ -43,7 +46,7 @@ images.forEach((image, idx) => {
     let elImage = new Image(300);
     elImage.src = image;
     elImage.classList.add('project-image');
-    elImage.style.display = 'none';
+    elImage.style.display = 'none'; // Always hidden
     document.body.append(elImage);
     imgArr.push(elImage);
 });
@@ -81,53 +84,53 @@ function drawImage(idx) {
     let scaledWidth = width * percent;
     let scaledHeight = height * percent;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     if (percent >= 1) {
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         ctx.drawImage(imgArr[idx], 0, 0, width, height);
-    } else if (percent > 0) {
+    } else {
         ctx.drawImage(imgArr[idx], 0, 0, scaledWidth, scaledHeight);
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        if (canvas.width !== 0 && canvas.height !== 0) {
+            ctx.drawImage(canvas, 0, 0, scaledWidth, scaledHeight, 0, 0, width, height)
+        }
     }
 }
 
 for (let i = 0; i < links.length; i++) {
+    links[i].addEventListener('mouseover', () => {
+        for (let j = 0; j < links.length; j++) {
+            if (j !== i) {
+                links[j].style.opacity = 0.2;
+                links[j].style.zIndex = 0;
+            } else {
+                links[j].style.opacity = 1;
+                links[j].style.zIndex = 3;
+            }
+        }
+    });
+
+    links[i].addEventListener('mouseleave', () => {
+        for (let i = 0; i < links.length; i++) {
+            links[i].style.opacity = 1;
+        }
+    });
+
     links[i].addEventListener('mouseenter', () => {
         imgIndex = i;
         target = 1;
-
-        links.forEach((link, idx) => {
-            if (idx === i) {
-                link.style.zIndex = '1002';
-            } else {
-                link.style.opacity = '0.2';
-                link.style.zIndex = '1000';
-            }
-        });
-        canvas.style.zIndex = '1001';
     });
 
     links[i].addEventListener('mouseleave', () => {
         target = 0;
-
-        links.forEach(link => {
-            link.style.opacity = '1';
-            link.style.zIndex = 'auto';
-        });
-        canvas.style.zIndex = '2';
     });
 }
 
 function animate() {
     currentX = lerp(currentX, targetX, 0.075);
     currentY = lerp(currentY, targetY, 0.075);
-
     let { width, height } = imgArr[imgIndex].getBoundingClientRect();
-
     canvas.style.transform = `translate3d(${currentX - (width / 2)}px, ${currentY - (height / 2)}px, 0)`;
-
     drawImage(imgIndex);
-
     window.requestAnimationFrame(animate);
 }
 
