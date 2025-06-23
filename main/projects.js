@@ -1,5 +1,3 @@
-import { gsap } from "gsap";
-
 let floatingImage = null;
 
 document.querySelectorAll('.project_item').forEach(item => {
