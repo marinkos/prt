@@ -118,7 +118,7 @@ for (let i = 0; i < links.length; i++) {
         imgIndex = i;
         target = 1;
         links.forEach((link, idx) => {
-            link.style.zIndex = idx === i ? 1001 : 1;
+            link.style.zIndex = idx === i ? 3 : 1;
         });
     });
 
