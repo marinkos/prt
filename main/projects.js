@@ -41,10 +41,8 @@ window.addEventListener('mousemove', (e) => {
 });
 
 images.forEach((image, idx) => {
-    let elImage = new Image(300);
+    let elImage = new window.Image(300);
     elImage.src = image;
-    elImage.classList.add('project-image');
-    document.body.append(elImage);
     imgArr.push(elImage);
 });
 
