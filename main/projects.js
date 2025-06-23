@@ -50,7 +50,10 @@ let percent = 0.001;
 let target = 0;
 
 function drawImage(idx) {
-    let { width, height } = imgArr[idx].getBoundingClientRect();
+    let width = imgArr[idx].naturalWidth;
+    let height = imgArr[idx].naturalHeight;
+
+    if (width === 0 || height === 0) return; // Don't draw if not loaded
 
     canvas.width = width * window.devicePixelRatio;
     canvas.height = height * window.devicePixelRatio;
