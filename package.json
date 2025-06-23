@@ -1,0 +1,18 @@
+{
+  "name": "prt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "build": "npm run build:main && npm run build:calc",
+    "build:main": "esbuild main/index.js --bundle --minify --outfile=main.min.js",
+    "build:calc": "esbuild main/calc.js --bundle --minify --outfile=calc.min.js --external:jquery --external:gsap"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.25.5"
+  }
+  
+}
