@@ -7,7 +7,7 @@ if (!canvas) {
   canvas.style.left = '0';
   canvas.style.pointerEvents = 'none';
   canvas.style.zIndex = '2';
-  document.body.appendChild(canvas);
+  document.querySelector('.projects_component').appendChild(canvas);
 }
 const ctx = canvas.getContext('2d');
 const links = [...document.querySelectorAll('.project_item')];
