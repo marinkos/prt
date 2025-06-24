@@ -65,7 +65,6 @@ images.forEach((imageUrl, idx) => {
     imgArr.push(elImage);
 });
 
-let percent = 0.001;
 let target = 0;
 
 function drawImage(idx) {
@@ -87,33 +86,9 @@ function drawImage(idx) {
     ctx.msImageSmoothingEnabled = true;
     ctx.imageSmoothingEnabled = true;
 
-    if (target === 1) {
-        if (percent < 0.2) {
-            percent += .01;
-        } else if (percent < 1) {
-            percent += .1;
-        }
-    } else if (target === 0) {
-        if (percent > 0.2) {
-            percent -= .3
-        } else if (percent > 0) {
-            percent -= .01;
-        }
-    }
-
-    let scaledWidth = width * percent;
-    let scaledHeight = height * percent;
-
-    if (percent >= 1) {
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        ctx.drawImage(imgArr[idx], 0, 0, width, height);
-    } else {
-        ctx.drawImage(imgArr[idx], 0, 0, scaledWidth, scaledHeight);
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        if (canvas.width !== 0 && canvas.height !== 0) {
-            ctx.drawImage(canvas, 0, 0, scaledWidth, scaledHeight, 0, 0, width, height)
-        }
-    }
+    // Draw image at full size immediately
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    ctx.drawImage(imgArr[idx], 0, 0, width, height);
 }
 
 for (let i = 0; i < links.length; i++) {
