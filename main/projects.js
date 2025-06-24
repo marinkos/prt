@@ -12,6 +12,7 @@ if (!canvas) {
     // Set initial canvas width in em, height will be auto
     canvas.style.width = '18.75em';
     canvas.style.height = 'auto';
+    canvas.style.display = 'none'; // Hide by default
     document.body.appendChild(canvas);
 }
 const ctx = canvas.getContext('2d');
@@ -102,21 +103,25 @@ for (let i = 0; i < links.length; i++) {
                 links[j].style.zIndex = 3;
             }
         }
+        canvas.style.display = 'block'; // Show canvas on hover
     });
 
     links[i].addEventListener('mouseleave', () => {
         for (let i = 0; i < links.length; i++) {
             links[i].style.opacity = 1;
         }
+        canvas.style.display = 'none'; // Hide canvas when not hovering
     });
 
     links[i].addEventListener('mouseenter', () => {
         imgIndex = i;
         target = 1;
+        canvas.style.display = 'block'; // Show canvas on hover
     });
 
     links[i].addEventListener('mouseleave', () => {
         target = 0;
+        canvas.style.display = 'none'; // Hide canvas when not hovering
     });
 }
 
