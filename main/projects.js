@@ -81,10 +81,11 @@ function drawImage(idx) {
     canvas.style.width = '18.75em';
     canvas.style.height = 'auto';
 
-    ctx.webkitImageSmoothingEnabled = false;
-    ctx.mozImageSmoothingEnabled = false;
-    ctx.msSmoothingEnabled = false;
-    ctx.imageSmoothingEnabled = false;
+    // Enable all image smoothing for crisp images
+    ctx.webkitImageSmoothingEnabled = true;
+    ctx.mozImageSmoothingEnabled = true;
+    ctx.msImageSmoothingEnabled = true;
+    ctx.imageSmoothingEnabled = true;
 
     if (target === 1) {
         if (percent < 0.2) {
