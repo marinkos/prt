@@ -9,11 +9,12 @@ if (!canvas) {
     canvas.style.left = '0';
     canvas.style.pointerEvents = 'none';
     canvas.style.zIndex = '1000';
+    // Set initial canvas width in em, height will be auto
+    canvas.style.width = '18.75em';
+    canvas.style.height = 'auto';
     document.body.appendChild(canvas);
 }
-
 const ctx = canvas.getContext('2d');
-
 const links = [...document.querySelectorAll('.project_item')];
 
 function lerp(start, end, t) {
@@ -42,11 +43,24 @@ window.addEventListener('mousemove', (e) => {
     targetY = e.clientY;
 });
 
-images.forEach((image, idx) => {
-    let elImage = new Image(300);
-    elImage.src = image;
+// Load all images and start animation only when they're all ready
+let loadedImages = 0;
+images.forEach((imageUrl, idx) => {
+    let elImage = new Image();
+    elImage.onload = () => {
+        loadedImages++;
+        if (loadedImages === images.length) {
+            // All images loaded, start animation
+            animate();
+        }
+    };
+    // Set explicit width in em, height auto
+    elImage.style.width = '18.75em';
+    elImage.style.height = 'auto';
+    elImage.style.objectFit = 'cover';
     elImage.classList.add('project-image');
-    elImage.style.display = 'none'; // Always hidden
+    elImage.style.display = 'none';
+    elImage.src = imageUrl; // Set src after adding onload handler
     document.body.append(elImage);
     imgArr.push(elImage);
 });
@@ -55,12 +69,17 @@ let percent = 0.001;
 let target = 0;
 
 function drawImage(idx) {
-    let { width, height } = imgArr[idx].getBoundingClientRect();
+    // Convert em to pixels for canvas drawing
+    const emToPx = parseFloat(getComputedStyle(document.body).fontSize);
+    const width = 18.75 * emToPx;  // Convert em to pixels
+    // Calculate height based on image's aspect ratio
+    const aspectRatio = imgArr[idx].naturalHeight / imgArr[idx].naturalWidth;
+    const height = width * aspectRatio;
 
     canvas.width = width * window.devicePixelRatio;
     canvas.height = height * window.devicePixelRatio;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
+    canvas.style.width = '18.75em';
+    canvas.style.height = 'auto';
 
     ctx.webkitImageSmoothingEnabled = false;
     ctx.mozImageSmoothingEnabled = false;
@@ -75,7 +94,7 @@ function drawImage(idx) {
         }
     } else if (target === 0) {
         if (percent > 0.2) {
-            percent -= .3;
+            percent -= .3
         } else if (percent > 0) {
             percent -= .01;
         }
@@ -128,10 +147,15 @@ for (let i = 0; i < links.length; i++) {
 function animate() {
     currentX = lerp(currentX, targetX, 0.075);
     currentY = lerp(currentY, targetY, 0.075);
-    let { width, height } = imgArr[imgIndex].getBoundingClientRect();
+    // Convert em to pixels for positioning
+    const emToPx = parseFloat(getComputedStyle(document.body).fontSize);
+    const width = 18.75 * emToPx;  // Convert em to pixels
+    const aspectRatio = imgArr[imgIndex].naturalHeight / imgArr[imgIndex].naturalWidth;
+    const height = width * aspectRatio;
     canvas.style.transform = `translate3d(${currentX - (width / 2)}px, ${currentY - (height / 2)}px, 0)`;
     drawImage(imgIndex);
     window.requestAnimationFrame(animate);
 }
 
-animate();
+// Animation starts only after all images are loaded
+// The animate() call is now in the onload handler above
