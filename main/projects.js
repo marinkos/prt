@@ -23,6 +23,7 @@ function lerp(start, end, t) {
 }
 
 let imgIndex = 0;
+let isHovering = false; // Track hover state
 const images = [
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e6114beeb6006a3543_eon.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e79a7da07ce4b79e9d_reflection.avif',
@@ -69,6 +70,9 @@ images.forEach((imageUrl, idx) => {
 let target = 0;
 
 function drawImage(idx) {
+    // Only draw if hovering
+    if (!isHovering) return;
+    
     // Convert em to pixels for canvas drawing
     const emToPx = parseFloat(getComputedStyle(document.body).fontSize);
     const width = 18.75 * emToPx;  // Convert em to pixels
@@ -116,11 +120,13 @@ for (let i = 0; i < links.length; i++) {
     links[i].addEventListener('mouseenter', () => {
         imgIndex = i;
         target = 1;
+        isHovering = true; // Set hover state
         canvas.style.display = 'block'; // Show canvas on hover
     });
 
     links[i].addEventListener('mouseleave', () => {
         target = 0;
+        isHovering = false; // Clear hover state
         canvas.style.display = 'none'; // Hide canvas when not hovering
     });
 }
