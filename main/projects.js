@@ -24,8 +24,10 @@ function lerp(start, end, t) {
 
 let imgIndex = 0;
 let isHovering = false; // Track hover state
+let currentScale = 0.8; // Start scale
+let targetScale = 0.8; // Target scale
 const images = [
-    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e6114beeb6006a3543_eon.avif',
+    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e754aff0f5394a252a_koi.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e79a7da07ce4b79e9d_reflection.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e6114beeb6006a3543_eon.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e735b067eddebcf47e_snapscan.avif',
@@ -91,9 +93,14 @@ function drawImage(idx) {
     ctx.msImageSmoothingEnabled = true;
     ctx.imageSmoothingEnabled = true;
 
-    // Draw image at full size immediately
+    // Apply scale effect
+    ctx.save();
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    ctx.translate(width / 2, height / 2);
+    ctx.scale(currentScale, currentScale);
+    ctx.translate(-width / 2, -height / 2);
     ctx.drawImage(imgArr[idx], 0, 0, width, height);
+    ctx.restore();
 }
 
 for (let i = 0; i < links.length; i++) {
@@ -121,12 +128,14 @@ for (let i = 0; i < links.length; i++) {
         imgIndex = i;
         target = 1;
         isHovering = true; // Set hover state
+        targetScale = 1.0; // Scale to full size
         canvas.style.display = 'block'; // Show canvas on hover
     });
 
     links[i].addEventListener('mouseleave', () => {
         target = 0;
         isHovering = false; // Clear hover state
+        targetScale = 0.8; // Scale back down
         canvas.style.display = 'none'; // Hide canvas when not hovering
     });
 }
@@ -134,6 +143,8 @@ for (let i = 0; i < links.length; i++) {
 function animate() {
     currentX = lerp(currentX, targetX, 0.075);
     currentY = lerp(currentY, targetY, 0.075);
+    currentScale = lerp(currentScale, targetScale, 0.1); // Smooth scale animation
+    
     // Convert em to pixels for positioning
     const emToPx = parseFloat(getComputedStyle(document.body).fontSize);
     const width = 18.75 * emToPx;  // Convert em to pixels
