@@ -140,6 +140,15 @@ class ThemeToggle {
             console.log(`   Set ${property} = ${value}`);
         });
         
+        // Also apply directly to body as fallback
+        const body = document.body;
+        if (this.themes[theme]['--_theme---bg-color']) {
+            body.style.backgroundColor = this.themes[theme]['--_theme---bg-color'];
+        }
+        if (this.themes[theme]['--_theme---txt-color']) {
+            body.style.color = this.themes[theme]['--_theme---txt-color'];
+        }
+        
         // Update data-theme attribute
         root.setAttribute('data-theme', theme);
         console.log(`   Set data-theme = "${theme}"`);
@@ -152,6 +161,24 @@ class ThemeToggle {
                 const appliedValue = appliedStyles.getPropertyValue(property);
                 console.log(`   ${property}: ${appliedValue}`);
             });
+            
+            // Check if body is actually using the variables
+            const bodyStyles = window.getComputedStyle(body);
+            console.log('🔍 Body styles after theme change:');
+            console.log(`   Background: ${bodyStyles.backgroundColor}`);
+            console.log(`   Color: ${bodyStyles.color}`);
+            
+            // Check if body has the CSS variable declarations
+            const bodyCSS = body.style.cssText;
+            console.log('🔍 Body inline styles:', bodyCSS);
+            
+            // Check if we need to apply variables to body directly
+            if (bodyStyles.backgroundColor !== this.themes[theme]['--_theme---bg-color'] || 
+                bodyStyles.color !== this.themes[theme]['--_theme---txt-color']) {
+                console.log('⚠️ CSS variables not being applied to body, applying directly...');
+                body.style.backgroundColor = `var(--_theme---bg-color)`;
+                body.style.color = `var(--_theme---txt-color)`;
+            }
         }, 100);
         
         // Update button state
