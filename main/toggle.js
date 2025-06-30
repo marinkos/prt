@@ -6,6 +6,8 @@ class ThemeToggle {
         this.currentTheme = 'light';
         this.toggleButton = null;
         this.themes = {};
+        this.transitionDuration = 0.5;
+        this.transitionEase = 'power1.out';
         this.init();
     }
     
@@ -15,6 +17,13 @@ class ThemeToggle {
         if (!this.toggleButton) {
             console.error('❌ Theme toggle button not found');
             return;
+        }
+        
+        // Get transition settings from script tag if available
+        const scriptTag = document.querySelector('[data-theme-toggle-script]');
+        if (scriptTag) {
+            this.transitionDuration = parseFloat(scriptTag.getAttribute('duration')) || 0.5;
+            this.transitionEase = scriptTag.getAttribute('ease') || 'power1.out';
         }
         
         // Wait for collector to gather theme data
@@ -51,17 +60,17 @@ class ThemeToggle {
         // Create light theme (current state)
         this.themes.light = { ...themeVars };
         
-        // Create dark theme by inverting colors
+        // Create dark theme with better color mapping
         this.themes.dark = {};
         Object.entries(themeVars).forEach(([property, value]) => {
             if (property.includes('bg-color')) {
-                // Invert background color
-                this.themes.dark[property] = this.invertColor(value);
+                // Map light background to dark background
+                this.themes.dark[property] = this.getDarkBackground(value);
             } else if (property.includes('txt-color')) {
-                // Invert text color
-                this.themes.dark[property] = this.invertColor(value);
+                // Map dark text to light text
+                this.themes.dark[property] = this.getLightText(value);
             } else {
-                // Keep other variables the same or add custom logic
+                // Keep other variables the same
                 this.themes.dark[property] = value;
             }
         });
@@ -85,21 +94,48 @@ class ThemeToggle {
         console.log('✅ Theme toggle initialized with dynamic themes');
     }
     
+    getDarkBackground(lightColor) {
+        // Better dark background mapping
+        const colorMap = {
+            '#f4f4f4': '#14161a', // Light gray to dark blue-gray
+            '#ffffff': '#0a0a0a', // White to very dark
+            '#fafafa': '#1a1a1a', // Very light gray to dark gray
+            'rgb(244, 244, 244)': 'rgb(20, 22, 26)',
+            'rgb(255, 255, 255)': 'rgb(10, 10, 10)',
+            'rgb(250, 250, 250)': 'rgb(26, 26, 26)'
+        };
+        
+        return colorMap[lightColor] || this.invertColor(lightColor);
+    }
+    
+    getLightText(darkColor) {
+        // Better light text mapping
+        const colorMap = {
+            '#14161a': '#f4f4f4', // Dark blue-gray to light gray
+            '#000000': '#ffffff', // Black to white
+            '#333333': '#cccccc', // Dark gray to light gray
+            'rgb(20, 22, 26)': 'rgb(244, 244, 244)',
+            'rgb(0, 0, 0)': 'rgb(255, 255, 255)',
+            'rgb(51, 51, 51)': 'rgb(204, 204, 204)'
+        };
+        
+        return colorMap[darkColor] || this.invertColor(darkColor);
+    }
+    
     loadTheme() {
         // Check localStorage for saved theme
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme && this.themes[savedTheme]) {
             console.log(`📱 Loading saved theme: ${savedTheme}`);
-            this.setTheme(savedTheme);
+            this.setTheme(savedTheme, false); // No animation on load
         } else {
-            // Don't automatically switch to dark mode on first load
-            // Only use system preference if user has explicitly chosen it before
-            console.log('📱 No saved theme preference, staying with default light theme');
-            this.setTheme('light');
+            // Always start with light theme by default
+            console.log('📱 No saved theme preference, starting with light theme');
+            this.setTheme('light', false); // No animation on load
         }
     }
     
-    setTheme(theme) {
+    setTheme(theme, animate = true) {
         if (!this.themes[theme]) {
             console.error(`❌ Theme "${theme}" not found`);
             return;
@@ -110,19 +146,41 @@ class ThemeToggle {
         
         console.log(`🎨 Applying theme "${theme}":`, this.themes[theme]);
         
-        // Apply theme variables
-        Object.entries(this.themes[theme]).forEach(([property, value]) => {
-            root.style.setProperty(property, value);
-            console.log(`   Set ${property} = ${value}`);
-        });
-        
-        // Apply directly to body
-        const body = document.body;
-        if (this.themes[theme]['--_theme---bg-color']) {
-            body.style.backgroundColor = this.themes[theme]['--_theme---bg-color'];
-        }
-        if (this.themes[theme]['--_theme---txt-color']) {
-            body.style.color = this.themes[theme]['--_theme---txt-color'];
+        if (animate && typeof gsap !== 'undefined') {
+            // Use GSAP for smooth transitions
+            const body = document.body;
+            const themeData = this.themes[theme];
+            
+            gsap.to(body, {
+                backgroundColor: themeData['--_theme---bg-color'],
+                color: themeData['--_theme---txt-color'],
+                duration: this.transitionDuration,
+                ease: this.transitionEase
+            });
+            
+            // Also animate CSS variables
+            Object.entries(themeData).forEach(([property, value]) => {
+                gsap.to(root, {
+                    [property]: value,
+                    duration: this.transitionDuration,
+                    ease: this.transitionEase
+                });
+            });
+        } else {
+            // Apply immediately without animation
+            Object.entries(this.themes[theme]).forEach(([property, value]) => {
+                root.style.setProperty(property, value);
+                console.log(`   Set ${property} = ${value}`);
+            });
+            
+            // Apply directly to body
+            const body = document.body;
+            if (this.themes[theme]['--_theme---bg-color']) {
+                body.style.backgroundColor = this.themes[theme]['--_theme---bg-color'];
+            }
+            if (this.themes[theme]['--_theme---txt-color']) {
+                body.style.color = this.themes[theme]['--_theme---txt-color'];
+            }
         }
         
         // Update data-theme attribute
@@ -141,7 +199,7 @@ class ThemeToggle {
     toggle() {
         const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
         console.log(`🔄 Toggling from ${this.currentTheme} to ${newTheme}`);
-        this.setTheme(newTheme);
+        this.setTheme(newTheme, true); // Always animate on toggle
     }
     
     updateButton() {
