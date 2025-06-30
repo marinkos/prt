@@ -113,13 +113,13 @@ class ThemeToggle {
         // Check localStorage for saved theme
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme && this.themes[savedTheme]) {
+            console.log(`📱 Loading saved theme: ${savedTheme}`);
             this.setTheme(savedTheme);
         } else {
-            // Check if user prefers dark mode
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (prefersDark) {
-                this.setTheme('dark');
-            }
+            // Don't automatically switch to dark mode on first load
+            // Only use system preference if user has explicitly chosen it before
+            console.log('📱 No saved theme preference, staying with default light theme');
+            this.setTheme('light');
         }
     }
     
@@ -132,13 +132,27 @@ class ThemeToggle {
         this.currentTheme = theme;
         const root = document.documentElement;
         
+        console.log(`🎨 Applying theme "${theme}":`, this.themes[theme]);
+        
         // Apply theme variables
         Object.entries(this.themes[theme]).forEach(([property, value]) => {
             root.style.setProperty(property, value);
+            console.log(`   Set ${property} = ${value}`);
         });
         
         // Update data-theme attribute
         root.setAttribute('data-theme', theme);
+        console.log(`   Set data-theme = "${theme}"`);
+        
+        // Verify the changes were applied
+        setTimeout(() => {
+            const appliedStyles = window.getComputedStyle(root);
+            console.log('🔍 Verification - Applied styles:');
+            Object.keys(this.themes[theme]).forEach(property => {
+                const appliedValue = appliedStyles.getPropertyValue(property);
+                console.log(`   ${property}: ${appliedValue}`);
+            });
+        }, 100);
         
         // Update button state
         this.updateButton();
