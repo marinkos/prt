@@ -11,7 +11,7 @@ function colorModeToggle() {
   
     const htmlElement = document.documentElement;
     let toggleEl;
-    let togglePressed = "true";
+    let togglePressed = "false";
   
     const scriptTag = document.querySelector("[data-theme-toggle-script]");
     if (!scriptTag) {
@@ -57,15 +57,25 @@ function colorModeToggle() {
       }
     }
   
-    // Dark mode on load
-    localStorage.getItem("dark-mode") === "false"
-      ? goDark(false, false)
-      : goDark(true, false);
+    function checkPreference(e) {
+      goDark(e.matches, false);
+    }
+    const colorPreference = window.matchMedia("(prefers-color-scheme: light)");
+    colorPreference.addEventListener("change", (e) => {
+      checkPreference(e);
+    });
+  
+    let storagePreference = localStorage.getItem("dark-mode");
+    if (storagePreference !== null) {
+      storagePreference === "true" ? goDark(true, false) : goDark(false, false);
+    } else {
+      checkPreference(colorPreference);
+    }
   
     window.addEventListener("DOMContentLoaded", (event) => {
       toggleEl = document.querySelectorAll("[data-theme-toggle-button]");
       toggleEl.forEach(function (element) {
-        element.setAttribute("aria-label", "Toggle Dark Mode");
+        element.setAttribute("aria-label", "View Dark Mode");
         element.setAttribute("role", "button");
         element.setAttribute("aria-pressed", togglePressed);
       });
@@ -78,5 +88,4 @@ function colorModeToggle() {
       });
     });
   }
-  colorModeToggle();
-  
+  document.addEventListener("colorThemesReady", colorModeToggle);
