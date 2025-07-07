@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
       gsap.to(body, {
           backgroundColor: newBg,
           color: newColor,
-          duration: 0.3,
+          duration: 0.5,
           ease: "power1.out",
           onComplete: function() {
               body.style.backgroundColor = '';
