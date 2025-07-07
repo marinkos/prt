@@ -5,4 +5,4 @@ import './projects.js';
 import './smooth-scroll.js';
 import './date.js';
 import './collector.js';
-//import './toggle.js';
+import './toggle.js';

@@ -1,91 +1,62 @@
-function colorModeToggle() {
-    function attr(defaultVal, attrVal) {
-      const defaultValType = typeof defaultVal;
-      if (typeof attrVal !== "string" || attrVal.trim() === "") return defaultVal;
-      if (attrVal === "true" && defaultValType === "boolean") return true;
-      if (attrVal === "false" && defaultValType === "boolean") return false;
-      if (isNaN(attrVal) && defaultValType === "string") return attrVal;
-      if (!isNaN(attrVal) && defaultValType === "number") return +attrVal;
-      return defaultVal;
-    }
+document.addEventListener('colorThemesReady', function() {
+  // Get the toggle button
+  const toggleButton = document.querySelector('[data-theme-toggle-button]');
+  const buttonText = toggleButton.querySelector('.lights-on');
   
-    const htmlElement = document.documentElement;
-    let toggleEl;
-    let togglePressed = "false";
+  // Get theme colors from the collected data
+  const lightTheme = window.colorThemes.getTheme('light');
+  const darkTheme = window.colorThemes.getTheme('dark');
   
-    const scriptTag = document.querySelector("[data-theme-toggle-script]");
-    if (!scriptTag) {
-      console.warn(
-        "Script tag with data-theme-toggle-script attribute not found"
-      );
-      return;
-    }
+  // Track current theme state
+  let isDarkMode = false;
   
-    let colorModeDuration = attr(0.5, scriptTag.getAttribute("duration"));
-    let colorModeEase = attr("power1.out", scriptTag.getAttribute("ease"));
-  
-    function setColors(themeString, animate) {
-      if (typeof gsap !== "undefined" && animate) {
-        gsap.to(htmlElement, {
-          ...colorThemes.getTheme(themeString),
-          duration: colorModeDuration,
-          ease: colorModeEase,
-        });
-      } else {
-        htmlElement.classList.remove("theme-dark");
-        htmlElement.classList.remove("theme-light");
-        htmlElement.classList.add("theme-" + themeString);
-      }
-    }
-  
-    function goDark(dark, animate) {
-      if (dark) {
-        localStorage.setItem("dark-mode", "true");
-        htmlElement.classList.add("dark-mode");
-        setColors("dark", animate);
-        togglePressed = "true";
-      } else {
-        localStorage.setItem("dark-mode", "false");
-        htmlElement.classList.remove("dark-mode");
-        setColors("light", animate);
-        togglePressed = "false";
-      }
-      if (typeof toggleEl !== "undefined") {
-        toggleEl.forEach(function (element) {
-          element.setAttribute("aria-pressed", togglePressed);
-        });
-      }
-    }
-  
-    function checkPreference(e) {
-      goDark(e.matches, false);
-    }
-    const colorPreference = window.matchMedia("(prefers-color-scheme: light)");
-    colorPreference.addEventListener("change", (e) => {
-      checkPreference(e);
-    });
-  
-    let storagePreference = localStorage.getItem("dark-mode");
-    if (storagePreference !== null) {
-      storagePreference === "true" ? goDark(true, false) : goDark(false, false);
-    } else {
-      checkPreference(colorPreference);
-    }
-  
-    window.addEventListener("DOMContentLoaded", (event) => {
-      toggleEl = document.querySelectorAll("[data-theme-toggle-button]");
-      toggleEl.forEach(function (element) {
-        element.setAttribute("aria-label", "View Dark Mode");
-        element.setAttribute("role", "button");
-        element.setAttribute("aria-pressed", togglePressed);
-      });
-      document.addEventListener("click", function (e) {
-        const targetElement = e.target.closest("[data-theme-toggle-button]");
-        if (targetElement) {
-          let darkClass = htmlElement.classList.contains("dark-mode");
-          darkClass ? goDark(false, true) : goDark(true, true);
-        }
-      });
-    });
+  // Check saved preference
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+      isDarkMode = true;
+      document.documentElement.classList.add('theme-dark');
+      buttonText.textContent = 'lights on';
+  } else {
+      document.documentElement.classList.add('theme-light');
   }
-  document.addEventListener("colorThemesReady", colorModeToggle);
+  
+  function toggleTheme() {
+      const currentTheme = isDarkMode ? lightTheme : darkTheme;
+      const targetTheme = isDarkMode ? darkTheme : lightTheme;
+      
+      // Create a timeline for smooth transition
+      const tl = gsap.timeline({
+          ease: "power1.out",
+          onComplete: function() {
+              // Toggle classes after animation
+              if (isDarkMode) {
+                  document.documentElement.classList.remove('theme-dark');
+                  document.documentElement.classList.add('theme-light');
+              } else {
+                  document.documentElement.classList.remove('theme-light');
+                  document.documentElement.classList.add('theme-dark');
+              }
+              isDarkMode = !isDarkMode;
+              localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+          }
+      });
+      
+      // Animate from current colors to target colors
+      tl.fromTo('body', 
+          {
+              backgroundColor: currentTheme['--_theme---bg-color'],
+              color: currentTheme['--_theme---txt-color']
+          },
+          {
+              backgroundColor: targetTheme['--_theme---bg-color'],
+              color: targetTheme['--_theme---txt-color'],
+              duration: 0.5
+          }
+      );
+      
+      // Update button text
+      buttonText.textContent = !isDarkMode ? 'lights on' : 'lights off';
+  }
+  
+  toggleButton.addEventListener('click', toggleTheme);
+});
