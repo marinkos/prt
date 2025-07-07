@@ -20,39 +20,38 @@ document.addEventListener('DOMContentLoaded', function() {
       const currentBg = getComputedStyle(body).backgroundColor;
       const currentColor = getComputedStyle(body).color;
       
-      // Toggle classes
-      isDarkMode = !isDarkMode;
+      // Store current state
+      const wasInDarkMode = body.classList.contains('theme-dark');
+      
+      // Apply new state to get target colors
       body.classList.remove('theme-light', 'theme-dark');
-      body.classList.add(isDarkMode ? 'theme-dark' : 'theme-light');
+      body.classList.add(wasInDarkMode ? 'theme-light' : 'theme-dark');
       
       // Get new computed colors  
       const newBg = getComputedStyle(body).backgroundColor;
       const newColor = getComputedStyle(body).color;
       
-      // Reset to current state for animation
+      // Remove classes temporarily to animate from current colors
       body.classList.remove('theme-light', 'theme-dark');
-      body.classList.add(isDarkMode ? 'theme-light' : 'theme-dark');
+      body.style.backgroundColor = currentBg;
+      body.style.color = currentColor;
       
       // Animate to new colors
-      gsap.fromTo(body, 
-          {
-              backgroundColor: currentBg,
-              color: currentColor
-          },
-          {
-              backgroundColor: newBg,
-              color: newColor,
-              duration: 0.5, // Faster animation
-              ease: "power1.out",
-              onComplete: function() {
-                  // Apply the final class after animation
-                  body.classList.remove('theme-light', 'theme-dark');
-                  body.classList.add(isDarkMode ? 'theme-dark' : 'theme-light');
-              }
+      gsap.to(body, {
+          backgroundColor: newBg,
+          color: newColor,
+          duration: 0.5,
+          ease: "power1.out",
+          onComplete: function() {
+              // Remove inline styles and apply the final class
+              body.style.backgroundColor = '';
+              body.style.color = '';
+              body.classList.add(wasInDarkMode ? 'theme-light' : 'theme-dark');
           }
-      );
+      });
       
-      // Update text and save preference
+      // Update state, text and save preference
+      isDarkMode = !wasInDarkMode;
       buttonText.textContent = isDarkMode ? 'lights on' : 'lights off';
       localStorage.setItem('dark-mode', isDarkMode);
   }
