@@ -623,8 +623,10 @@ document.addEventListener("DOMContentLoaded", function () {
           submitBtn.value = "Success!";
 
           console.log("All children data:", childrenData);
-          // Redirect to thank-you page after successful submission
-          window.location.href = "/thank-you-schedule";
+          // Redirect to thank-you page after successful submission (defer to avoid Webflow handlers)
+          setTimeout(function () {
+            window.location.replace("/thank-you-schedule");
+          }, 0);
         } catch (error) {
           console.error("Upload failed:", error);
           submitBtn.disabled = false;
