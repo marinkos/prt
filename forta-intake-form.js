@@ -631,7 +631,6 @@ document.addEventListener("DOMContentLoaded", function () {
           console.error("Upload failed:", error);
           submitBtn.disabled = false;
           submitBtn.value = "Submit";
-          alert("Failed to upload files. Please try again.");
         }
       }
     });
@@ -1049,15 +1048,17 @@ document.addEventListener("DOMContentLoaded", function () {
         ];
   
         if (!allowedTypes.includes(file.type)) {
-          alert("Please upload only images (JPEG, PNG, GIF) or PDF files");
+          console.warn("Invalid file type selected", file.type);
           return false;
         }
   
         if (file.size > maxSize) {
-          alert(
-            `File size exceeds limit. Maximum size: ${
-              file.type.includes("pdf") ? "25MB" : "10MB"
-            }`
+          console.warn(
+            "File size exceeds limit.", {
+              type: file.type,
+              size: file.size,
+              max: file.type.includes("pdf") ? 25 * 1024 * 1024 : 10 * 1024 * 1024,
+            }
           );
           return false;
         }
