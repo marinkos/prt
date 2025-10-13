@@ -621,9 +621,10 @@ document.addEventListener("DOMContentLoaded", function () {
           }
   
           submitBtn.value = "Success!";
-  
+
           console.log("All children data:", childrenData);
-          alert(`Successfully submitted ${childrenData.length} children!`);
+          // Redirect to thank-you page after successful submission
+          window.location.href = "/thank-you-schedule";
         } catch (error) {
           console.error("Upload failed:", error);
           submitBtn.disabled = false;
