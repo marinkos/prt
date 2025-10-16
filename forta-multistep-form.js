@@ -171,35 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Keep this function for when reCAPTCHA loads
 function onRecaptchaLoad() {
-    // Render reCAPTCHA first
-    let recaptchaContainer = document.getElementById('recaptcha-container');
-    let captchaErrorMessage = document.getElementById('missing_captcha_error_message');
-    
-    if (recaptchaContainer && typeof grecaptcha !== "undefined") {
-        // Check if already rendered
-        if (!recaptchaContainer.hasChildNodes()) {
-            grecaptcha.render(recaptchaContainer, { 
-                sitekey: '6Ldp-yorAAAAAH7nTspqJRX-wZQ1HKfvJEpV3g8B',
-                callback: function(token) {
-                    if (captchaErrorMessage) captchaErrorMessage.style.display = 'none';
-                },
-                'expired-callback': function() {
-                    if (captchaErrorMessage) {
-                        captchaErrorMessage.style.display = 'block';
-                        captchaErrorMessage.textContent = 'Captcha expired. Please try again.';
-                    }
-                },
-                'error-callback': function() {
-                    if (captchaErrorMessage) {
-                        captchaErrorMessage.style.display = 'block';
-                        captchaErrorMessage.textContent = 'Captcha failed to load. Please refresh.';
-                    }
-                }
-            });
-        }
-    }
-    
-    // Then load JSON and initialize script
+    // Load JSON and initialize script
     fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
         .then(response => response.json())
         .then(data => {
@@ -235,24 +207,33 @@ function initializeScript() {
     let recaptchaContainer = document.getElementById('recaptcha-container');
     let captchaErrorMessage = document.getElementById('missing_captcha_error_message');
     if (recaptchaContainer && typeof grecaptcha !== "undefined") {
-        grecaptcha.render(recaptchaContainer, { 
-            sitekey: '6Ldp-yorAAAAAH7nTspqJRX-wZQ1HKfvJEpV3g8B',
-            callback: function(token) {
-                if (captchaErrorMessage) captchaErrorMessage.style.display = 'none';
-            },
-            'expired-callback': function() {
-                if (captchaErrorMessage) {
-                    captchaErrorMessage.style.display = 'block';
-                    captchaErrorMessage.textContent = 'Captcha expired. Please try again.';
-                }
-            },
-            'error-callback': function() {
-                if (captchaErrorMessage) {
-                    captchaErrorMessage.style.display = 'block';
-                    captchaErrorMessage.textContent = 'Captcha failed to load. Please refresh.';
-                }
+        // Check if reCAPTCHA is already rendered in this container
+        if (!recaptchaContainer.hasChildNodes() && !recaptchaContainer.getAttribute('data-recaptcha-rendered')) {
+            try {
+                grecaptcha.render(recaptchaContainer, { 
+                    sitekey: '6Ldp-yorAAAAAH7nTspqJRX-wZQ1HKfvJEpV3g8B',
+                    callback: function(token) {
+                        if (captchaErrorMessage) captchaErrorMessage.style.display = 'none';
+                    },
+                    'expired-callback': function() {
+                        if (captchaErrorMessage) {
+                            captchaErrorMessage.style.display = 'block';
+                            captchaErrorMessage.textContent = 'Captcha expired. Please try again.';
+                        }
+                    },
+                    'error-callback': function() {
+                        if (captchaErrorMessage) {
+                            captchaErrorMessage.style.display = 'block';
+                            captchaErrorMessage.textContent = 'Captcha failed to load. Please refresh.';
+                        }
+                    }
+                });
+                // Mark as rendered to prevent future attempts
+                recaptchaContainer.setAttribute('data-recaptcha-rendered', 'true');
+            } catch (error) {
+                console.warn('reCAPTCHA already rendered or failed to render:', error);
             }
-        });
+        }
     }
 
     // ------------------------
