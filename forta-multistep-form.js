@@ -1,6 +1,7 @@
 // Global variables - declare these at the top
 let jsonData = [];
 let isScriptInitialized = false;
+let isRecaptchaRendered = false;
 
 
 // -----------------------
@@ -156,22 +157,11 @@ document.addEventListener('DOMContentLoaded', populateHiddenFields);
 // ------------------------------------
 // Load JSON Data and Initialize Script
 // ------------------------------------
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
-        .then(response => response.json())
-        .then(data => {
-            jsonData = data;
-            if (!isScriptInitialized) {
-                initializeScript();
-                isScriptInitialized = true;
-            }
-        })
-        .catch(error => console.error('Error fetching JSON:', error));
-});
-
-// Keep this function for when reCAPTCHA loads
-function onRecaptchaLoad() {
-    // Load JSON and initialize script
+function loadJsonAndInitialize() {
+    if (isScriptInitialized) {
+        return; // Already initialized, don't run again
+    }
+    
     fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
         .then(response => response.json())
         .then(data => {
@@ -184,7 +174,21 @@ function onRecaptchaLoad() {
         .catch(error => console.error('Error fetching JSON:', error));
 }
 
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', loadJsonAndInitialize);
+
+// Keep this function for when reCAPTCHA loads
+function onRecaptchaLoad() {
+    loadJsonAndInitialize();
+}
+
 function initializeScript() {
+    // Prevent multiple initializations
+    if (isScriptInitialized) {
+        console.log('Script already initialized, skipping...');
+        return;
+    }
+    
     // ---------------------
     // Variable Declarations
     // ---------------------
@@ -206,7 +210,7 @@ function initializeScript() {
 
     let recaptchaContainer = document.getElementById('recaptcha-container');
     let captchaErrorMessage = document.getElementById('missing_captcha_error_message');
-    if (recaptchaContainer && typeof grecaptcha !== "undefined") {
+    if (recaptchaContainer && typeof grecaptcha !== "undefined" && !isRecaptchaRendered) {
         // Check if reCAPTCHA is already rendered in this container
         if (!recaptchaContainer.hasChildNodes() && !recaptchaContainer.getAttribute('data-recaptcha-rendered')) {
             try {
@@ -230,10 +234,16 @@ function initializeScript() {
                 });
                 // Mark as rendered to prevent future attempts
                 recaptchaContainer.setAttribute('data-recaptcha-rendered', 'true');
+                isRecaptchaRendered = true;
+                console.log('reCAPTCHA rendered successfully');
             } catch (error) {
                 console.warn('reCAPTCHA already rendered or failed to render:', error);
             }
+        } else {
+            console.log('reCAPTCHA already rendered, skipping...');
         }
+    } else if (isRecaptchaRendered) {
+        console.log('reCAPTCHA already rendered globally, skipping...');
     }
 
     // ------------------------
