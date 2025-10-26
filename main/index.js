@@ -6,4 +6,3 @@ import './smooth-scroll.js';
 import './date.js';
 //import './collector.js';
 import './toggle.js';
-//import './scroll-fade.js';

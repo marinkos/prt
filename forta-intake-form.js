@@ -401,42 +401,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Make childData globally accessible
   window.childData = childData;
   
-  // Initialize datepicker
-  function initializeDatepicker() {
-    // Check if jQuery and datepicker are available
-    if (typeof $ !== 'undefined' && $.fn.datepicker) {
-      $('[data-toggle="datepicker"]').datepicker({
-        format: 'mm-dd-yyyy'
-      });
-      
-      // Make readonly on mobile
-      if (window.innerWidth < 768) {
-        $('[data-toggle="datepicker"]').attr('readonly', 'readonly');
-      }
-    } else {
-      // Fallback: try to load the datepicker script
-      const script = document.createElement('script');
-      script.src = 'https://fengyuanchen.github.io/datepicker/js/datepicker.js';
-      script.onload = function() {
-        // Wait a bit for the script to initialize
-        setTimeout(function() {
-          if (typeof $ !== 'undefined' && $.fn.datepicker) {
-            $('[data-toggle="datepicker"]').datepicker({
-              format: 'mm-dd-yyyy'
-            });
-            
-            if (window.innerWidth < 768) {
-              $('[data-toggle="datepicker"]').attr('readonly', 'readonly');
-            }
-          }
-        }, 100);
-      };
-      document.head.appendChild(script);
-    }
-  }
-  
-  // Initialize datepicker when DOM is ready
-  initializeDatepicker();
   
   });
   
