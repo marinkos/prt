@@ -98,12 +98,12 @@ document.addEventListener("DOMContentLoaded", function () {
           nextBtn.style.display = "block";
           submitBtn.style.display = "none";
           break;
-        case 3:
-          step3.style.display = "block";
-          prevBtn.style.display = "flex";
-          nextBtn.style.display = "block";
-          submitBtn.style.display = "none";
-          break;
+  case 3:
+    step3.style.display = "block";
+    prevBtn.style.display = "flex";
+    nextBtn.style.display = "block";
+    submitBtn.style.display = "none";
+    break;
         case 4:
           step4Summary.style.display = "block";
           prevBtn.style.display = "flex";
@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
           submitBtn.value = "Submit";
           // Update summary display if child data exists
           if (childData) {
-            updateSummaryDisplay();
+          updateSummaryDisplay();
           }
           break;
       }
@@ -328,9 +328,11 @@ document.addEventListener("DOMContentLoaded", function () {
     e.stopPropagation();
   
     if (currentStep === 2) {
-      // Save child data and proceed to step 3
-      saveChildData();
-      showStep(3);
+      // Validate step 2 before proceeding
+      if (validateStep(2)) {
+        saveChildData();
+        showStep(3);
+      }
     } else if (currentStep === 3) {
       // Proceed to summary step
       showStep(4);
@@ -348,6 +350,13 @@ document.addEventListener("DOMContentLoaded", function () {
       e.stopPropagation();
   
       if (currentStep > 1) {
+        // Hide summary when going back from step 4
+        if (currentStep === 4) {
+          const summaryContainer = document.getElementById("childrenSummaryCards");
+          if (summaryContainer) {
+            summaryContainer.innerHTML = "";
+          }
+        }
         showStep(currentStep - 1);
       }
     });
@@ -391,6 +400,43 @@ document.addEventListener("DOMContentLoaded", function () {
   
   // Make childData globally accessible
   window.childData = childData;
+  
+  // Initialize datepicker
+  function initializeDatepicker() {
+    // Check if jQuery and datepicker are available
+    if (typeof $ !== 'undefined' && $.fn.datepicker) {
+      $('[data-toggle="datepicker"]').datepicker({
+        format: 'mm-dd-yyyy'
+      });
+      
+      // Make readonly on mobile
+      if (window.innerWidth < 768) {
+        $('[data-toggle="datepicker"]').attr('readonly', 'readonly');
+      }
+    } else {
+      // Fallback: try to load the datepicker script
+      const script = document.createElement('script');
+      script.src = 'https://fengyuanchen.github.io/datepicker/js/datepicker.js';
+      script.onload = function() {
+        // Wait a bit for the script to initialize
+        setTimeout(function() {
+          if (typeof $ !== 'undefined' && $.fn.datepicker) {
+            $('[data-toggle="datepicker"]').datepicker({
+              format: 'mm-dd-yyyy'
+            });
+            
+            if (window.innerWidth < 768) {
+              $('[data-toggle="datepicker"]').attr('readonly', 'readonly');
+            }
+          }
+        }, 100);
+      };
+      document.head.appendChild(script);
+    }
+  }
+  
+  // Initialize datepicker when DOM is ready
+  initializeDatepicker();
   
   });
   
