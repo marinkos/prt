@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("email-form");
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
-    const skipBtn = document.getElementById("skipBtn");
     const submitBtn = document.querySelector(".button.is-form-submit");
     const progressBar = document.querySelector(".intake_progress");
     const progressText = document.getElementById("intakeProgress");
@@ -91,33 +90,29 @@ document.addEventListener("DOMContentLoaded", function () {
           step1.style.display = "block";
           prevBtn.style.display = "none";
           nextBtn.style.display = "block";
-          skipBtn.style.display = "none";
           submitBtn.style.display = "none";
           break;
         case 2:
           step2.style.display = "block";
           prevBtn.style.display = "flex";
           nextBtn.style.display = "block";
-          skipBtn.style.display = "none";
           submitBtn.style.display = "none";
           break;
-  case 3:
-    step3.style.display = "block";
-    prevBtn.style.display = "flex";
-    nextBtn.style.display = "block";
-          skipBtn.style.display = "none";
-    submitBtn.style.display = "none";
-    break;
+        case 3:
+          step3.style.display = "block";
+          prevBtn.style.display = "flex";
+          nextBtn.style.display = "block";
+          submitBtn.style.display = "none";
+          break;
         case 4:
           step4Summary.style.display = "block";
           prevBtn.style.display = "flex";
           nextBtn.style.display = "none";
-          skipBtn.style.display = "none";
           submitBtn.style.display = "block";
           submitBtn.value = "Submit";
           // Update summary display if child data exists
           if (childData) {
-          updateSummaryDisplay();
+            updateSummaryDisplay();
           }
           break;
       }
