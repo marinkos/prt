@@ -4,7 +4,7 @@
 
 document.addEventListener("DOMContentLoaded", function () {
     // Constants
-    const TOTAL_STEPS = 3;
+    const TOTAL_STEPS = 4;
   
     // Get form elements
     const form = document.getElementById("email-form");
@@ -61,9 +61,10 @@ document.addEventListener("DOMContentLoaded", function () {
     function updateProgressBar() {
       let progress = 0;
   
-      if (currentStep >= 1) progress = 33;
-      if (currentStep >= 2) progress = 66;
-      if (currentStep >= 3) progress = 100;
+      if (currentStep === 1) progress = 33;
+      if (currentStep === 2) progress = 66;
+      if (currentStep === 3) progress = 100;
+      if (currentStep === 4) progress = 100;
   
       progressText.textContent = progress;
       progressBar.style.width = progress + "%";
@@ -78,7 +79,6 @@ document.addEventListener("DOMContentLoaded", function () {
       step1.style.display = "none";
       step2.style.display = "none";
       step3.style.display = "none";
-      step4Summary.style.display = "none";
   
       // Hide all validation messages
       validation1.style.display = "none";
@@ -103,6 +103,13 @@ document.addEventListener("DOMContentLoaded", function () {
           break;
   case 3:
     step3.style.display = "block";
+    prevBtn.style.display = "flex";
+    nextBtn.style.display = "block";
+          skipBtn.style.display = "none";
+    submitBtn.style.display = "none";
+    break;
+        case 4:
+          step4Summary.style.display = "block";
           prevBtn.style.display = "flex";
           nextBtn.style.display = "none";
           skipBtn.style.display = "none";
@@ -284,7 +291,7 @@ document.addEventListener("DOMContentLoaded", function () {
           break;
   
         case 3:
-          // Step 3 is now a textarea, no validation needed
+          // Step 3 is a textarea, no validation needed
           return true;
       }
   
@@ -329,6 +336,9 @@ document.addEventListener("DOMContentLoaded", function () {
       // Save child data and proceed to step 3
       saveChildData();
       showStep(3);
+    } else if (currentStep === 3) {
+      // Proceed to summary step
+      showStep(4);
     } else if (validateStep(currentStep)) {
       if (currentStep < TOTAL_STEPS) {
         showStep(currentStep + 1);
@@ -352,7 +362,7 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
       e.stopPropagation();
   
-      if (currentStep === 3) {
+      if (currentStep === 4) {
         submitBtn.disabled = true;
         submitBtn.value = "Submitting...";
   
