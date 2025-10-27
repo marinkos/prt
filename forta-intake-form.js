@@ -134,6 +134,7 @@ document.addEventListener("DOMContentLoaded", function () {
       birthDate: document.getElementById("00N8b00000GjjfI").value,
       gender: document.getElementById("00NRc00000kLAzZ").value,
       level: document.getElementById("00NRc00000kLBFh").value,
+      freeformText: document.getElementById("00NRc00000kLBUDMA4").value,
     };
   
     console.log("Child data saved:", childData);
@@ -145,6 +146,8 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("00N8b00000GjjfI").value = "";
       document.getElementById("00NRc00000kLAzZ").value = "";
       document.getElementById("00NRc00000kLBFh").value = "";
+      // Clear step 3 freeform text
+      document.getElementById("00NRc00000kLBUDMA4").value = "";
     }
   
   
@@ -155,12 +158,12 @@ document.addEventListener("DOMContentLoaded", function () {
   
       if (childData) {
         const age = childData.birthDate ? calculateAge(childData.birthDate) : "Unknown";
+        const freeformText = childData.freeformText ? childData.freeformText.substring(0, 100) + (childData.freeformText.length > 100 ? "..." : "") : "No additional information provided";
   
           summaryHTML += `
             <div class="child-summary-card">
                 <div class="child-card-header">
-                <div>Child Information</div>
-                <a href="#" class="button is-secondary w-button edit-child-btn">Edit</a>
+                <div>Summary</div>
                 </div>
                 <div class="child-card-content">
                   <div class="summary-row">
@@ -179,21 +182,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     <span class="summary-label">Level:</span>
                   <span class="summary-value">${childData.level}</span>
                   </div>
+                  <div class="summary-row">
+                  <span class="summary-label">Additional Info:</span>
+                  <span class="summary-value">${freeformText}</span>
+                </div>
                 </div>
               </div>
             `;
         }
   
       summaryContainer.innerHTML = summaryHTML;
-  
-      // Add edit button listener
-      const editBtn = document.querySelector(".edit-child-btn");
-      if (editBtn) {
-        editBtn.addEventListener("click", function (e) {
-          e.preventDefault();
-          editChild();
-        });
-      }
     }
   
     function calculateAge(birthDate) {
@@ -218,19 +216,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   
   
-    function editChild() {
-      if (!childData) return;
-  
-      // Populate form with child data
-      document.getElementById("00N8b00000Bz3KG").value = childData.firstName;
-      document.getElementById("00N8b00000Bz3KL").value = childData.lastName;
-      document.getElementById("00N8b00000GjjfI").value = childData.birthDate;
-      document.getElementById("00NRc00000kLAzZ").value = childData.gender;
-      document.getElementById("00NRc00000kLBFh").value = childData.level;
-  
-      // Go back to step 2
-      showStep(2);
-    }
   
     // ===================================
     // VALIDATION FUNCTIONS
@@ -334,7 +319,10 @@ document.addEventListener("DOMContentLoaded", function () {
         showStep(3);
       }
     } else if (currentStep === 3) {
-      // Proceed to summary step
+      // Save freeform text and proceed to summary step
+      if (childData) {
+        childData.freeformText = document.getElementById("00NRc00000kLBUDMA4").value;
+      }
       showStep(4);
     } else if (validateStep(currentStep)) {
       if (currentStep < TOTAL_STEPS) {
