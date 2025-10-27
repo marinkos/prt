@@ -211,9 +211,7 @@ function initializeScript() {
     let recaptchaContainer = document.getElementById('recaptcha-container');
     let captchaErrorMessage = document.getElementById('missing_captcha_error_message');
 
-    // Add is-fill class to type and insurance dropdowns initially
-    type.classList.add("is-fill");
-    type2.classList.add("is-fill");
+    // Add is-fill class only to insurance dropdowns initially (type dropdowns are active since state is pre-selected)
     insurance.classList.add("is-fill");
     insurance2.classList.add("is-fill");
     if (recaptchaContainer && typeof grecaptcha !== "undefined" && !isRecaptchaRendered) {
@@ -270,9 +268,7 @@ function initializeScript() {
         insurance2.removeAttribute("required");
         type2.removeAttribute("required");
 
-        // Add is-fill class to type and insurance dropdowns
-        type.classList.add("is-fill");
-        type2.classList.add("is-fill");
+        // Add is-fill class only to insurance dropdowns (type dropdowns are active since state is pre-selected)
         insurance.classList.add("is-fill");
         insurance2.classList.add("is-fill");
     }
@@ -316,9 +312,7 @@ function initializeScript() {
         if (statePrimary) statePrimary.value = selectedState;
         if (stateSecondary) stateSecondary.value = selectedState;
 
-        // Remove is-fill class from type dropdowns when state is selected
-        type.classList.remove("is-fill");
-        type2.classList.remove("is-fill");
+        // Type dropdowns are always active since state is pre-selected
 
         // Optionally, update the insurance dropdowns based on the new state and existing type selections
         const type1 = type.value;
@@ -392,8 +386,7 @@ function initializeScript() {
         const selectedType = type.value;
         updateInsuranceDropdowns(selectedState, selectedType, 'insurance');
 
-        // Remove is-fill class from type dropdown when state is selected
-        type.classList.remove("is-fill");
+        // Type dropdown is always active since state is pre-selected
 
         // Reset insurance dropdown to 'Select provider'
         insurance.selectedIndex = 0;
@@ -408,8 +401,7 @@ function initializeScript() {
         const selectedType = type2.value;
         updateInsuranceDropdowns(selectedState, selectedType, 'insurance2');
 
-        // Remove is-fill class from type2 dropdown when state is selected
-        type2.classList.remove("is-fill");
+        // Type2 dropdown is always active since state is pre-selected
 
         // Reset insurance2 dropdown to 'Select provider'
         insurance2.selectedIndex = 0;
