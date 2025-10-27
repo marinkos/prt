@@ -210,6 +210,12 @@ function initializeScript() {
 
     let recaptchaContainer = document.getElementById('recaptcha-container');
     let captchaErrorMessage = document.getElementById('missing_captcha_error_message');
+
+    // Add is-fill class to type and insurance dropdowns initially
+    type.classList.add("is-fill");
+    type2.classList.add("is-fill");
+    insurance.classList.add("is-fill");
+    insurance2.classList.add("is-fill");
     if (recaptchaContainer && typeof grecaptcha !== "undefined" && !isRecaptchaRendered) {
         // Check if reCAPTCHA is already rendered in this container
         if (!recaptchaContainer.hasChildNodes() && !recaptchaContainer.getAttribute('data-recaptcha-rendered')) {
@@ -263,6 +269,12 @@ function initializeScript() {
         type.removeAttribute("required");
         insurance2.removeAttribute("required");
         type2.removeAttribute("required");
+
+        // Add is-fill class to type and insurance dropdowns
+        type.classList.add("is-fill");
+        type2.classList.add("is-fill");
+        insurance.classList.add("is-fill");
+        insurance2.classList.add("is-fill");
     }
 
     // --------------------------------------
@@ -303,6 +315,10 @@ function initializeScript() {
         // Auto-fill statePrimary and stateSecondary with main state
         if (statePrimary) statePrimary.value = selectedState;
         if (stateSecondary) stateSecondary.value = selectedState;
+
+        // Remove is-fill class from type dropdowns when state is selected
+        type.classList.remove("is-fill");
+        type2.classList.remove("is-fill");
 
         // Optionally, update the insurance dropdowns based on the new state and existing type selections
         const type1 = type.value;
@@ -376,6 +392,9 @@ function initializeScript() {
         const selectedType = type.value;
         updateInsuranceDropdowns(selectedState, selectedType, 'insurance');
 
+        // Remove is-fill class from type dropdown when state is selected
+        type.classList.remove("is-fill");
+
         // Reset insurance dropdown to 'Select provider'
         insurance.selectedIndex = 0;
         primaryInsuranceInput.value = '';
@@ -388,6 +407,9 @@ function initializeScript() {
         const selectedState = this.value;
         const selectedType = type2.value;
         updateInsuranceDropdowns(selectedState, selectedType, 'insurance2');
+
+        // Remove is-fill class from type2 dropdown when state is selected
+        type2.classList.remove("is-fill");
 
         // Reset insurance2 dropdown to 'Select provider'
         insurance2.selectedIndex = 0;
@@ -402,6 +424,9 @@ function initializeScript() {
         const selectedType = this.value;
         updateInsuranceDropdowns(selectedState, selectedType, 'insurance');
 
+        // Remove is-fill class from insurance dropdown when type is selected
+        insurance.classList.remove("is-fill");
+
         // Reset insurance dropdown to 'Select provider'
         insurance.selectedIndex = 0;
         primaryInsuranceInput.value = '';
@@ -414,6 +439,9 @@ function initializeScript() {
         const selectedState = stateSecondary.value;
         const selectedType = this.value;
         updateInsuranceDropdowns(selectedState, selectedType, 'insurance2');
+
+        // Remove is-fill class from insurance2 dropdown when type is selected
+        insurance2.classList.remove("is-fill");
 
         // Reset insurance2 dropdown to 'Select provider'
         insurance2.selectedIndex = 0;
