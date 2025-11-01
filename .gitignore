@@ -40,3 +40,6 @@ Temporary Items
 *.icloud
 
 # End of https://www.toptal.com/developers/gitignore/api/macos
+
+# Webflow CSV folder (keep local only)
+webflow csv/
