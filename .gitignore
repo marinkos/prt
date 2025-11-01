@@ -43,3 +43,6 @@ Temporary Items
 
 # Webflow CSV folder (keep local only)
 webflow csv/
+
+# Reference file (keep local only)
+reference.html
