@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Format phone field #00NRc00000kLFHh
+    // Format phone field #00NRc00000kLFHh (Practice Phone)
     const practicePhoneInput = document.getElementById('00NRc00000kLFHh');
     if (practicePhoneInput) {
         practicePhoneInput.addEventListener('keyup', function () {
@@ -89,6 +89,21 @@ document.addEventListener('DOMContentLoaded', function() {
         // Format the phone number on page load if it has a value
         if (practicePhoneInput.value) {
             practicePhoneInput.value = phoneFormat(practicePhoneInput.value);
+        }
+    }
+
+    // Format fax field #00NRc00000kLFJJ (Fax)
+    const faxInput = document.getElementById('00NRc00000kLFJJ');
+    if (faxInput) {
+        faxInput.addEventListener('keyup', function () {
+            faxInput.value = phoneFormat(faxInput.value);
+        });
+        faxInput.addEventListener('input', function () {
+            faxInput.value = phoneFormat(faxInput.value);
+        });
+        // Format the fax number on page load if it has a value
+        if (faxInput.value) {
+            faxInput.value = phoneFormat(faxInput.value);
         }
     }
 });
