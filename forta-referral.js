@@ -199,7 +199,11 @@ function initializeScript() {
     const stateSelect = document.getElementById("state");
     const typeSelect = document.getElementById("type");
     const insuranceSelect = document.getElementById("00N8b00000EQM3J");
-    const referralForm = document.getElementById("wf-form-Referral-Form") || document.querySelector('form');
+    // Try multiple form selectors for Webflow compatibility
+    const referralForm = document.getElementById("wf-form-Referral-Form") || 
+                         document.querySelector('form.referral_form') ||
+                         document.querySelector('form[name="wf-form-Referral-Form"]') ||
+                         document.querySelector('form');
 
     if (!stateSelect || !typeSelect || !insuranceSelect) {
         console.warn('Required form elements not found');
@@ -244,9 +248,26 @@ function initializeScript() {
             
             if (selectedState && selectedInsurance) {
                 updatePrimaryInsuranceFields(selectedState, selectedInsurance);
+                // Recalculate MQL status when insurance changes
+                setTimeout(() => calculateMQLStatus(null), 100);
             } else {
                 clearInsuranceFields();
             }
+        });
+    }
+    
+    // Also recalculate MQL when ASD diagnosis or other key fields change
+    const asdDiagnosisField = document.getElementById('00N8b00000EQM2f');
+    if (asdDiagnosisField) {
+        asdDiagnosisField.addEventListener('change', function() {
+            setTimeout(() => calculateMQLStatus(null), 100);
+        });
+    }
+    
+    const birthDateField = document.getElementById('00N8b00000GjjfI');
+    if (birthDateField) {
+        birthDateField.addEventListener('change', function() {
+            setTimeout(() => calculateMQLStatus(null), 100);
         });
     }
 
@@ -259,12 +280,26 @@ function initializeScript() {
             updateInsuranceDropdown(currentState, currentType);
         }
     }
+    
+    // Calculate initial MQL status if form fields are already filled
+    setTimeout(() => {
+        const insuranceValue = insuranceSelect ? insuranceSelect.value : '';
+        const asdValue = asdDiagnosisField ? asdDiagnosisField.value : '';
+        if (insuranceValue || asdValue) {
+            calculateMQLStatus(null);
+        }
+    }, 500);
 
     // ------------------------------------------
     // Form Submission Logic with MQL
     // ------------------------------------------
     if (referralForm) {
+        console.log('Form found, attaching submit handler');
+        
+        // Use submit event - DO NOT prevent default, just populate fields
         referralForm.addEventListener('submit', function (event) {
+            console.log('Form submit event triggered');
+            
             // Update insurance fields before submission
             const selectedState = stateSelect ? stateSelect.value : '';
             const selectedInsurance = insuranceSelect ? insuranceSelect.value : '';
@@ -272,9 +307,19 @@ function initializeScript() {
                 updatePrimaryInsuranceFields(selectedState, selectedInsurance);
             }
 
-            // Calculate MQL Status
+            // Calculate MQL Status - run synchronously before form submits
             calculateMQLStatus(event);
+            
+            // Log for debugging
+            const mqlStatusField = document.getElementById('00NRc00000Nxa1C');
+            if (mqlStatusField) {
+                console.log('MQL Status set to:', mqlStatusField.value);
+            }
+            
+            // DO NOT prevent default - let form submit normally with original redirects
         });
+    } else {
+        console.warn('Referral form not found for MQL calculation');
     }
 
     isScriptInitialized = true;
@@ -432,6 +477,12 @@ function calculateMQLStatus(event) {
         console.warn('MQL Status field not found');
         return;
     }
+    
+    // Debug logging
+    console.log('Calculating MQL Status...');
+    console.log('ASD Diagnosis:', asdDiagnosisField ? asdDiagnosisField.value : 'not found');
+    console.log('State:', stateSelect ? stateSelect.value : 'not found');
+    console.log('Insurance:', insuranceSelect ? insuranceSelect.value : 'not found');
     
     const asdDiagnosis = asdDiagnosisField ? asdDiagnosisField.value.trim() : '';
     const state = stateSelect ? stateSelect.value : '';
