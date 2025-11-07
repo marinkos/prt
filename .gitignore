@@ -46,3 +46,7 @@ webflow csv/
 
 # Reference file (keep local only)
 reference.html
+
+# Files with secrets (keep local only)
+sms-telnix.js
+form10.js
