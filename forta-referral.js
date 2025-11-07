@@ -4,7 +4,6 @@
 
 // Global variables
 let jsonData = [];
-let citiesData = null; // Will store cities data from JSON or fallback
 let isScriptInitialized = false;
 
 // -----------------------
@@ -141,171 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// --------------------------------
-// Fallback City Data by State (used if JSON fetch fails)
-// --------------------------------
-const fallbackCitiesByState = {
-    'AL': ['Birmingham', 'Montgomery', 'Mobile', 'Huntsville', 'Tuscaloosa'],
-    'AK': ['Anchorage', 'Fairbanks', 'Juneau', 'Sitka', 'Ketchikan'],
-    'AZ': ['Phoenix', 'Tucson', 'Mesa', 'Chandler', 'Scottsdale', 'Glendale', 'Tempe', 'Peoria', 'Surprise', 'Yuma'],
-    'AR': ['Little Rock', 'Fort Smith', 'Fayetteville', 'Jonesboro', 'North Little Rock'],
-    'CA': ['Los Angeles', 'San Diego', 'San Jose', 'San Francisco', 'Fresno', 'Sacramento', 'Long Beach', 'Oakland', 'Bakersfield', 'Anaheim', 'Santa Ana', 'Riverside', 'Stockton', 'Irvine', 'Chula Vista', 'Fremont', 'San Bernardino', 'Modesto', 'Fontana', 'Oxnard'],
-    'CO': ['Denver', 'Colorado Springs', 'Aurora', 'Fort Collins', 'Lakewood', 'Thornton', 'Arvada', 'Westminster', 'Pueblo', 'Centennial'],
-    'CT': ['Bridgeport', 'New Haven', 'Hartford', 'Stamford', 'Waterbury', 'Norwalk', 'Danbury', 'New Britain', 'West Hartford', 'Greenwich'],
-    'DE': ['Wilmington', 'Dover', 'Newark', 'Middletown', 'Smyrna'],
-    'DC': ['Washington'],
-    'FL': ['Jacksonville', 'Miami', 'Tampa', 'Orlando', 'St. Petersburg', 'Hialeah', 'Tallahassee', 'Fort Lauderdale', 'Port St. Lucie', 'Cape Coral'],
-    'GA': ['Atlanta', 'Augusta', 'Columbus', 'Savannah', 'Athens', 'Sandy Springs', 'Roswell', 'Macon', 'Johns Creek', 'Albany'],
-    'HI': ['Honolulu', 'Hilo', 'Kailua', 'Kaneohe', 'Kapaa'],
-    'ID': ['Boise', 'Nampa', 'Meridian', 'Idaho Falls', 'Pocatello'],
-    'IL': ['Chicago', 'Aurora', 'Naperville', 'Joliet', 'Rockford', 'Elgin', 'Peoria', 'Champaign', 'Waukegan', 'Cicero'],
-    'IN': ['Indianapolis', 'Fort Wayne', 'Evansville', 'South Bend', 'Carmel', 'Fishers', 'Bloomington', 'Hammond', 'Gary', 'Muncie'],
-    'IA': ['Des Moines', 'Cedar Rapids', 'Davenport', 'Sioux City', 'Iowa City', 'Waterloo', 'Council Bluffs', 'Ames', 'West Des Moines', 'Dubaque'],
-    'KS': ['Wichita', 'Overland Park', 'Kansas City', 'Olathe', 'Topeka', 'Lawrence', 'Shawnee', 'Manhattan', 'Lenexa', 'Salina'],
-    'KY': ['Louisville', 'Lexington', 'Bowling Green', 'Owensboro', 'Covington', 'Hopkinsville', 'Richmond', 'Florence', 'Georgetown', 'Henderson'],
-    'LA': ['New Orleans', 'Baton Rouge', 'Shreveport', 'Lafayette', 'Lake Charles', 'Kenner', 'Bossier City', 'Monroe', 'Alexandria', 'Houma'],
-    'ME': ['Portland', 'Lewiston', 'Bangor', 'South Portland', 'Auburn'],
-    'MD': ['Baltimore', 'Frederick', 'Rockville', 'Gaithersburg', 'Bowie', 'Annapolis', 'College Park', 'Salisbury', 'Laurel', 'Greenbelt'],
-    'MA': ['Boston', 'Worcester', 'Springfield', 'Lowell', 'Cambridge', 'New Bedford', 'Brockton', 'Quincy', 'Lynn', 'Fall River'],
-    'MI': ['Detroit', 'Grand Rapids', 'Warren', 'Sterling Heights', 'Lansing', 'Ann Arbor', 'Flint', 'Dearborn', 'Livonia', 'Troy'],
-    'MN': ['Minneapolis', 'St. Paul', 'Rochester', 'Duluth', 'Bloomington', 'Brooklyn Park', 'Plymouth', 'St. Cloud', 'Eagan', 'Woodbury'],
-    'MS': ['Jackson', 'Gulfport', 'Southaven', 'Hattiesburg', 'Biloxi', 'Meridian', 'Tupelo', 'Greenville', 'Olive Branch', 'Horn Lake'],
-    'MO': ['Kansas City', 'St. Louis', 'Springfield', 'Columbia', 'Independence', 'Lee\'s Summit', 'O\'Fallon', 'St. Joseph', 'St. Charles', 'St. Peters'],
-    'MT': ['Billings', 'Missoula', 'Great Falls', 'Bozeman', 'Butte'],
-    'NE': ['Omaha', 'Lincoln', 'Bellevue', 'Grand Island', 'Kearney'],
-    'NV': ['Las Vegas', 'Henderson', 'Reno', 'North Las Vegas', 'Sparks', 'Carson City'],
-    'NH': ['Manchester', 'Nashua', 'Concord', 'Derry', 'Rochester'],
-    'NJ': ['Newark', 'Jersey City', 'Paterson', 'Elizabeth', 'Edison', 'Woodbridge', 'Lakewood', 'Toms River', 'Hamilton', 'Trenton'],
-    'NM': ['Albuquerque', 'Las Cruces', 'Rio Rancho', 'Santa Fe', 'Roswell'],
-    'NY': ['New York', 'Buffalo', 'Rochester', 'Yonkers', 'Syracuse', 'Albany', 'New Rochelle', 'Mount Vernon', 'Schenectady', 'Utica'],
-    'NC': ['Charlotte', 'Raleigh', 'Greensboro', 'Durham', 'Winston-Salem', 'Fayetteville', 'Cary', 'Wilmington', 'High Point', 'Asheville'],
-    'ND': ['Fargo', 'Bismarck', 'Grand Forks', 'Minot', 'West Fargo'],
-    'OH': ['Columbus', 'Cleveland', 'Cincinnati', 'Toledo', 'Akron', 'Dayton', 'Parma', 'Canton', 'Youngstown', 'Lorain'],
-    'OK': ['Oklahoma City', 'Tulsa', 'Norman', 'Broken Arrow', 'Lawton', 'Edmond', 'Moore', 'Midwest City', 'Enid', 'Stillwater'],
-    'OR': ['Portland', 'Salem', 'Eugene', 'Gresham', 'Hillsboro', 'Bend', 'Beaverton', 'Medford', 'Springfield', 'Corvallis'],
-    'PA': ['Philadelphia', 'Pittsburgh', 'Allentown', 'Erie', 'Reading', 'Scranton', 'Bethlehem', 'Lancaster', 'Harrisburg', 'Altoona'],
-    'RI': ['Providence', 'Warwick', 'Cranston', 'Pawtucket', 'East Providence'],
-    'SC': ['Charleston', 'Columbia', 'North Charleston', 'Mount Pleasant', 'Rock Hill', 'Greenville', 'Summerville', 'Sumter', 'Hilton Head Island', 'Florence'],
-    'SD': ['Sioux Falls', 'Rapid City', 'Aberdeen', 'Watertown', 'Brookings'],
-    'TN': ['Nashville', 'Memphis', 'Knoxville', 'Chattanooga', 'Clarksville', 'Murfreesboro', 'Franklin', 'Jackson', 'Johnson City', 'Bartlett'],
-    'TX': ['Houston', 'San Antonio', 'Dallas', 'Austin', 'Fort Worth', 'El Paso', 'Arlington', 'Corpus Christi', 'Plano', 'Laredo'],
-    'UT': ['Salt Lake City', 'West Valley City', 'Provo', 'West Jordan', 'Orem', 'Sandy', 'Ogden', 'St. George', 'Layton', 'Taylorsville'],
-    'VT': ['Burlington', 'Essex', 'South Burlington', 'Colchester', 'Rutland'],
-    'VA': ['Virginia Beach', 'Norfolk', 'Chesapeake', 'Richmond', 'Newport News', 'Alexandria', 'Hampton', 'Portsmouth', 'Suffolk', 'Roanoke'],
-    'WA': ['Seattle', 'Spokane', 'Tacoma', 'Vancouver', 'Bellevue', 'Kent', 'Everett', 'Renton', 'Yakima', 'Federal Way'],
-    'WV': ['Charleston', 'Huntington', 'Parkersburg', 'Morgantown', 'Wheeling'],
-    'WI': ['Milwaukee', 'Madison', 'Green Bay', 'Kenosha', 'Racine', 'Appleton', 'Waukesha', 'Oshkosh', 'Eau Claire', 'Janesville'],
-    'WY': ['Cheyenne', 'Casper', 'Laramie', 'Gillette', 'Rock Springs']
-};
-
-// --------------------------------
-// Function to Update City Dropdown
-// --------------------------------
-function updateCityDropdown(selectedState) {
-    const cityDropdown = document.getElementById('city');
-    if (!cityDropdown) {
-        console.warn('City dropdown not found');
-        return;
-    }
-
-    // Clear current options
-    cityDropdown.innerHTML = '<option value="">Select a city</option>';
-
-    if (!selectedState) {
-        return;
-    }
-
-    // Use fetched cities data if available, otherwise fallback to hardcoded data
-    let cities = [];
-    
-    if (citiesData && citiesData[selectedState]) {
-        cities = citiesData[selectedState]; // Already sorted from JSON load
-    } else if (fallbackCitiesByState[selectedState]) {
-        cities = fallbackCitiesByState[selectedState].sort(); // Sort fallback data
-        console.warn('Using fallback city data for state:', selectedState);
-    }
-
-    // Add cities to dropdown (already sorted if from JSON)
-    cities.forEach(city => {
-        const option = document.createElement('option');
-        option.value = city;
-        option.text = city;
-        cityDropdown.appendChild(option);
-    });
-}
-
-// --------------------------------
-// State Name to Abbreviation Mapping
-// --------------------------------
-const stateNameToAbbr = {
-    'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
-    'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'District of Columbia': 'DC', 'Florida': 'FL',
-    'Georgia': 'GA', 'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN',
-    'Iowa': 'IA', 'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME',
-    'Maryland': 'MD', 'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS',
-    'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH',
-    'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND',
-    'Ohio': 'OH', 'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI',
-    'South Carolina': 'SC', 'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT',
-    'Vermont': 'VT', 'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
-};
-
-// --------------------------------
-// Function to Convert ALL CAPS to Title Case
-// --------------------------------
-function toTitleCase(str) {
-    if (!str) return '';
-    return str.toLowerCase().split(' ').map(word => {
-        // Handle hyphenated words
-        if (word.includes('-')) {
-            return word.split('-').map(part => 
-                part.charAt(0).toUpperCase() + part.slice(1)
-            ).join('-');
-        }
-        return word.charAt(0).toUpperCase() + word.slice(1);
-    }).join(' ');
-}
-
-// --------------------------------
-// Load Cities Data from JSON
-// --------------------------------
-function loadCitiesData() {
-    const citiesJsonUrl = 'https://raw.githubusercontent.com/cschoi3/US-states-and-cities-json/refs/heads/master/data.json';
-    
-    fetch(citiesJsonUrl)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch cities data');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Transform data from full state names to abbreviations and convert city names to title case
-            citiesData = {};
-            
-            Object.keys(data).forEach(stateName => {
-                const stateAbbr = stateNameToAbbr[stateName];
-                if (stateAbbr && data[stateName] && Array.isArray(data[stateName])) {
-                    // Convert cities from ALL CAPS to Title Case
-                    citiesData[stateAbbr] = data[stateName].map(city => toTitleCase(city));
-                    // Sort cities alphabetically
-                    citiesData[stateAbbr].sort();
-                }
-            });
-            
-            console.log('Cities data loaded and processed successfully');
-            
-            // Update city dropdown if state is already selected
-            const stateSelect = document.getElementById('state');
-            if (stateSelect && stateSelect.value) {
-                updateCityDropdown(stateSelect.value);
-            }
-        })
-        .catch(error => {
-            console.warn('Could not load cities from JSON, using fallback data:', error);
-            // Will use fallback data automatically when updateCityDropdown is called
-        });
-}
+// City is now a text input, city data no longer needed
 
 // ------------------------------------
 // Load JSON Data and Initialize Script
@@ -315,33 +150,36 @@ function loadJsonAndInitialize() {
         return; // Already initialized, don't run again
     }
     
-    // Load both insurance data and cities data in parallel
-    Promise.all([
-        fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
-            .then(response => response.json())
-            .then(data => {
-                jsonData = data;
-            })
-            .catch(error => {
-                console.error('Error fetching insurance JSON:', error);
-                jsonData = [];
-            }),
-        // Load cities data (will use fallback if fetch fails)
-        new Promise((resolve) => {
-            loadCitiesData();
-            // Don't block initialization if cities fail to load
-            setTimeout(resolve, 100);
+    // Load insurance data
+    fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
+        .then(response => response.json())
+        .then(data => {
+            jsonData = data;
+            if (!isScriptInitialized) {
+                initializeScript();
+                isScriptInitialized = true;
+            }
         })
-    ]).then(() => {
-        if (!isScriptInitialized) {
-            initializeScript();
-            isScriptInitialized = true;
-        }
-    });
+        .catch(error => {
+            console.error('Error fetching insurance JSON:', error);
+            jsonData = [];
+            if (!isScriptInitialized) {
+                initializeScript();
+                isScriptInitialized = true;
+            }
+        });
 }
 
 // Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', loadJsonAndInitialize);
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default "Child Has Health Insurance?" to "Yes"
+    const hasInsuranceField = document.getElementById('00N8b00000Bz6et');
+    if (hasInsuranceField) {
+        hasInsuranceField.value = 'yes';
+    }
+    
+    loadJsonAndInitialize();
+});
 
 // Keep this function for when reCAPTCHA loads
 function onRecaptchaLoad() {
@@ -361,7 +199,7 @@ function initializeScript() {
     const stateSelect = document.getElementById("state");
     const typeSelect = document.getElementById("type");
     const insuranceSelect = document.getElementById("00N8b00000EQM3J");
-    const citySelect = document.getElementById("city");
+    const referralForm = document.getElementById("wf-form-Referral-Form") || document.querySelector('form');
 
     if (!stateSelect || !typeSelect || !insuranceSelect) {
         console.warn('Required form elements not found');
@@ -373,14 +211,11 @@ function initializeScript() {
     // ---------------------------------------
     if (stateSelect) {
         stateSelect.addEventListener('change', function () {
-            const selectedState = this.value;
-            
-            // Update city dropdown based on state
-            updateCityDropdown(selectedState);
-            
             // Clear and reset insurance dropdown when state changes
             if (insuranceSelect) {
                 insuranceSelect.innerHTML = '<option value="">Select one...</option>';
+                // Clear insurance hidden fields when state changes
+                clearInsuranceFields();
             }
         });
     }
@@ -399,6 +234,22 @@ function initializeScript() {
         });
     }
 
+    // ---------------------------------------
+    // Event Listener for Insurance Selection
+    // ---------------------------------------
+    if (insuranceSelect) {
+        insuranceSelect.addEventListener('change', function () {
+            const selectedState = stateSelect ? stateSelect.value : '';
+            const selectedInsurance = this.value;
+            
+            if (selectedState && selectedInsurance) {
+                updatePrimaryInsuranceFields(selectedState, selectedInsurance);
+            } else {
+                clearInsuranceFields();
+            }
+        });
+    }
+
     // Update insurance dropdown when both state and type are selected
     if (stateSelect && typeSelect) {
         // Check if both are already selected on page load
@@ -409,9 +260,21 @@ function initializeScript() {
         }
     }
 
-    // Initialize city dropdown if state is pre-selected
-    if (stateSelect && stateSelect.value) {
-        updateCityDropdown(stateSelect.value);
+    // ------------------------------------------
+    // Form Submission Logic with MQL
+    // ------------------------------------------
+    if (referralForm) {
+        referralForm.addEventListener('submit', function (event) {
+            // Update insurance fields before submission
+            const selectedState = stateSelect ? stateSelect.value : '';
+            const selectedInsurance = insuranceSelect ? insuranceSelect.value : '';
+            if (selectedState && selectedInsurance) {
+                updatePrimaryInsuranceFields(selectedState, selectedInsurance);
+            }
+
+            // Calculate MQL Status
+            calculateMQLStatus(event);
+        });
     }
 
     isScriptInitialized = true;
@@ -483,4 +346,151 @@ function updateInsuranceDropdown(state, type) {
 
     // Ensure default option is selected
     insuranceDropdown.selectedIndex = 0;
+    
+    // Clear insurance fields when dropdown is reset
+    clearInsuranceFields();
+}
+
+// ------------------------------------------
+// Functions to Find Insurance Data from JSON
+// ------------------------------------------
+function findInsuranceData(state, insuranceName) {
+    if (!jsonData || jsonData.length === 0) {
+        return null;
+    }
+    return jsonData.find(item =>
+        item.state === state &&
+        item.tofu_payor_name === insuranceName
+    );
+}
+
+// ------------------------------------------
+// Update Hidden Fields for Primary Insurance
+// ------------------------------------------
+function updatePrimaryInsuranceFields(state, insuranceName) {
+    const insuranceData = findInsuranceData(state, insuranceName);
+    if (insuranceData) {
+        const bayField = document.getElementById('00NRc00000OHqQz');
+        const statusField = document.getElementById('00NRc00000OHo1Z');
+        
+        if (bayField) {
+            bayField.value = insuranceData.final_forta_bay || ''; // Primary Insurance Bay
+        }
+        if (statusField) {
+            statusField.value = insuranceData.inn_oon_designation || ''; // Primary Insurance Status
+        }
+    } else {
+        clearInsuranceFields();
+    }
+}
+
+// ------------------------------------------
+// Clear Insurance Hidden Fields
+// ------------------------------------------
+function clearInsuranceFields() {
+    const bayField = document.getElementById('00NRc00000OHqQz');
+    const statusField = document.getElementById('00NRc00000OHo1Z');
+    
+    if (bayField) bayField.value = '';
+    if (statusField) statusField.value = '';
+}
+
+// ------------------------------------------
+// Calculate Age from Date of Birth
+// ------------------------------------------
+function calculateAge(birthDate) {
+    if (!birthDate) return null;
+    
+    const today = new Date();
+    const birth = new Date(birthDate);
+    
+    if (isNaN(birth.getTime())) return null;
+    
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
+    
+    return age >= 0 ? age : null;
+}
+
+// ------------------------------------------
+// Calculate MQL Status
+// ------------------------------------------
+function calculateMQLStatus(event) {
+    // Get form field values
+    const asdDiagnosisField = document.getElementById('00N8b00000EQM2f');
+    const birthDateField = document.getElementById('00N8b00000GjjfI');
+    const stateSelect = document.getElementById('state');
+    const typeSelect = document.getElementById('type');
+    const insuranceSelect = document.getElementById('00N8b00000EQM3J');
+    const mqlStatusField = document.getElementById('00NRc00000Nxa1C');
+    
+    if (!mqlStatusField) {
+        console.warn('MQL Status field not found');
+        return;
+    }
+    
+    const asdDiagnosis = asdDiagnosisField ? asdDiagnosisField.value.trim() : '';
+    const state = stateSelect ? stateSelect.value : '';
+    const insuranceProvider = insuranceSelect ? insuranceSelect.value : '';
+    const birthDate = birthDateField ? birthDateField.value : '';
+    const childAge = calculateAge(birthDate);
+    
+    // Diagnosis Disqualify States
+    const diagnosisDisqualifyStates = ["AK", "CA", "IA", "HI", "LA", "MA", "MT", "NM", "NY", "OR"];
+    
+    // Get primary insurance's TOFU Status
+    const insuranceData = findInsuranceData(state, insuranceProvider);
+    const tofuStatus = insuranceData ? insuranceData.tofu_status : null;
+    
+    // Default: Child has insurance (always "yes" for referral form)
+    const hasInsurance = 'yes';
+    
+    // --------------------------------------
+    // MQL Logic Based on Business Rules
+    // --------------------------------------
+    let mqlStatus = '';
+    
+    // DISQUALIFY if primary insurance's TOFU Status is "Disqualify"
+    if (tofuStatus === "Disqualify") {
+        mqlStatus = "DQ - Insurance not supported";
+    }
+    // MQL - Check Diagnosis (PASS case)
+    else if (
+        asdDiagnosis.toLowerCase() === "no, evaluation scheduled" || 
+        (asdDiagnosis.toLowerCase() === "no, iep only" && state.toLowerCase() === "ca" && typeSelect && typeSelect.value.toLowerCase() === "yes")
+    ) {
+        mqlStatus = "Dx - Check Eval";
+    }
+    // DQ - No Diagnosis (FAIL case)
+    else if (
+        ["no", "no, iep only", "no, on a waitlist", "no, have non-asd diagnosis"].includes(asdDiagnosis.toLowerCase())
+    ) {
+        mqlStatus = "DQ - No Diagnosis";
+    }
+    // MQL - Standard Pass if primary insurance's TOFU Status is "Passing"
+    else if (tofuStatus === "Passing") {
+        mqlStatus = "MQL";
+    }
+    // DISQUALIFY based on adjusted ASD diagnosis logic (FAIL case)
+    else if (
+        asdDiagnosis.toLowerCase() !== "yes" &&
+        diagnosisDisqualifyStates.includes(state) &&
+        asdDiagnosis.toLowerCase().includes('no')
+    ) {
+        mqlStatus = "DQ - No Diagnosis";
+    }
+    // DISQUALIFY if Age is >99 (FAIL case)
+    else if (childAge !== null && childAge > 99) {
+        mqlStatus = "DQ - Age";
+    } else {
+        // Default fallback (FAIL case)
+        mqlStatus = "DQ - Other";
+    }
+    
+    // Set the MQL Status hidden field
+    mqlStatusField.value = mqlStatus;
 }
