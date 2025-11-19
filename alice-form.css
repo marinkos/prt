@@ -1,18 +1,22 @@
-/* Style labels as small text below the input fields */
+/* Hide afterGetLinkedIn labels */
+label.afterGetLinkedIn,
+label.afterGetLinkedIn.control-label {
+  display: none !important;
+}
+
+/* Style labels as small text on the top border line of the field */
 .form-group {
   position: relative !important;
   margin-bottom: 1.5rem !important;
-  display: flex !important;
-  flex-direction: column !important;
 }
 
-/* Show label below input using flexbox order */
 .form-group label.control-label {
-  display: block !important;
-  order: 2 !important;
-  margin-top: 4px !important;
-  margin-bottom: 0 !important;
-  margin-left: 20px !important;
+  position: absolute !important;
+  top: -8px !important;
+  left: 20px !important;
+  background: #f0ebe3 !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
   color: #0D0D0D !important;
   font-family: "ABC Monument Grotesk", sans-serif !important;
   font-size: 0.75rem !important;
@@ -20,13 +24,9 @@
   line-height: 100% !important;
   letter-spacing: 0.045em !important;
   opacity: 0.7 !important;
-}
-
-/* Ensure inputs come first */
-.form-group input,
-.form-group textarea,
-.form-group select {
-  order: 1 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  display: block !important;
 }
 
 /* Ensure form and all elements align left */
