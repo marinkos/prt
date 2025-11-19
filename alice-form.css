@@ -23,16 +23,27 @@
 
 /* Style submit button */
 .applyButton {
-  border: 0.5px solid #0d0d0d !important;
+  display: block !important;
+  margin: 1rem auto 0 auto !important; /* center horizontally */
+  border: 0.5px solid #0D0D0D !important;
   background: #108496 !important;
-  box-shadow: 3px 3px 0 0 #000 !important;
-  border-radius: 8px !important;
-  padding: 12px 24px !important;
-  color: white !important;
-  font-weight: 600 !important;
-  font-size: 16px !important;
+  box-shadow: 3px 3px 0 0 #0D0D0D !important;
+  color: #fff !important;
+  padding: 0.75rem 2rem !important;
+  border-radius: 0 !important; /* removed radius */
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  font-family: "ABC Monument Grotesk", sans-serif !important;
+  font-size: 0.875rem !important;
+  font-style: normal !important;
+  font-weight: 300 !important;
+  line-height: 100% !important;
+  letter-spacing: 0.045em !important;
+  transition: box-shadow 0.2s ease !important;
+}
+
+/* Button hover */
+.applyButton:hover {
+  box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
 /* Add placeholder via CSS pseudo-elements since JS won't work cross-origin */
