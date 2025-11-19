@@ -63,7 +63,11 @@ form,
 input,
 textarea,
 select,
-.form-control {
+.form-control,
+#applyForm .form-control,
+#applyForm input,
+#applyForm textarea,
+#applyForm select {
   border-radius: 0 !important;
 }
 
