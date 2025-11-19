@@ -153,38 +153,6 @@ label.clickableLink:focus-within {
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
-/* Style LinkedIn button to match apply button (keep original colors) */
-#apply-with-linkedin,
-#apply-with-linkedin.btn-md {
-  border: 0.5px solid #0D0D0D !important;
-  box-shadow: 3px 3px 0 0 #0D0D0D !important;
-  padding: 0.75rem 2rem !important;
-  padding-top: 0.75rem !important;
-  padding-bottom: 0.75rem !important;
-  padding-left: 2rem !important;
-  padding-right: 2rem !important;
-  border-radius: 0 !important;
-  transition: box-shadow 0.2s ease !important;
-  height: auto !important;
-  min-height: auto !important;
-}
-
-/* Override Tailwind padding classes */
-#apply-with-linkedin.px-\[26px\] {
-  padding-left: 2rem !important;
-  padding-right: 2rem !important;
-}
-
-#apply-with-linkedin.py-0 {
-  padding-top: 0.75rem !important;
-  padding-bottom: 0.75rem !important;
-}
-
-#apply-with-linkedin:hover,
-#apply-with-linkedin.btn-md:hover {
-  box-shadow: 1px 1px 0 0 #0D0D0D !important;
-}
-
 /* Privacy policy text */
 .privacyPolicy {
   font-size: 0.875rem !important;
