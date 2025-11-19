@@ -59,9 +59,16 @@ form,
   }
 }
 
-/* Style form inputs */
+/* Remove border radius from all form elements */
+input,
+textarea,
+select,
 .form-control {
   border-radius: 0 !important;
+}
+
+/* Style form inputs */
+.form-control {
   border: 1px solid #bdbbb8 !important;
   background: #f6f0e9 !important;
   padding: 12px 16px !important;
