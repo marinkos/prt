@@ -153,6 +153,21 @@ label.clickableLink:focus-within {
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
+/* Style LinkedIn button to match apply button (keep original colors) */
+#apply-with-linkedin,
+.btn-primary {
+  border: 0.5px solid #0D0D0D !important;
+  box-shadow: 3px 3px 0 0 #0D0D0D !important;
+  padding: 0.75rem 2rem !important;
+  border-radius: 0 !important;
+  transition: box-shadow 0.2s ease !important;
+}
+
+#apply-with-linkedin:hover,
+.btn-primary:hover {
+  box-shadow: 1px 1px 0 0 #0D0D0D !important;
+}
+
 /* Privacy policy text */
 .privacyPolicy {
   font-size: 0.875rem !important;
