@@ -1,41 +1,32 @@
-/* Convert labels to placeholders using CSS */
+/* Style labels as small text below the input fields */
 .form-group {
   position: relative !important;
+  margin-bottom: 1.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
+/* Show label below input using flexbox order */
 .form-group label.control-label {
-  position: absolute !important;
-  left: 16px !important;
-  top: 12px !important;
-  pointer-events: none !important;
+  display: block !important;
+  order: 2 !important;
+  margin-top: 4px !important;
+  margin-bottom: 0 !important;
+  margin-left: 20px !important;
   color: #0D0D0D !important;
   font-family: "ABC Monument Grotesk", sans-serif !important;
-  font-size: 0.875rem !important;
+  font-size: 0.75rem !important;
   font-weight: 300 !important;
   line-height: 100% !important;
   letter-spacing: 0.045em !important;
-  transition: all 0.2s ease !important;
-  z-index: 1 !important;
-  margin: 0 !important;
-  display: block !important;
+  opacity: 0.7 !important;
 }
 
-/* Hide label when input has focus - works regardless of DOM order */
-.form-group:focus-within label.control-label {
-  opacity: 0 !important;
-  transform: translateY(-5px) !important;
-  pointer-events: none !important;
-}
-
-/* Hide label when input has a value (for browsers that support :has) */
-.form-group:has(input:not([value=""])) label.control-label,
-.form-group:has(textarea:not(:empty)) label.control-label {
-  opacity: 0 !important;
-}
-
-/* For select elements, always hide the label */
-.form-group select ~ label.control-label {
-  display: none !important;
+/* Ensure inputs come first */
+.form-group input,
+.form-group textarea,
+.form-group select {
+  order: 1 !important;
 }
 
 /* Ensure form and all elements align left */
@@ -102,9 +93,3 @@ form,
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
-/* Ensure inputs have proper padding to accommodate label text */
-.form-group input.form-control,
-.form-group textarea.form-control {
-  position: relative !important;
-  z-index: 2 !important;
-}
