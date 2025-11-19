@@ -10,6 +10,17 @@ form,
   text-align: left !important;
 }
 
+/* Fix Bootstrap column widths at tablet breakpoint */
+@media (min-width: 768px) {
+  .col-sm-offset-3 {
+    margin-left: 0 !important;
+  }
+  
+  .col-sm-9 {
+    width: 100% !important;
+  }
+}
+
 /* Style form inputs */
 .form-control {
   border-radius: 10px !important;
@@ -56,16 +67,6 @@ form,
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
-/* Add placeholder via CSS pseudo-elements since JS won't work cross-origin */
-input[name="firstName"]::before {
-  content: "First name";
-}
-input[name="lastName"]::before {
-  content: "Last name";
-}
-input[name="email"]::before {
-  content: "Email";
-}
-input[name="phone"]::before {
-  content: "Phone";
-}
+/* Note: To convert labels to placeholders, you need JavaScript.
+   See alice-form-placeholders.js for the solution.
+   CSS cannot set placeholder attributes - they must be set via JS or HTML. */
