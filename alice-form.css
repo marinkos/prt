@@ -159,3 +159,19 @@ label.clickableLink:focus-within {
   opacity: 0.8 !important;
 }
 
+/* Questionnaire widget styling */
+.questionnairesWidget .questionnaires > li:first-of-type {
+  border-top: 1px solid #d2d8da !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.questionnaire .questionnaire-header {
+  display: none !important;
+}
+
+.questionnaire .question .question-header .question-title {
+  font-size: 16px !important;
+  font-weight: 400 !important;
+}
+
