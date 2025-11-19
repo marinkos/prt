@@ -1,6 +1,41 @@
-/* Hide labels and convert to placeholders via JavaScript */
+/* Convert labels to placeholders using CSS */
+.form-group {
+  position: relative !important;
+}
+
 .form-group label.control-label {
-  display: none;
+  position: absolute !important;
+  left: 16px !important;
+  top: 12px !important;
+  pointer-events: none !important;
+  color: #0D0D0D !important;
+  font-family: "ABC Monument Grotesk", sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 300 !important;
+  line-height: 100% !important;
+  letter-spacing: 0.045em !important;
+  transition: all 0.2s ease !important;
+  z-index: 1 !important;
+  margin: 0 !important;
+  display: block !important;
+}
+
+/* Hide label when input has focus - works regardless of DOM order */
+.form-group:focus-within label.control-label {
+  opacity: 0 !important;
+  transform: translateY(-5px) !important;
+  pointer-events: none !important;
+}
+
+/* Hide label when input has a value (for browsers that support :has) */
+.form-group:has(input:not([value=""])) label.control-label,
+.form-group:has(textarea:not(:empty)) label.control-label {
+  opacity: 0 !important;
+}
+
+/* For select elements, always hide the label */
+.form-group select ~ label.control-label {
+  display: none !important;
 }
 
 /* Ensure form and all elements align left */
@@ -67,6 +102,9 @@ form,
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
-/* Note: To convert labels to placeholders, you need JavaScript.
-   See alice-form-placeholders.js for the solution.
-   CSS cannot set placeholder attributes - they must be set via JS or HTML. */
+/* Ensure inputs have proper padding to accommodate label text */
+.form-group input.form-control,
+.form-group textarea.form-control {
+  position: relative !important;
+  z-index: 2 !important;
+}
