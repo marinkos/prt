@@ -1,0 +1,31 @@
+/* ===================================
+   COMEET FORM RESPONSIVE IFRAME HEIGHTS
+   ===================================
+   Add this CSS to your Webflow page's custom code (in page settings)
+   or in a style tag in the page
+*/
+
+.form-container iframe {
+  /* Responsive heights */
+  min-height: 80rem !important; /* Mobile default - larger to fit content */
+}
+
+/* Tablet */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .form-container iframe {
+    min-height: 70rem !important;
+  }
+}
+
+/* Desktop */
+@media screen and (min-width: 1025px) {
+  .form-container iframe {
+    min-height: 56rem !important;
+  }
+}
+
+/* Ensure form container aligns left */
+.form-container {
+  text-align: left !important;
+}
+
