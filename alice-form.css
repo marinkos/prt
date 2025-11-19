@@ -1,7 +1,11 @@
-/* Hide afterGetLinkedIn labels */
+/* Hide afterGetLinkedIn labels - more specific selectors */
 label.afterGetLinkedIn,
-label.afterGetLinkedIn.control-label {
+label.afterGetLinkedIn.control-label,
+.afterGetLinkedIn.control-label,
+label.control-label.afterGetLinkedIn,
+label.afterGetLinkedIn.ng-hide {
   display: none !important;
+  visibility: hidden !important;
 }
 
 /* Style labels as small text on the top border line of the field */
@@ -14,19 +18,35 @@ label.afterGetLinkedIn.control-label {
   position: absolute !important;
   top: -8px !important;
   left: 20px !important;
-  background: #f0ebe3 !important;
+  background: #F6F2E9 !important;
   padding: 0 4px !important;
   margin: 0 !important;
   color: #0D0D0D !important;
   font-family: "ABC Monument Grotesk", sans-serif !important;
-  font-size: 0.75rem !important;
+  font-size: 0.875rem !important;
   font-weight: 300 !important;
   line-height: 100% !important;
   letter-spacing: 0.045em !important;
   opacity: 0.7 !important;
   z-index: 1 !important;
   pointer-events: none !important;
-  display: block !important;
+  display: inline-block !important;
+  width: auto !important;
+  white-space: nowrap !important;
+}
+
+/* Hide labels for file inputs since they don't have visible borders */
+.form-group:has(input[type="file"]) label.control-label,
+.form-group:has(.inputFiles) label.control-label,
+.form-group input[type="file"] ~ label.control-label,
+.form-group .inputFiles ~ label.control-label {
+  display: none !important;
+}
+
+/* Also hide labels that are siblings of file inputs (for browsers without :has support) */
+input[type="file"].inputFiles + label.control-label,
+.inputFiles + label.control-label {
+  display: none !important;
 }
 
 /* Ensure form and all elements align left */
