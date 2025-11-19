@@ -1,0 +1,50 @@
+/* Hide labels and convert to placeholders via JavaScript */
+.form-group label.control-label {
+  display: none;
+}
+
+/* Style form inputs */
+.form-control {
+  border-radius: 10px !important;
+  border: 1px solid #bdbbb8 !important;
+  background: #f0ebe3 !important;
+  padding: 12px 16px !important;
+  font-size: 16px !important;
+  width: 100% !important;
+  margin-bottom: 10px !important;
+}
+
+.form-control:focus {
+  border-color: #108496 !important;
+  background: #fff !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(16, 132, 150, 0.1) !important;
+}
+
+/* Style submit button */
+.applyButton {
+  border: 0.5px solid #0d0d0d !important;
+  background: #108496 !important;
+  box-shadow: 3px 3px 0 0 #000 !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Add placeholder via CSS pseudo-elements since JS won't work cross-origin */
+input[name="firstName"]::before {
+  content: "First name";
+}
+input[name="lastName"]::before {
+  content: "Last name";
+}
+input[name="email"]::before {
+  content: "Email";
+}
+input[name="phone"]::before {
+  content: "Phone";
+}
