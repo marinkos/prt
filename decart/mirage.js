@@ -125,4 +125,35 @@ document.addEventListener("DOMContentLoaded", () => {
     el.addEventListener("mouseenter", (e) => handleEnter(e, el, index));
     el.addEventListener("mouseleave", handleLeave);
   });
+
+
+  /** Copy to clipboard **/
+  document.querySelectorAll(".copy_icon-wrap").forEach((wrap) => {
+    wrap.addEventListener("click", async () => {
+      // Find .copy_text - could be within wrap or as a sibling
+      const copyTextEl = wrap.querySelector(".copy_text") || wrap.parentElement?.querySelector(".copy_text");
+      const copyIcon = wrap.querySelector(".copy_icon");
+      const checkIcon = wrap.querySelector(".check_icon");
+
+      if (!copyTextEl) return;
+
+      const textToCopy = copyTextEl.textContent || copyTextEl.innerText;
+
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        
+        // Show check icon
+        if (copyIcon) copyIcon.style.display = "none";
+        if (checkIcon) checkIcon.style.display = "block";
+
+        // Revert back to copy icon after 2 seconds
+        setTimeout(() => {
+          if (copyIcon) copyIcon.style.display = "block";
+          if (checkIcon) checkIcon.style.display = "none";
+        }, 2000);
+      } catch (err) {
+        console.error("Failed to copy text:", err);
+      }
+    });
+  });
 });
