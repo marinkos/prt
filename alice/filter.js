@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  function hideDuplicates(collectionId) {
-    const collection = document.getElementById(collectionId);
+  function hideDuplicates(collectionClass) {
+    const collection = document.querySelector(`.${collectionClass}`);
     if (!collection) return;
 
     // Get all dropdown links in this collection
@@ -21,13 +21,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Hide duplicates in both collections
-  hideDuplicates('locationCollection');
-  hideDuplicates('teamCollection');
+  hideDuplicates('location-collection');
+  hideDuplicates('team-collection');
 
   // Watch for new items (pagination)
   const observer = new MutationObserver(() => {
-    hideDuplicates('locationCollection');
-    hideDuplicates('teamCollection');
+    hideDuplicates('location-collection');
+    hideDuplicates('team-collection');
   });
 
   const filterWrapper = document.querySelector('.positions_filter-wrapper');
