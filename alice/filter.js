@@ -51,15 +51,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Find location dropdown
-  const locationDropdown = document.querySelector('select[name="location"][fs-list-field="location"]');
-  const locationDropdownWrapper = locationDropdown?.closest('.w-dropdown[fs-selectcustom-element="dropdown"]');
+  // Find location dropdown using ID
+  const locationCollection = document.getElementById('locationCollection');
+  const locationDropdownWrapper = locationCollection?.closest('.w-dropdown[fs-selectcustom-element="dropdown"]');
+  const locationDropdown = locationCollection?.querySelector('select[name="location"]');
 
-  // Find team dropdown
-  const teamDropdown = document.querySelector('select[name="team"][fs-list-field="team"]');
-  const teamDropdownWrapper = teamDropdown?.closest('.w-dropdown[fs-selectcustom-element="dropdown"]');
+  // Find team dropdown using ID
+  const teamCollection = document.getElementById('teamCollection');
+  const teamDropdownWrapper = teamCollection?.closest('.w-dropdown[fs-selectcustom-element="dropdown"]');
+  const teamDropdown = teamCollection?.querySelector('select[name="team"]');
 
   // Remove duplicates from both dropdowns
+  if (!locationCollection || !teamCollection) {
+    console.warn('Location or Team collection not found. Make sure IDs are set: locationCollection and teamCollection');
+    return;
+  }
+
   if (locationDropdownWrapper) {
     removeDuplicatesFromDropdown(locationDropdownWrapper);
   }
@@ -116,17 +123,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // Watch for new items being loaded (in case pagination adds more)
   const observer = new MutationObserver(() => {
     // Re-run duplicate removal when new items are added
-    if (locationDropdownWrapper) {
-      removeDuplicatesFromDropdown(locationDropdownWrapper);
+    // Re-find elements in case DOM changed
+    const locCollection = document.getElementById('locationCollection');
+    const locWrapper = locCollection?.closest('.w-dropdown[fs-selectcustom-element="dropdown"]');
+    const locSelect = locCollection?.querySelector('select[name="location"]');
+    
+    const teamColl = document.getElementById('teamCollection');
+    const teamWrapper = teamColl?.closest('.w-dropdown[fs-selectcustom-element="dropdown"]');
+    const teamSelect = teamColl?.querySelector('select[name="team"]');
+    
+    if (locWrapper) {
+      removeDuplicatesFromDropdown(locWrapper);
     }
-    if (teamDropdownWrapper) {
-      removeDuplicatesFromDropdown(teamDropdownWrapper);
+    if (teamWrapper) {
+      removeDuplicatesFromDropdown(teamWrapper);
     }
-    if (locationDropdown) {
-      removeDuplicatesFromSelect(locationDropdown);
+    if (locSelect) {
+      removeDuplicatesFromSelect(locSelect);
     }
-    if (teamDropdown) {
-      removeDuplicatesFromSelect(teamDropdown);
+    if (teamSelect) {
+      removeDuplicatesFromSelect(teamSelect);
     }
   });
 
