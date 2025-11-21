@@ -1,10 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
-  function hideDuplicates(collectionClass) {
-    const collection = document.querySelector(`.${collectionClass}`);
+  function hideDuplicates(collectionId) {
+    // Find the collection by ID
+    const collection = document.getElementById(collectionId);
     if (!collection) return;
 
-    // Get all dropdown links in this collection
-    const links = collection.querySelectorAll('.template-item.w-dropdown-link');
+    // Find the parent nav that contains the dropdown links
+    const dropdownNav = collection.closest('.positions_dropdown-nav');
+    if (!dropdownNav) return;
+
+    // Get all visible dropdown links in this nav
+    const links = dropdownNav.querySelectorAll('.template-item.w-dropdown-link');
     const seen = new Set();
 
     links.forEach((link) => {
@@ -21,13 +26,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Hide duplicates in both collections
-  hideDuplicates('location-collection');
-  hideDuplicates('team-collection');
+  hideDuplicates('locationCollection');
+  hideDuplicates('teamCollection');
 
   // Watch for new items (pagination)
   const observer = new MutationObserver(() => {
-    hideDuplicates('location-collection');
-    hideDuplicates('team-collection');
+    hideDuplicates('locationCollection');
+    hideDuplicates('teamCollection');
   });
 
   const filterWrapper = document.querySelector('.positions_filter-wrapper');
