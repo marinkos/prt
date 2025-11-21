@@ -120,11 +120,46 @@ document.addEventListener("DOMContentLoaded", () => {
     scaleTl.timeScale(2).reverse(); // Reverse the scaling effect on mouseleave
   }
 
+  // Function to hide image completely
+  function hideImage() {
+    if (fade.progress() > 0) {
+      fade.reverse();
+      scaleTl.timeScale(2).reverse();
+      // Reset scale elements to initial state after reverse completes
+      setTimeout(() => {
+        scaleTl.progress(0);
+        gsap.set(".hover-reveal_inner", { scale: 0.3 });
+        gsap.set(".hover-reveal_img", { scale: 2.5 });
+      }, 200);
+    }
+    stopFollow();
+    currentIndex = -1;
+  }
+
   // Apply to all elements with class "events_item"
   gsap.utils.toArray(".events_item").forEach((el, index) => {
     el.addEventListener("mouseenter", (e) => handleEnter(e, el, index));
     el.addEventListener("mouseleave", handleLeave);
   });
+
+  // Hide image on scroll to prevent it from staying visible
+  let scrollTimeout;
+  window.addEventListener("scroll", () => {
+    // Clear any existing timeout
+    clearTimeout(scrollTimeout);
+    
+    // Hide image immediately when scrolling
+    if (fade.progress() > 0) {
+      hideImage();
+    }
+    
+    // Debounce: ensure image stays hidden after scrolling stops
+    scrollTimeout = setTimeout(() => {
+      if (fade.progress() > 0) {
+        hideImage();
+      }
+    }, 100);
+  }, { passive: true });
 
 
   /** Copy to clipboard **/
