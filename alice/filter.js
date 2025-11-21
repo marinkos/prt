@@ -1,208 +1,141 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Get dropdowns
-  const locationDropdown = document.getElementById("positionsLocation");
-  const teamDropdown = document.getElementById("positionsTeam");
-  
-  // Get all collection items (including hidden ones from Load More)
-  const getAllCollectionItems = () => {
-    return document.querySelectorAll(".positions_collection-item");
-  };
-  
-  let collectionItems = getAllCollectionItems();
-  
-  if (!locationDropdown || !teamDropdown || collectionItems.length === 0) {
-    console.warn("Filter elements not found");
-    return;
-  }
+  // Function to remove duplicates from Finsweet dropdown
+  function removeDuplicatesFromDropdown(dropdownElement) {
+    // Find the dropdown nav that contains the links
+    const dropdownNav = dropdownElement.querySelector('.w-dropdown-list');
+    if (!dropdownNav) return;
 
-  // Find Webflow pagination button (Load More)
-  const getPaginationButton = () => {
-    return document.querySelector('.w-pagination-next') || 
-           document.querySelector('.pagination .w-pagination-next');
-  };
-  
-  const getPaginationWrapper = () => {
-    return document.querySelector('.w-pagination-wrapper') || 
-           document.querySelector('.pagination');
-  };
-
-  // Extract unique locations and teams from collection
-  const locationsSet = new Set();
-  const teamsSet = new Set();
-
-  collectionItems.forEach((item) => {
-    const locationEl = item.querySelector('[data-filter="location"]');
-    const teamEl = item.querySelector('[data-filter="team"]');
+    // Get all dropdown links (excluding the reset button)
+    const dropdownLinks = dropdownNav.querySelectorAll('.template-item.w-dropdown-link');
     
-    if (locationEl) {
-      const location = locationEl.textContent.trim();
-      if (location) locationsSet.add(location);
-    }
-    
-    if (teamEl) {
-      const team = teamEl.textContent.trim();
-      if (team) teamsSet.add(team);
-    }
-  });
+    if (dropdownLinks.length === 0) return;
 
-  // Populate location dropdown
-  const sortedLocations = Array.from(locationsSet).sort();
-  sortedLocations.forEach((location) => {
-    const option = document.createElement("option");
-    option.value = location;
-    option.textContent = location;
-    locationDropdown.appendChild(option);
-  });
+    // Collect unique values
+    const uniqueValues = new Set();
+    const valueToElement = new Map();
 
-  // Populate team dropdown
-  const sortedTeams = Array.from(teamsSet).sort();
-  sortedTeams.forEach((team) => {
-    const option = document.createElement("option");
-    option.value = team;
-    option.textContent = team;
-    teamDropdown.appendChild(option);
-  });
-
-  // Function to check if any filter is active
-  function isFilterActive() {
-    return locationDropdown.value !== "All Locations" || teamDropdown.value !== "All Teams";
-  }
-
-  // Filter function
-  function filterPositions() {
-    // Refresh collection items to get all items (including newly loaded ones)
-    collectionItems = getAllCollectionItems();
-    
-    const selectedLocation = locationDropdown.value;
-    const selectedTeam = teamDropdown.value;
-    const filterActive = isFilterActive();
-
-    // Hide/show pagination (Load More button) based on filter state
-    const paginationButton = getPaginationButton();
-    const paginationWrapper = getPaginationWrapper();
-    
-    if (filterActive) {
-      // Hide pagination when filtering
-      if (paginationButton) {
-        paginationButton.style.display = "none";
+    dropdownLinks.forEach((link) => {
+      const text = link.textContent.trim();
+      if (text && !uniqueValues.has(text)) {
+        uniqueValues.add(text);
+        valueToElement.set(text, link);
       }
-      if (paginationWrapper) {
-        paginationWrapper.style.display = "none";
-      }
-    } else {
-      // Show pagination when no filters are active
-      if (paginationButton) {
-        paginationButton.style.display = "";
-      }
-      if (paginationWrapper) {
-        paginationWrapper.style.display = "";
-      }
-    }
+    });
 
-    // Show all items when filtering (bypass Load More visibility)
-    collectionItems.forEach((item) => {
-      const locationEl = item.querySelector('[data-filter="location"]');
-      const teamEl = item.querySelector('[data-filter="team"]');
-      
-      const itemLocation = locationEl ? locationEl.textContent.trim() : "";
-      const itemTeam = teamEl ? teamEl.textContent.trim() : "";
+    // Get the list container where links are stored
+    const listContainer = dropdownNav.querySelector('.list-container');
+    if (!listContainer) return;
 
-      // Check if item matches filters
-      const locationMatch = selectedLocation === "All Locations" || selectedLocation === itemLocation;
-      const teamMatch = selectedTeam === "All Teams" || selectedTeam === itemTeam;
+    // Remove all existing dropdown links
+    dropdownLinks.forEach((link) => {
+      link.remove();
+    });
 
-      // Show or hide item based on both filters
-      if (locationMatch && teamMatch) {
-        item.style.display = "";
-        // Remove any Load More visibility classes/attributes that might hide it
-        item.classList.remove("w-dyn-item--hidden");
-        item.removeAttribute("fs-loadmore-element");
-      } else {
-        item.style.display = "none";
+    // Sort unique values
+    const sortedValues = Array.from(uniqueValues).sort();
+
+    // Re-add only unique links in sorted order
+    sortedValues.forEach((value) => {
+      const originalLink = valueToElement.get(value);
+      if (originalLink) {
+        // Clone the original link to preserve attributes
+        const newLink = originalLink.cloneNode(true);
+        // Insert before the reset button (if it exists) or at the end
+        const resetButton = dropdownNav.querySelector('.template-item.is-reset');
+        if (resetButton && resetButton.parentNode) {
+          resetButton.parentNode.insertBefore(newLink, resetButton);
+        } else {
+          listContainer.appendChild(newLink);
+        }
       }
     });
   }
 
-  // Add event listeners
-  locationDropdown.addEventListener("change", filterPositions);
-  teamDropdown.addEventListener("change", filterPositions);
+  // Find location dropdown
+  const locationDropdown = document.querySelector('select[name="location"][fs-list-field="location"]');
+  const locationDropdownWrapper = locationDropdown?.closest('.w-dropdown[fs-selectcustom-element="dropdown"]');
 
-  // Also listen for Load More events to refresh items when new ones are loaded
-  // This ensures we can filter newly loaded items
-  const observer = new MutationObserver(() => {
-    const newItems = getAllCollectionItems();
-    if (newItems.length > collectionItems.length) {
-      collectionItems = newItems;
-      // Re-extract unique values if new items were loaded
-      newItems.forEach((item) => {
-        const locationEl = item.querySelector('[data-filter="location"]');
-        const teamEl = item.querySelector('[data-filter="team"]');
-        
-        if (locationEl) {
-          const location = locationEl.textContent.trim();
-          if (location && !locationsSet.has(location)) {
-            locationsSet.add(location);
-            const option = document.createElement("option");
-            option.value = location;
-            option.textContent = location;
-            locationDropdown.appendChild(option);
-            // Sort options
-            const options = Array.from(locationDropdown.options);
-            options.sort((a, b) => {
-              if (a.value === "All Locations") return -1;
-              if (b.value === "All Locations") return 1;
-              return a.textContent.localeCompare(b.textContent);
-            });
-            locationDropdown.innerHTML = "";
-            options.forEach(opt => locationDropdown.appendChild(opt));
-          }
-        }
-        
-        if (teamEl) {
-          const team = teamEl.textContent.trim();
-          if (team && !teamsSet.has(team)) {
-            teamsSet.add(team);
-            const option = document.createElement("option");
-            option.value = team;
-            option.textContent = team;
-            teamDropdown.appendChild(option);
-            // Sort options
-            const options = Array.from(teamDropdown.options);
-            options.sort((a, b) => {
-              if (a.value === "All Teams") return -1;
-              if (b.value === "All Teams") return 1;
-              return a.textContent.localeCompare(b.textContent);
-            });
-            teamDropdown.innerHTML = "";
-            options.forEach(opt => teamDropdown.appendChild(opt));
-          }
-        }
-      });
-      
-      // Re-apply filter if active
-      if (isFilterActive()) {
-        filterPositions();
+  // Find team dropdown
+  const teamDropdown = document.querySelector('select[name="team"][fs-list-field="team"]');
+  const teamDropdownWrapper = teamDropdown?.closest('.w-dropdown[fs-selectcustom-element="dropdown"]');
+
+  // Remove duplicates from both dropdowns
+  if (locationDropdownWrapper) {
+    removeDuplicatesFromDropdown(locationDropdownWrapper);
+  }
+
+  if (teamDropdownWrapper) {
+    removeDuplicatesFromDropdown(teamDropdownWrapper);
+  }
+
+  // Also handle the hidden select options (remove duplicates there too)
+  function removeDuplicatesFromSelect(selectElement) {
+    if (!selectElement) return;
+
+    const options = Array.from(selectElement.options);
+    const uniqueValues = new Set();
+    const valueToOption = new Map();
+
+    // Skip the first option (usually "All Locations" or "All Teams")
+    const firstOption = options[0];
+    const firstValue = firstOption ? firstOption.value || firstOption.textContent.trim() : '';
+
+    options.forEach((option) => {
+      const value = option.value || option.textContent.trim();
+      if (value && value !== firstValue && !uniqueValues.has(value)) {
+        uniqueValues.add(value);
+        valueToOption.set(value, option);
       }
+    });
+
+    // Clear all options except the first one
+    while (selectElement.options.length > 1) {
+      selectElement.remove(1);
+    }
+
+    // Re-add unique options in sorted order
+    const sortedValues = Array.from(uniqueValues).sort();
+    sortedValues.forEach((value) => {
+      const originalOption = valueToOption.get(value);
+      if (originalOption) {
+        const newOption = originalOption.cloneNode(true);
+        selectElement.appendChild(newOption);
+      }
+    });
+  }
+
+  // Remove duplicates from hidden select elements
+  if (locationDropdown) {
+    removeDuplicatesFromSelect(locationDropdown);
+  }
+
+  if (teamDropdown) {
+    removeDuplicatesFromSelect(teamDropdown);
+  }
+
+  // Watch for new items being loaded (in case pagination adds more)
+  const observer = new MutationObserver(() => {
+    // Re-run duplicate removal when new items are added
+    if (locationDropdownWrapper) {
+      removeDuplicatesFromDropdown(locationDropdownWrapper);
+    }
+    if (teamDropdownWrapper) {
+      removeDuplicatesFromDropdown(teamDropdownWrapper);
+    }
+    if (locationDropdown) {
+      removeDuplicatesFromSelect(locationDropdown);
+    }
+    if (teamDropdown) {
+      removeDuplicatesFromSelect(teamDropdown);
     }
   });
 
-  // Observe the collection list for changes (when pagination loads new items)
-  const collectionList = document.querySelector(".positions_collection-list");
-  if (collectionList) {
-    observer.observe(collectionList, {
+  // Observe the dropdown containers for changes
+  const filterWrapper = document.querySelector('.positions_filter-wrapper');
+  if (filterWrapper) {
+    observer.observe(filterWrapper, {
       childList: true,
       subtree: true
-    });
-  }
-  
-  // Also observe pagination wrapper to detect when new items are loaded
-  const paginationWrapper = getPaginationWrapper();
-  if (paginationWrapper) {
-    observer.observe(paginationWrapper, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'aria-hidden']
     });
   }
 });
