@@ -47,7 +47,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Exit early if hover-reveal element doesn't exist
   if (!image) return;
 
-  gsap.set(".hover-reveal", { yPercent: -50, xPercent: -50 });
+  // Set initial position and opacity
+  gsap.set(".hover-reveal", { yPercent: -50, xPercent: -50, opacity: 0 });
 
   let setX,
     setY,
@@ -58,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     startFollow = () => document.addEventListener("mousemove", align),
     stopFollow = () => document.removeEventListener("mousemove", align),
     fade = gsap.to(image, {
-      autoAlpha: 1,
+      opacity: 1,
       ease: "none",
       paused: true,
       onReverseComplete: stopFollow
@@ -120,46 +121,11 @@ document.addEventListener("DOMContentLoaded", () => {
     scaleTl.timeScale(2).reverse(); // Reverse the scaling effect on mouseleave
   }
 
-  // Function to hide image completely
-  function hideImage() {
-    if (fade.progress() > 0) {
-      fade.reverse();
-      scaleTl.timeScale(2).reverse();
-      // Reset scale elements to initial state after reverse completes
-      setTimeout(() => {
-        scaleTl.progress(0);
-        gsap.set(".hover-reveal_inner", { scale: 0.3 });
-        gsap.set(".hover-reveal_img", { scale: 2.5 });
-      }, 200);
-    }
-    stopFollow();
-    currentIndex = -1;
-  }
-
   // Apply to all elements with class "events_item"
   gsap.utils.toArray(".events_item").forEach((el, index) => {
     el.addEventListener("mouseenter", (e) => handleEnter(e, el, index));
     el.addEventListener("mouseleave", handleLeave);
   });
-
-  // Hide image on scroll to prevent it from staying visible
-  let scrollTimeout;
-  window.addEventListener("scroll", () => {
-    // Clear any existing timeout
-    clearTimeout(scrollTimeout);
-    
-    // Hide image immediately when scrolling
-    if (fade.progress() > 0) {
-      hideImage();
-    }
-    
-    // Debounce: ensure image stays hidden after scrolling stops
-    scrollTimeout = setTimeout(() => {
-      if (fade.progress() > 0) {
-        hideImage();
-      }
-    }, 100);
-  }, { passive: true });
 
 
   /** Copy to clipboard **/
