@@ -93,5 +93,46 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     });
   });
+
+  /** Enterprise Form - Enable/Disable Submit Button **/
+  const enterpriseForm = document.getElementById("wf-form-Enterprise-Form");
+  
+  if (enterpriseForm) {
+    const submitButton = enterpriseForm.querySelector('input[type="submit"]');
+    const requiredFields = enterpriseForm.querySelectorAll('[required]');
+    
+    // Function to check if all required fields are filled
+    const checkRequiredFields = () => {
+      let allFilled = true;
+      
+      requiredFields.forEach((field) => {
+        const value = field.value.trim();
+        
+        // Check if field is empty or if it's a select with empty value
+        if (!value || value === '') {
+          allFilled = false;
+        }
+      });
+      
+      // Toggle the is-disabled class based on whether all fields are filled
+      if (allFilled) {
+        submitButton.classList.remove('is-disabled');
+        submitButton.disabled = false;
+      } else {
+        submitButton.classList.add('is-disabled');
+        submitButton.disabled = true;
+      }
+    };
+    
+    // Add event listeners to all required fields
+    requiredFields.forEach((field) => {
+      // Use 'input' for text inputs and textareas, 'change' for selects
+      const eventType = field.tagName === 'SELECT' ? 'change' : 'input';
+      field.addEventListener(eventType, checkRequiredFields);
+    });
+    
+    // Initial check on page load
+    checkRequiredFields();
+  }
 });
 
