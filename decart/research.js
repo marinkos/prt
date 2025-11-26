@@ -103,29 +103,51 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /** Video play on hover **/
   if (window.innerWidth > 767) {
-    document.querySelectorAll(".slider_card").forEach(wrapper => {
-      const video = wrapper.querySelector("video");
-      if (!video) return;
+    const initVideoHover = () => {
+      // Select all slider cards including Slick clones
+      document.querySelectorAll(".slider_card").forEach(card => {
+        // Skip if already initialized
+        if (card.dataset.videoInitialized) return;
+        
+        const video = card.querySelector("video");
+        if (!video) return;
 
-      video.pause();
-
-      wrapper.addEventListener("mouseenter", () => {
-        video.play();
-      });
-
-      wrapper.addEventListener("mouseleave", () => {
+        // Mark as initialized
+        card.dataset.videoInitialized = "true";
         video.pause();
-        video.currentTime = 0; 
-      });
 
-      wrapper.addEventListener("click", () => {
-        if (video.paused) {
-          video.play();
-        } else {
+        card.addEventListener("mouseenter", () => {
+          video.play().catch(() => {}); // Catch autoplay errors
+        });
+
+        card.addEventListener("mouseleave", () => {
           video.pause();
           video.currentTime = 0; 
-        }
+        });
+
+        card.addEventListener("click", (e) => {
+          // Don't interfere with link clicks
+          if (e.target.closest('a')) return;
+          
+          if (video.paused) {
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+            video.currentTime = 0; 
+          }
+        });
       });
+    };
+
+    // Initialize immediately
+    initVideoHover();
+
+    // Re-initialize after a short delay to catch Slick clones
+    setTimeout(initVideoHover, 100);
+    
+    // Also listen for Slick's reinit event if available
+    $(document).on('init reInit afterChange', '.slider_component', function() {
+      setTimeout(initVideoHover, 50);
     });
   }
 });
