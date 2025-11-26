@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /** Video play on hover **/
   if (window.innerWidth > 767) {
-    document.querySelectorAll(".stack_card").forEach(wrapper => {
+    document.querySelectorAll(".slider_card").forEach(wrapper => {
       const video = wrapper.querySelector("video");
       if (!video) return;
 
