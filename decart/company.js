@@ -35,11 +35,12 @@ window.Webflow.push(() => {
       }
     });
 
-    // Update q-wrapper texts - remove all is-active, add to current
+    // Update q-wrapper texts - add is-active to all texts up to and including current
     qWrapperTexts.forEach((text, textIndex) => {
-      text.classList.remove('is-active');
-      if (textIndex === index) {
+      if (textIndex <= index) {
         text.classList.add('is-active');
+      } else {
+        text.classList.remove('is-active');
       }
     });
   }
