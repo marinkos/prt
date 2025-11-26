@@ -7,14 +7,6 @@ $('.areas_tabs-link').hover(
 
 //Slick slider
 $(document).ready(function() {
-      // Calculate slides to show based on window width
-      let calculatedSlidesToShow = 1;
-      if (window.innerWidth >= 768) {
-        calculatedSlidesToShow = 3;
-      } else if (window.innerWidth >= 480) {
-        calculatedSlidesToShow = 2;
-      }
-      
       $('.features_component').slick({
         centerMode: true,
         centerPadding: '30px',
@@ -22,7 +14,23 @@ $(document).ready(function() {
         infinite: true,
         arrows: false,
         speed: 500,
-        slidesToShow: calculatedSlidesToShow,
+        slidesToShow: 3,
         slidesToScroll: 1,
+        responsive: [
+          {
+            breakpoint: 768,
+            settings: {
+              slidesToShow: 2,
+              centerPadding: '20px'
+            }
+          },
+          {
+            breakpoint: 480,
+            settings: {
+              slidesToShow: 1,
+              centerPadding: '10px'
+            }
+          }
+        ]
       });
   });
