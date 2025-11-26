@@ -572,14 +572,19 @@ else if (tofuStatus === "Disqualify") {
     returnURL = "https://www.fortahealth.com/thank-you-2";
     mqlStatus = "DQ - Insurance not supported";
 }
-// MQL - Check Diagnosis (PASS case)
+// MQL - If diagnosis is "Yes", always MQL
+else if (asdDiagnosis.toLowerCase() === "yes") {
+    returnURL = "https://www.fortahealth.com/thank-you-intake-pre-qualified";
+    mqlStatus = "MQL";
+}
+// Dx - Check Eval (only for "no, evaluation scheduled" or CA IEP case)
 else if (
     asdDiagnosis.toLowerCase() === "no, evaluation scheduled" || 
     // insurance type is unfortunately a variable called type which is Yes for mediciad/mco and No for commercial
     (asdDiagnosis.toLowerCase() === "no, iep only" && state.toLowerCase() === "ca" && type.value.toLowerCase() === "yes")
 ) {
-    returnURL = "https://www.fortahealth.com/thank-you-intake2"; // Changed from /thank-you-diagnosis
-    mqlStatus = "MQL - Check Diagnosis";
+    returnURL = "https://www.fortahealth.com/thank-you-diagnosis";
+    mqlStatus = "Dx - Check Eval";
 }
 // DQ - No Diagnosis (FAIL case)
 else if (
@@ -590,7 +595,7 @@ else if (
 }
 // MQL - Standard Pass if primary insurance's TOFU Status is "Passing"
 else if (tofuStatus === "Passing") {
-    returnURL = "https://www.fortahealth.com/thank-you-intake2"; // Changed from /thank-you-intake
+    returnURL = "https://www.fortahealth.com/thank-you-intake-pre-qualified";
     mqlStatus = "MQL";
 }
 // DISQUALIFY based on adjusted ASD diagnosis logic (FAIL case)
