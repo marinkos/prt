@@ -26,11 +26,12 @@ window.Webflow.push(() => {
       timelineProgress.style.width = `${newWidth}%`;
     }
 
-    // Update timeline stops - remove all is-active, add to current
+    // Update timeline stops - add is-active to all stops up to and including current
     timelineStops.forEach((stop, stopIndex) => {
-      stop.classList.remove('is-active');
-      if (stopIndex === index) {
+      if (stopIndex <= index) {
         stop.classList.add('is-active');
+      } else {
+        stop.classList.remove('is-active');
       }
     });
 
