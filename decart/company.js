@@ -113,13 +113,13 @@ window.Webflow.push(() => {
   /** Text reveal animation **/
   const revealElements = document.querySelectorAll(".reveal-type");
 
-  revealElements.forEach((element) => {
-    const text = new SplitText(element, { type: "chars, words, lines" });
+  revealElements.forEach((char) => {
+    const text = new SplitText(char, { type: "chars, words, lines" });
 
     // Create timeline for scroll-triggered reveal
     const tl = gsap.timeline({
       scrollTrigger: {
-        trigger: element,
+        trigger: char,
         start: "top 80%",
         end: "top 20%",
         scrub: true,
