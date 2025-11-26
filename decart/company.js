@@ -110,7 +110,7 @@ window.Webflow.push(() => {
   // Initialize timeline on page load
   updateTimeline(currentIndex);
 
-  /** Text reveal animation **/
+  /** Text reveal **/
   const splitTypes = document.querySelectorAll(".reveal-type");
 
   splitTypes.forEach((char) => {
@@ -144,61 +144,6 @@ window.Webflow.push(() => {
     tl.to(text.chars, {
       color: "white",
       stagger: 0.2,
-    });
-  });
-
-  /** Fade-in text reveal (alternative animation) **/
-  const fadeRevealElements = document.querySelectorAll(".fade-reveal");
-
-  fadeRevealElements.forEach((element) => {
-    const text = new SplitText(element, { type: "lines" });
-
-    // Set initial state
-    gsap.set(text.lines, {
-      opacity: 0,
-      y: 50,
-    });
-
-    // Create scroll-triggered animation
-    gsap.to(text.lines, {
-      opacity: 1,
-      y: 0,
-      duration: 1,
-      stagger: 0.2,
-      ease: "power3.out",
-      scrollTrigger: {
-        trigger: element,
-        start: "top 85%",
-        end: "top 50%",
-        toggleActions: "play none none reverse",
-      },
-    });
-  });
-
-  /** Word-by-word reveal **/
-  const wordRevealElements = document.querySelectorAll(".word-reveal");
-
-  wordRevealElements.forEach((element) => {
-    const text = new SplitText(element, { type: "words" });
-
-    // Set initial state
-    gsap.set(text.words, {
-      opacity: 0,
-      y: 30,
-    });
-
-    // Create scroll-triggered animation
-    gsap.to(text.words, {
-      opacity: 1,
-      y: 0,
-      duration: 0.8,
-      stagger: 0.1,
-      ease: "power2.out",
-      scrollTrigger: {
-        trigger: element,
-        start: "top 80%",
-        toggleActions: "play none none reverse",
-      },
     });
   });
 });
