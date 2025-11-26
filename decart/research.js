@@ -7,30 +7,33 @@ $('.areas_tabs-link').hover(
 
 //Slick slider
 $(document).ready(function() {
-      $('.slider_component').slick({
-        centerMode: true,
-        centerPadding: '30px',
-        dots: true,
-        infinite: true,
-        arrows: false,
-        speed: 500,
-        slidesToShow: 3,
-        slidesToScroll: 1,
-        responsive: [
-          {
-            breakpoint: 768,
-            settings: {
-              slidesToShow: 2,
-              centerPadding: '20px'
+      const $slider = $('.slider_component');
+      if ($slider.length && typeof $.fn.slick !== 'undefined') {
+        $slider.slick({
+          centerMode: true,
+          centerPadding: '30px',
+          dots: true,
+          infinite: true,
+          arrows: false,
+          speed: 500,
+          slidesToShow: 3,
+          slidesToScroll: 1,
+          responsive: [
+            {
+              breakpoint: 768,
+              settings: {
+                slidesToShow: 2,
+                centerPadding: '20px'
+              }
+            },
+            {
+              breakpoint: 480,
+              settings: {
+                slidesToShow: 1,
+                centerPadding: '10px'
+              }
             }
-          },
-          {
-            breakpoint: 480,
-            settings: {
-              slidesToShow: 1,
-              centerPadding: '10px'
-            }
-          }
-        ]
-      });
+          ]
+        });
+      }
   });
