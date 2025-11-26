@@ -7,7 +7,7 @@ $('.areas_tabs-link').hover(
 
 //Slick slider
 $(document).ready(function() {
-      $('.features_component').slick({
+      $('.slider_component').slick({
         centerMode: true,
         centerPadding: '30px',
         dots: true,
