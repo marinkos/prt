@@ -111,12 +111,12 @@ window.Webflow.push(() => {
   updateTimeline(currentIndex);
 
   /** Text reveal animation **/
-  const revealElements = document.querySelectorAll(".reveal-type");
+  const splitTypes = document.querySelectorAll(".reveal-type");
 
-  revealElements.forEach((char) => {
+  splitTypes.forEach((char) => {
     const text = new SplitText(char, { type: "chars, words, lines" });
 
-    // Create timeline for scroll-triggered reveal
+    // Create timeline for better control
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: char,
@@ -125,7 +125,7 @@ window.Webflow.push(() => {
         scrub: true,
         markers: false,
         onRefresh: (self) => {
-          // Handle refresh state - check if element is already in view
+          // Check if element is already in view when ScrollTrigger refreshes
           if (self.progress === 1) {
             gsap.set(text.chars, { color: "white" });
           } else if (self.progress === 0) {
@@ -140,7 +140,7 @@ window.Webflow.push(() => {
       color: "#475462",
     });
 
-    // Animate to white with stagger effect
+    // Animate to white
     tl.to(text.chars, {
       color: "white",
       stagger: 0.2,
