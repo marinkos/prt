@@ -103,52 +103,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /** Video play on hover **/
   if (window.innerWidth > 767) {
-    const initVideoHover = () => {
-      // Select all slider cards including Slick clones
-      document.querySelectorAll(".slider_card").forEach(card => {
-        // Skip if already initialized
-        if (card.dataset.videoInitialized) return;
-        
-        const video = card.querySelector("video");
-        if (!video) return;
-
-        // Mark as initialized
-        card.dataset.videoInitialized = "true";
-        video.pause();
-
-        card.addEventListener("mouseenter", () => {
-          video.play().catch(() => {}); // Catch autoplay errors
-        });
-
-        card.addEventListener("mouseleave", () => {
+    const sliderComponent = document.querySelector(".slider_component");
+    if (sliderComponent) {
+      // Initialize all videos to paused state
+      const initAllVideos = () => {
+        document.querySelectorAll(".slider_card video").forEach(video => {
           video.pause();
-          video.currentTime = 0; 
         });
+      };
 
-        card.addEventListener("click", (e) => {
-          // Don't interfere with link clicks
-          if (e.target.closest('a')) return;
-          
-          if (video.paused) {
-            video.play().catch(() => {});
-          } else {
-            video.pause();
-            video.currentTime = 0; 
+      // Use mouseover/mouseout for event delegation (they bubble, unlike mouseenter/mouseleave)
+      let currentCard = null;
+      
+      sliderComponent.addEventListener("mouseover", (e) => {
+        const card = e.target.closest(".slider_card");
+        if (card && card !== currentCard) {
+          currentCard = card;
+          const video = card.querySelector("video");
+          if (video) {
+            video.play().catch(() => {}); // Catch autoplay errors
           }
-        });
+        }
       });
-    };
 
-    // Initialize immediately
-    initVideoHover();
+      sliderComponent.addEventListener("mouseout", (e) => {
+        const card = e.target.closest(".slider_card");
+        // Check if we're leaving the card (not just moving to a child element)
+        if (card && !card.contains(e.relatedTarget)) {
+          currentCard = null;
+          const video = card.querySelector("video");
+          if (video) {
+            video.pause();
+            video.currentTime = 0;
+          }
+        }
+      });
 
-    // Re-initialize after a short delay to catch Slick clones
-    setTimeout(initVideoHover, 100);
-    
-    // Also listen for Slick's reinit event if available
-    $(document).on('init reInit afterChange', '.slider_component', function() {
-      setTimeout(initVideoHover, 50);
-    });
+      sliderComponent.addEventListener("click", (e) => {
+        const card = e.target.closest(".slider_card");
+        if (card && !e.target.closest('a')) {
+          const video = card.querySelector("video");
+          if (video) {
+            if (video.paused) {
+              video.play().catch(() => {});
+            } else {
+              video.pause();
+              video.currentTime = 0;
+            }
+          }
+        }
+      });
+
+      // Initialize videos after Slick is ready
+      setTimeout(() => {
+        initAllVideos();
+      }, 300);
+
+      // Re-initialize on Slick events
+      $(document).on('init reInit afterChange', '.slider_component', function() {
+        setTimeout(initAllVideos, 100);
+      });
+    }
   }
 });
 
