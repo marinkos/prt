@@ -207,6 +207,8 @@ function initializeScript() {
     const stateSecondary = document.getElementById('stateSecondary');
     const asd = document.getElementById('asd');
     const ageInput = document.getElementById('00N8b00000EQM2a');
+    const leadSource = document.getElementById('lead_source');
+    const referralDiv = document.querySelector('.is-referral');
 
     let recaptchaContainer = document.getElementById('recaptcha-container');
     let captchaErrorMessage = document.getElementById('missing_captcha_error_message');
@@ -439,6 +441,24 @@ function initializeScript() {
         insurance2.selectedIndex = 0;
         secondaryInsuranceInput.value = '';
     });
+
+    // ------------------------------------------
+    // Event Listener for Lead Source Selection
+    // ------------------------------------------
+    if (leadSource && referralDiv) {
+        leadSource.addEventListener("change", function () {
+            if (this.value === "Physician Referral") {
+                referralDiv.classList.remove("is-hidden");
+            } else {
+                referralDiv.classList.add("is-hidden");
+                // Clear the field when hidden
+                const providerField = document.getElementById('00NRc00000kLEgb');
+                if (providerField) {
+                    providerField.value = '';
+                }
+            }
+        });
+    }
 
     // --------------------------------------------------
     // Update Insurance Dropdowns Based on State and Type
