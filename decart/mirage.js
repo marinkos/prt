@@ -49,6 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Set initial position and opacity
   gsap.set(".hover-reveal", { yPercent: -50, xPercent: -50, opacity: 0 });
+  
+  // Ensure inner container has relative positioning for absolute video positioning
+  gsap.set(".hover-reveal_inner", { position: "relative" });
 
   let setX,
     setY,
@@ -66,12 +69,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
   // Initialize all video elements (find any with id starting with "video-")
-  // This ensures they're hidden and paused initially
-  document.querySelectorAll("[id^='video-']").forEach((videoEl) => {
-    const video = videoEl.querySelector('video') || videoEl;
-    gsap.set(videoEl, { opacity: 0 });
-    video.pause();
-    video.currentTime = 0;
+  // Position them absolutely so they all overlap in the same position
+  const allVideos = document.querySelectorAll("[id^='video-']");
+  console.log("🔍 Found video containers:", allVideos.length);
+  allVideos.forEach((videoEl) => {
+    const video = videoEl.querySelector('video');
+    console.log(`📹 Initializing ${videoEl.id}:`, {
+      container: videoEl,
+      videoElement: video,
+      containerRect: videoEl.getBoundingClientRect(),
+      containerOpacity: window.getComputedStyle(videoEl).opacity
+    });
+    
+    // Position all videos absolutely so they overlap
+    gsap.set(videoEl, { 
+      opacity: 0,
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%"
+    });
+    
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+    }
   });
 
   // Create a new timeline for the scaling effect
@@ -102,41 +125,101 @@ document.addEventListener("DOMContentLoaded", () => {
   function handleEnter(e, el, index) {
     // Get video ID from data-video attribute (e.g., "video-0", "video-1", etc.)
     const videoId = el.dataset.video;
-    console.log("enter", index, "-> video", videoId);
+    console.log("🖱️ HOVER ENTER:", {
+      index,
+      videoId,
+      element: el,
+      currentVideoId
+    });
 
     if (!videoId) {
-      console.warn("No data-video attribute found on element");
+      console.warn("❌ No data-video attribute found on element");
       return;
     }
 
     if (currentVideoId !== videoId) {
       // Hide ALL videos first
+      console.log("🔇 Hiding all videos...");
       document.querySelectorAll("[id^='video-']").forEach((videoEl) => {
         const video = videoEl.querySelector('video');
+        const beforeOpacity = window.getComputedStyle(videoEl).opacity;
+        const beforeRect = videoEl.getBoundingClientRect();
         if (video) {
           gsap.set(videoEl, { opacity: 0 });
           video.pause();
           video.currentTime = 0;
+          const afterOpacity = window.getComputedStyle(videoEl).opacity;
+          console.log(`  📹 Hiding ${videoEl.id}:`, {
+            beforeOpacity,
+            afterOpacity,
+            rect: beforeRect,
+            videoPaused: video.paused,
+            videoCurrentTime: video.currentTime
+          });
         }
       });
 
       // Show and play new video
       const videoEl = document.getElementById(videoId);
+      console.log("🔍 Looking for video container:", videoId, "Found:", videoEl);
+      
       if (videoEl) {
-        console.log("switching to video", videoId);
         const video = videoEl.querySelector('video');
+        const beforeRect = videoEl.getBoundingClientRect();
+        const beforeOpacity = window.getComputedStyle(videoEl).opacity;
+        
+        console.log("📹 Video container details:", {
+          id: videoEl.id,
+          videoElement: video,
+          beforeRect,
+          beforeOpacity,
+          hasVideo: !!video
+        });
+        
         if (video) {
+          console.log("▶️ Showing and playing video:", videoId);
           gsap.set(videoEl, { opacity: 1 });
-          video.play().catch(err => {
-            console.error("Error playing video:", err);
+          
+          const afterOpacity = window.getComputedStyle(videoEl).opacity;
+          const afterRect = videoEl.getBoundingClientRect();
+          
+          console.log("✅ Video state after show:", {
+            opacity: afterOpacity,
+            rect: afterRect,
+            videoReadyState: video.readyState,
+            videoPaused: video.paused
+          });
+          
+          video.play().then(() => {
+            console.log("✅ Video playing:", videoId, {
+              paused: video.paused,
+              currentTime: video.currentTime,
+              readyState: video.readyState
+            });
+          }).catch(err => {
+            console.error("❌ Error playing video:", err, {
+              videoId,
+              error: err.message
+            });
           });
           currentVideoId = videoId;
         } else {
-          console.warn("Video element not found inside:", videoId);
+          console.warn("❌ Video element not found inside:", videoId, {
+            container: videoEl,
+            children: Array.from(videoEl.children).map(c => ({
+              tag: c.tagName,
+              id: c.id,
+              class: c.className
+            }))
+          });
         }
       } else {
-        console.warn("Video container not found:", videoId);
+        console.warn("❌ Video container not found:", videoId, {
+          allVideoIds: Array.from(document.querySelectorAll("[id^='video-']")).map(v => v.id)
+        });
       }
+    } else {
+      console.log("⏭️ Same video, skipping switch");
     }
 
     fade.play();
@@ -152,7 +235,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleLeave() {
-    console.log("leave - reversing animations");
+    console.log("🖱️ HOVER LEAVE:", {
+      currentVideoId
+    });
     fade.reverse();
     scaleTl.timeScale(2).reverse(); // Reverse the scaling effect on mouseleave
     
@@ -162,9 +247,22 @@ document.addEventListener("DOMContentLoaded", () => {
       if (videoEl) {
         const video = videoEl.querySelector('video');
         if (video) {
+          console.log("⏸️ Pausing and hiding video:", currentVideoId, {
+            beforePause: {
+              paused: video.paused,
+              currentTime: video.currentTime
+            }
+          });
           video.pause();
           video.currentTime = 0;
           gsap.set(videoEl, { opacity: 0 });
+          console.log("✅ Video paused and hidden:", {
+            afterPause: {
+              paused: video.paused,
+              currentTime: video.currentTime,
+              opacity: window.getComputedStyle(videoEl).opacity
+            }
+          });
         }
       }
       currentVideoId = null;
