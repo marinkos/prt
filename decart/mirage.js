@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   /** Hover reveal **/
-  let currentIndex = -1; 
+  let currentVideoId = null; 
   const image = document.querySelector(".hover-reveal");
 
   // Exit early if hover-reveal element doesn't exist
@@ -65,19 +65,14 @@ document.addEventListener("DOMContentLoaded", () => {
       onReverseComplete: stopFollow
     });
 
-  // Get all video elements (video-1 to video-5)
-  const videos = {};
-  for (let i = 1; i <= 5; i++) {
-    const videoEl = document.getElementById(`video-${i}`);
-    if (videoEl) {
-      videos[i] = videoEl;
-      // Ensure videos are hidden initially and get the video element inside
-      const video = videoEl.querySelector('video') || videoEl;
-      gsap.set(videoEl, { opacity: 0 });
-      video.pause();
-      video.currentTime = 0;
-    }
-  }
+  // Initialize all video elements (find any with id starting with "video-")
+  // This ensures they're hidden and paused initially
+  document.querySelectorAll("[id^='video-']").forEach((videoEl) => {
+    const video = videoEl.querySelector('video') || videoEl;
+    gsap.set(videoEl, { opacity: 0 });
+    video.pause();
+    video.currentTime = 0;
+  });
 
   // Create a new timeline for the scaling effect
   const scaleTl = gsap.timeline({ paused: true });
@@ -105,25 +100,27 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   function handleEnter(e, el, index) {
-    // Map index to video ID (index 0 -> video-1, index 1 -> video-2, etc.)
-    const videoId = index + 1;
+    // Get video ID from data-video attribute (e.g., "video-1", "video-2", etc.)
+    const videoId = el.dataset.video;
     console.log("enter", index, "-> video", videoId);
 
-    if (currentIndex !== index) {
+    if (!videoId) {
+      console.warn("No data-video attribute found on element");
+      return;
+    }
+
+    if (currentVideoId !== videoId) {
       // Hide previous video if exists
-      if (currentIndex >= 0) {
-        const prevVideoId = currentIndex + 1;
-        const prevVideoEl = videos[prevVideoId];
-        if (prevVideoEl) {
-          const prevVideo = prevVideoEl.querySelector('video') || prevVideoEl;
-          gsap.set(prevVideoEl, { opacity: 0 });
-          prevVideo.pause();
-          prevVideo.currentTime = 0;
-        }
+      if (currentVideoId && videos[currentVideoId]) {
+        const prevVideoEl = videos[currentVideoId];
+        const prevVideo = prevVideoEl.querySelector('video') || prevVideoEl;
+        gsap.set(prevVideoEl, { opacity: 0 });
+        prevVideo.pause();
+        prevVideo.currentTime = 0;
       }
 
       // Show and play new video
-      const videoEl = videos[videoId];
+      const videoEl = document.getElementById(videoId);
       if (videoEl) {
         console.log("switching to video", videoId);
         const video = videoEl.querySelector('video') || videoEl;
@@ -131,11 +128,11 @@ document.addEventListener("DOMContentLoaded", () => {
         video.play().catch(err => {
           console.error("Error playing video:", err);
         });
+        currentVideoId = videoId;
       } else {
-        console.warn("Video element not found for video-", videoId);
+        console.warn("Video element not found:", videoId);
       }
     }
-    currentIndex = index;
 
     fade.play();
     startFollow();
@@ -155,17 +152,16 @@ document.addEventListener("DOMContentLoaded", () => {
     scaleTl.timeScale(2).reverse(); // Reverse the scaling effect on mouseleave
     
     // Pause and reset current video
-    if (currentIndex >= 0) {
-      const videoId = currentIndex + 1;
-      const videoEl = videos[videoId];
+    if (currentVideoId) {
+      const videoEl = document.getElementById(currentVideoId);
       if (videoEl) {
         const video = videoEl.querySelector('video') || videoEl;
         video.pause();
         video.currentTime = 0;
         gsap.set(videoEl, { opacity: 0 });
       }
+      currentVideoId = null;
     }
-    currentIndex = -1;
   }
 
   // Apply to all elements with class "events_item"
