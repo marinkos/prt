@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   function handleEnter(e, el, index) {
-    // Get video ID from data-video attribute (e.g., "video-1", "video-2", etc.)
+    // Get video ID from data-video attribute (e.g., "video-0", "video-1", etc.)
     const videoId = el.dataset.video;
     console.log("enter", index, "-> video", videoId);
 
@@ -110,27 +110,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (currentVideoId !== videoId) {
-      // Hide previous video if exists
-      if (currentVideoId && videos[currentVideoId]) {
-        const prevVideoEl = videos[currentVideoId];
-        const prevVideo = prevVideoEl.querySelector('video') || prevVideoEl;
-        gsap.set(prevVideoEl, { opacity: 0 });
-        prevVideo.pause();
-        prevVideo.currentTime = 0;
-      }
+      // Hide ALL videos first
+      document.querySelectorAll("[id^='video-']").forEach((videoEl) => {
+        const video = videoEl.querySelector('video');
+        if (video) {
+          gsap.set(videoEl, { opacity: 0 });
+          video.pause();
+          video.currentTime = 0;
+        }
+      });
 
       // Show and play new video
       const videoEl = document.getElementById(videoId);
       if (videoEl) {
         console.log("switching to video", videoId);
-        const video = videoEl.querySelector('video') || videoEl;
-        gsap.set(videoEl, { opacity: 1 });
-        video.play().catch(err => {
-          console.error("Error playing video:", err);
-        });
-        currentVideoId = videoId;
+        const video = videoEl.querySelector('video');
+        if (video) {
+          gsap.set(videoEl, { opacity: 1 });
+          video.play().catch(err => {
+            console.error("Error playing video:", err);
+          });
+          currentVideoId = videoId;
+        } else {
+          console.warn("Video element not found inside:", videoId);
+        }
       } else {
-        console.warn("Video element not found:", videoId);
+        console.warn("Video container not found:", videoId);
       }
     }
 
@@ -155,10 +160,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentVideoId) {
       const videoEl = document.getElementById(currentVideoId);
       if (videoEl) {
-        const video = videoEl.querySelector('video') || videoEl;
-        video.pause();
-        video.currentTime = 0;
-        gsap.set(videoEl, { opacity: 0 });
+        const video = videoEl.querySelector('video');
+        if (video) {
+          video.pause();
+          video.currentTime = 0;
+          gsap.set(videoEl, { opacity: 0 });
+        }
       }
       currentVideoId = null;
     }
