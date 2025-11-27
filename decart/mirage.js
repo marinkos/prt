@@ -65,12 +65,12 @@ document.addEventListener("DOMContentLoaded", () => {
       onReverseComplete: stopFollow
     });
 
-  // Get all video elements (video-0 to video-6)
-  const videos = [];
-  for (let i = 0; i <= 6; i++) {
+  // Get all video elements (video-1 to video-5)
+  const videos = {};
+  for (let i = 1; i <= 5; i++) {
     const videoEl = document.getElementById(`video-${i}`);
     if (videoEl) {
-      videos.push(videoEl);
+      videos[i] = videoEl;
       // Ensure videos are hidden initially and get the video element inside
       const video = videoEl.querySelector('video') || videoEl;
       gsap.set(videoEl, { opacity: 0 });
@@ -105,25 +105,34 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   function handleEnter(e, el, index) {
-    console.log("enter", index);
+    // Map index to video ID (index 0 -> video-1, index 1 -> video-2, etc.)
+    const videoId = index + 1;
+    console.log("enter", index, "-> video", videoId);
 
     if (currentIndex !== index) {
       // Hide previous video if exists
-      if (currentIndex >= 0 && videos[currentIndex]) {
-        const prevVideo = videos[currentIndex].querySelector('video') || videos[currentIndex];
-        gsap.set(videos[currentIndex], { opacity: 0 });
-        prevVideo.pause();
-        prevVideo.currentTime = 0;
+      if (currentIndex >= 0) {
+        const prevVideoId = currentIndex + 1;
+        const prevVideoEl = videos[prevVideoId];
+        if (prevVideoEl) {
+          const prevVideo = prevVideoEl.querySelector('video') || prevVideoEl;
+          gsap.set(prevVideoEl, { opacity: 0 });
+          prevVideo.pause();
+          prevVideo.currentTime = 0;
+        }
       }
 
       // Show and play new video
-      if (videos[index]) {
-        console.log("switching to video", index);
-        const video = videos[index].querySelector('video') || videos[index];
-        gsap.set(videos[index], { opacity: 1 });
+      const videoEl = videos[videoId];
+      if (videoEl) {
+        console.log("switching to video", videoId);
+        const video = videoEl.querySelector('video') || videoEl;
+        gsap.set(videoEl, { opacity: 1 });
         video.play().catch(err => {
           console.error("Error playing video:", err);
         });
+      } else {
+        console.warn("Video element not found for video-", videoId);
       }
     }
     currentIndex = index;
@@ -146,11 +155,15 @@ document.addEventListener("DOMContentLoaded", () => {
     scaleTl.timeScale(2).reverse(); // Reverse the scaling effect on mouseleave
     
     // Pause and reset current video
-    if (currentIndex >= 0 && videos[currentIndex]) {
-      const video = videos[currentIndex].querySelector('video') || videos[currentIndex];
-      video.pause();
-      video.currentTime = 0;
-      gsap.set(videos[currentIndex], { opacity: 0 });
+    if (currentIndex >= 0) {
+      const videoId = currentIndex + 1;
+      const videoEl = videos[videoId];
+      if (videoEl) {
+        const video = videoEl.querySelector('video') || videoEl;
+        video.pause();
+        video.currentTime = 0;
+        gsap.set(videoEl, { opacity: 0 });
+      }
     }
     currentIndex = -1;
   }
