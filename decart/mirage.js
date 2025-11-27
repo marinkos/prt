@@ -65,6 +65,20 @@ document.addEventListener("DOMContentLoaded", () => {
       onReverseComplete: stopFollow
     });
 
+  // Get all video elements (video-0 to video-6)
+  const videos = [];
+  for (let i = 0; i <= 6; i++) {
+    const videoEl = document.getElementById(`video-${i}`);
+    if (videoEl) {
+      videos.push(videoEl);
+      // Ensure videos are hidden initially and get the video element inside
+      const video = videoEl.querySelector('video') || videoEl;
+      gsap.set(videoEl, { opacity: 0 });
+      video.pause();
+      video.currentTime = 0;
+    }
+  }
+
   // Create a new timeline for the scaling effect
   const scaleTl = gsap.timeline({ paused: true });
 
@@ -78,8 +92,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   );
 
+  // Scale animation for videos
   scaleTl.fromTo(
-    ".hover-reveal_img",
+    "[id^='video-']",
     { scale: 2.5 },
     {
       ease: "expo.out",
@@ -90,16 +105,26 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   function handleEnter(e, el, index) {
-    const imageSrc = el.dataset.image; // Gets the data-image value
-    
-    console.log("enter", index, "👀", imageSrc);
+    console.log("enter", index);
 
     if (currentIndex !== index) {
-      console.log("switching image");
-      // Switch to the new image
-      gsap.set(".hover-reveal_img", {
-        backgroundImage: `url(${imageSrc})`
-      });
+      // Hide previous video if exists
+      if (currentIndex >= 0 && videos[currentIndex]) {
+        const prevVideo = videos[currentIndex].querySelector('video') || videos[currentIndex];
+        gsap.set(videos[currentIndex], { opacity: 0 });
+        prevVideo.pause();
+        prevVideo.currentTime = 0;
+      }
+
+      // Show and play new video
+      if (videos[index]) {
+        console.log("switching to video", index);
+        const video = videos[index].querySelector('video') || videos[index];
+        gsap.set(videos[index], { opacity: 1 });
+        video.play().catch(err => {
+          console.error("Error playing video:", err);
+        });
+      }
     }
     currentIndex = index;
 
@@ -119,6 +144,15 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("leave - reversing animations");
     fade.reverse();
     scaleTl.timeScale(2).reverse(); // Reverse the scaling effect on mouseleave
+    
+    // Pause and reset current video
+    if (currentIndex >= 0 && videos[currentIndex]) {
+      const video = videos[currentIndex].querySelector('video') || videos[currentIndex];
+      video.pause();
+      video.currentTime = 0;
+      gsap.set(videos[currentIndex], { opacity: 0 });
+    }
+    currentIndex = -1;
   }
 
   // Apply to all elements with class "events_item"
