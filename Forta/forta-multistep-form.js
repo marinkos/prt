@@ -252,6 +252,167 @@ function initializeScript() {
         console.log('reCAPTCHA already rendered globally, skipping...');
     }
 
+    // --------------------------------
+    // Form Next/Prev Buttons and Validation
+    // --------------------------------
+    
+    // Mobile detection function
+    function isMobileDevice() {
+        return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // Error message function
+    function showErrorMessage(stepId) {
+        const errorMessage = document.querySelector(`#${stepId} .step_message-error`);
+        if (errorMessage) {
+            errorMessage.style.display = 'block';
+            setTimeout(function() {
+                errorMessage.style.display = 'none';
+            }, 2000);
+        }
+    }
+
+    // Email validation helper function
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    // Validation function for different field types
+    function validateStep(stepId) {
+        let isValid = true;
+        const stepElement = document.getElementById(stepId);
+        if (!stepElement) return false;
+
+        // Check select fields
+        const selects = stepElement.querySelectorAll('select');
+        selects.forEach(function(select) {
+            if (select.hasAttribute('required') && (select.value === '' || select.value === null)) {
+                isValid = false;
+            }
+        });
+
+        // Check text inputs
+        const textInputs = stepElement.querySelectorAll('input[type="text"]');
+        textInputs.forEach(function(input) {
+            if (input.hasAttribute('required') && input.value.trim() === '') {
+                isValid = false;
+            }
+        });
+
+        // Check email inputs
+        const emailInputs = stepElement.querySelectorAll('input[type="email"]');
+        emailInputs.forEach(function(input) {
+            if (input.hasAttribute('required')) {
+                const email = input.value.trim();
+                if (email === '' || !isValidEmail(email)) {
+                    isValid = false;
+                }
+            }
+        });
+
+        // Check phone inputs
+        const phoneInputs = stepElement.querySelectorAll('input[type="tel"], input[name*="phone"]');
+        phoneInputs.forEach(function(input) {
+            if (input.hasAttribute('required') && input.value.trim() === '') {
+                isValid = false;
+            }
+        });
+
+        // Check number inputs
+        const numberInputs = stepElement.querySelectorAll('input[type="number"]');
+        numberInputs.forEach(function(input) {
+            if (input.hasAttribute('required') && input.value.trim() === '') {
+                isValid = false;
+            }
+        });
+
+        return isValid;
+    }
+
+    // Function to scroll to top on mobile
+    function scrollToTopOnMobile() {
+        if (isMobileDevice() && formSales) {
+            setTimeout(function() {
+                formSales.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+        }
+    }
+
+    // Next Button 01 (Step 1 to Step 2)
+    const nextBtn01 = document.getElementById('nextBtn01');
+    if (nextBtn01) {
+        nextBtn01.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!validateStep('step01')) {
+                showErrorMessage('step01');
+            } else {
+                const sliderDots = document.querySelectorAll('.w-slider-dot');
+                if (sliderDots[1]) {
+                    sliderDots[1].click(); // Go to slide 2
+                    scrollToTopOnMobile();
+                }
+            }
+        });
+    }
+
+    // Next Button 02 (Step 2 to Step 3)
+    const nextBtn02 = document.getElementById('nextBtn02');
+    if (nextBtn02) {
+        nextBtn02.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!validateStep('step02')) {
+                showErrorMessage('step02');
+            } else {
+                const sliderDots = document.querySelectorAll('.w-slider-dot');
+                if (sliderDots[2]) {
+                    sliderDots[2].click(); // Go to slide 3
+                    scrollToTopOnMobile();
+                }
+            }
+        });
+    }
+
+    // Next Button 03 (Contact anyway - goes to Step 3)
+    const nextBtn03 = document.getElementById('nextBtn03');
+    if (nextBtn03) {
+        nextBtn03.addEventListener('click', function(e) {
+            e.preventDefault();
+            const sliderDots = document.querySelectorAll('.w-slider-dot');
+            if (sliderDots[2]) {
+                sliderDots[2].click(); // Go to slide 3
+                scrollToTopOnMobile();
+            }
+        });
+    }
+
+    // Prev Button 01 (From Step 2 back to Step 1)
+    const prevBtn01 = document.getElementById('prevBtn01');
+    if (prevBtn01) {
+        prevBtn01.addEventListener('click', function(e) {
+            e.preventDefault();
+            const sliderDots = document.querySelectorAll('.w-slider-dot');
+            if (sliderDots[0]) {
+                sliderDots[0].click(); // Go to slide 1
+            }
+        });
+    }
+
+    // Prev Button 02 (From Step 3 back to Step 2)
+    const prevBtn02 = document.getElementById('prevBtn02');
+    if (prevBtn02) {
+        prevBtn02.addEventListener('click', function(e) {
+            e.preventDefault();
+            const sliderDots = document.querySelectorAll('.w-slider-dot');
+            if (sliderDots[1]) {
+                sliderDots[1].click(); // Go to slide 2
+            }
+        });
+    }
+
     // ------------------------
     // Reset Form Functionality
     // ------------------------
