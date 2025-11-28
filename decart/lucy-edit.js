@@ -47,6 +47,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Exit early if hover-reveal element doesn't exist
   if (!image) return;
 
+  // Detect mobile/touch device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   ('ontouchstart' in window) || 
+                   (navigator.maxTouchPoints > 0);
+
   // Set initial position and opacity
   gsap.set(".hover-reveal", { yPercent: -50, xPercent: -50, opacity: 0 });
   
@@ -59,8 +64,16 @@ document.addEventListener("DOMContentLoaded", () => {
       setX(e.clientX);
       setY(e.clientY);
     },
-    startFollow = () => document.addEventListener("mousemove", align),
-    stopFollow = () => document.removeEventListener("mousemove", align),
+    startFollow = () => {
+      if (!isMobile) {
+        document.addEventListener("mousemove", align);
+      }
+    },
+    stopFollow = () => {
+      if (!isMobile) {
+        document.removeEventListener("mousemove", align);
+      }
+    },
     fade = gsap.to(image, {
       opacity: 1,
       ease: "none",
@@ -225,10 +238,23 @@ document.addEventListener("DOMContentLoaded", () => {
     fade.play();
     startFollow();
 
-    // Set up smooth mouse following
-    setX = gsap.quickTo(image, "x", { duration: 0.6, ease: "power2.out" });
-    setY = gsap.quickTo(image, "y", { duration: 0.6, ease: "power2.out" });
-    align(e);
+    // Position video: centered on mobile, follow mouse on desktop
+    if (isMobile) {
+      // Center video to the .events_item element
+      const rect = el.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      gsap.set(image, {
+        x: centerX,
+        y: centerY
+      });
+    } else {
+      // Set up smooth mouse following for desktop
+      setX = gsap.quickTo(image, "x", { duration: 0.6, ease: "power2.out" });
+      setY = gsap.quickTo(image, "y", { duration: 0.6, ease: "power2.out" });
+      align(e);
+    }
 
     // Play the scaling timeline
     scaleTl.play();
