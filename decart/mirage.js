@@ -299,18 +299,6 @@ document.addEventListener("DOMContentLoaded", () => {
   gsap.utils.toArray(".events_item").forEach((el, index) => {
     el.addEventListener("mouseenter", (e) => handleEnter(e, el, index));
     el.addEventListener("mouseleave", handleLeave);
-    
-    // Add touch events for mobile
-    if (isMobile) {
-      el.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        handleEnter(e, el, index);
-      });
-      el.addEventListener("touchend", (e) => {
-        e.preventDefault();
-        handleLeave();
-      });
-    }
   });
 
 
