@@ -118,61 +118,6 @@
   font-family: "ABC Monument Grotesk", sans-serif !important;
 }
 
-/* Style social widget container - responsive flex layout */
-.socialWidget {
-  width: 100% !important;
-}
-
-.socialWidget ul,
-.socialWidget ul.row,
-.socialWidget ul.flex {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 0.5rem !important;
-  list-style: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  flex-direction: row !important;
-}
-
-/* Mobile: buttons stack vertically */
-@media (max-width: 767px) {
-  .socialWidget ul,
-  .socialWidget ul.row,
-  .socialWidget ul.flex {
-    flex-direction: column !important;
-  }
-  
-  .socialWidget .shareButton,
-  .socialWidget .shareButton.col-fifth {
-    width: 100% !important;
-    max-width: 100% !important;
-    flex: 0 0 100% !important;
-  }
-  
-  .socialWidget .shareButton a {
-    width: 100% !important;
-    display: block !important;
-  }
-}
-
-/* Desktop: buttons in one row */
-@media (min-width: 768px) {
-  .socialWidget ul,
-  .socialWidget ul.row,
-  .socialWidget ul.flex {
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-  }
-  
-  .socialWidget .shareButton,
-  .socialWidget .shareButton.col-fifth {
-    flex: 1 1 auto !important;
-    width: auto !important;
-    max-width: none !important;
-  }
-}
-
 /* Add bottom padding to .main class */
 .main {
   padding-bottom: 1rem !important;
