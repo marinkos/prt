@@ -97,17 +97,22 @@
 
 /* Button hover */
 .applyButton:hover {
-  background: #108496 !important;
+  background: #0D6A78 !important;
   color: #FFF !important;
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
-/* Style LinkedIn button - same as submit button but keep original bg color */
-#apply-with-linkedin {
+/* Style share buttons - same as submit button but with custom bg colors */
+.shareButton {
+  border-radius: 0 !important;
+  font-family: "ABC Monument Grotesk", sans-serif !important;
+}
+
+.shareButton a {
   display: inline-block !important;
   margin: 0 !important;
   border: 0.5px solid #0D0D0D !important;
-  /* Keep original background color - don't override */
+  background: #F7F5F1 !important;
   box-shadow: 3px 3px 0 0 #0D0D0D !important;
   padding: 0.75rem 2rem !important;
   border-radius: 0 !important;
@@ -120,13 +125,15 @@
   letter-spacing: 0.84px !important;
   text-align: center !important;
   text-transform: none !important;
-  transition: box-shadow 0.2s ease !important;
+  transition: box-shadow 0.2s ease, background 0.2s ease !important;
   width: auto !important;
   min-width: auto !important;
+  text-decoration: none !important;
 }
 
-/* LinkedIn button hover */
-#apply-with-linkedin:hover {
+/* Share button hover */
+.shareButton a:hover {
+  background: #F0EBE3 !important;
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
