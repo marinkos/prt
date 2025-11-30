@@ -140,31 +140,24 @@
   font-family: "ABC Monument Grotesk", sans-serif !important;
 }
 
-/* Style LinkedIn button using .btn-primary class */
-.btn-primary {
+/* Style LinkedIn button wrapper - Note: Button is in LinkedIn iframe, cannot be styled directly */
+apply-with-linkedin-v3 {
   display: inline-block !important;
-  margin: 0 !important;
-  border: 0.5px solid #0D0D0D !important;
-  box-shadow: 3px 3px 0 0 #0D0D0D !important;
-  padding: 0.75rem 2rem !important;
-  border-radius: 0 !important;
-  cursor: pointer !important;
-  font-family: "ABC Monument Grotesk", sans-serif !important;
-  font-size: 14px !important;
-  font-style: normal !important;
-  font-weight: 400 !important;
-  line-height: 100% !important;
-  letter-spacing: 0.84px !important;
-  text-align: center !important;
-  text-transform: none !important;
-  transition: box-shadow 0.2s ease !important;
-  width: auto !important;
-  min-width: auto !important;
 }
 
-/* LinkedIn button hover */
-.btn-primary:hover {
-  box-shadow: 1px 1px 0 0 #0D0D0D !important;
+/* Style LinkedIn widget container */
+.IN-widget {
+  display: inline-block !important;
+}
+
+/* Style LinkedIn iframe container - limited styling possible due to cross-origin iframe */
+.IN-widget--iframe {
+  border-radius: 0 !important;
+}
+
+/* Style form-group containing LinkedIn button */
+.form-group:has(apply-with-linkedin-v3) {
+  margin-bottom: 1.5rem !important;
 }
 
 /* Add bottom padding to .main class */
