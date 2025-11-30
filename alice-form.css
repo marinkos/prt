@@ -140,21 +140,47 @@
   font-family: "ABC Monument Grotesk", sans-serif !important;
 }
 
-/* Style LinkedIn button wrapper - Note: Button is in LinkedIn iframe, cannot be styled directly */
-apply-with-linkedin-v3 {
-  display: inline-block !important;
+/* Style social widget container - responsive flex layout */
+.socialWidget {
+  width: 100% !important;
 }
 
-/* Style LinkedIn widget container */
-.IN-widget {
-  display: inline-block !important;
+.socialWidget ul {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
-/* Style LinkedIn iframe container - limited styling possible due to cross-origin iframe */
-.IN-widget--iframe {
-  border-radius: 0 !important;
+/* Mobile: buttons stack vertically */
+@media (max-width: 767px) {
+  .socialWidget ul {
+    flex-direction: column !important;
+  }
+  
+  .socialWidget .shareButton {
+    width: 100% !important;
+  }
+  
+  .socialWidget .shareButton a {
+    width: 100% !important;
+    display: block !important;
+  }
 }
 
+/* Desktop: buttons in one row */
+@media (min-width: 768px) {
+  .socialWidget ul {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  .socialWidget .shareButton {
+    flex: 1 1 auto !important;
+  }
+}
 
 /* Add bottom padding to .main class */
 .main {
