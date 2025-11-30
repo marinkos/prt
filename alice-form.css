@@ -1,7 +1,7 @@
 /* ===================================
    COMEET FORM CUSTOM CSS
    Following Comeet guidelines: Only using IDs and allowed classes
-   Allowed classes: .control-label, .form-group, .field-*, .submit-button, .shareTitle, .shareButton
+   Allowed classes: .control-label, .form-group, .field-*, .shareTitle, .shareButton
    =================================== */
 
 /* Hide afterGetLinkedIn labels - using allowed classes only */
@@ -65,8 +65,7 @@
 }
 
 
-/* Style submit button - using both .submit-button and .applyButton classes */
-.submit-button,
+/* Style submit button - using .applyButton class */
 .applyButton {
   display: inline-block !important;
   margin: 0 !important;
@@ -91,7 +90,6 @@
 }
 
 /* Button hover */
-.submit-button:hover,
 .applyButton:hover {
   background: #108496 !important;
   color: #FFF !important;
