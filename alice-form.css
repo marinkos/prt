@@ -11,11 +11,15 @@
   visibility: hidden !important;
 }
 
-/* Style form groups */
+/* Style form groups - ensure no button-like styling on containers */
 .form-group {
   position: relative !important;
   margin-bottom: 1.5rem !important;
   text-align: left !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 /* Style labels as small text on the top border line of the field */
@@ -60,11 +64,12 @@
   box-shadow: none !important;
 }
 
+
 /* Style submit button - using both .submit-button and .applyButton classes */
 .submit-button,
 .applyButton {
   display: inline-block !important;
-  margin: 1rem 0 0 0 !important;
+  margin: 0 !important;
   border: 0.5px solid #0D0D0D !important;
   background: #108496 !important;
   box-shadow: 3px 3px 0 0 #0D0D0D !important;
@@ -103,9 +108,12 @@
   font-family: "ABC Monument Grotesk", sans-serif !important;
 }
 
-/* Ensure form container aligns left */
+/* Ensure form container aligns left and has no button styling */
 #applyForm {
   text-align: left !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 #applyForm .form-group {
