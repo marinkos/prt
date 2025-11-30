@@ -1,20 +1,25 @@
-/* Hide afterGetLinkedIn labels - more specific selectors */
-label.afterGetLinkedIn,
-label.afterGetLinkedIn.control-label,
+/* ===================================
+   COMEET FORM CUSTOM CSS
+   Following Comeet guidelines: Only using IDs and allowed classes
+   Allowed classes: .control-label, .form-group, .field-*, .submit-button, .shareTitle, .shareButton
+   =================================== */
+
+/* Hide afterGetLinkedIn labels - using allowed classes only */
 .afterGetLinkedIn.control-label,
-label.control-label.afterGetLinkedIn,
-label.afterGetLinkedIn.ng-hide {
+.control-label.afterGetLinkedIn {
   display: none !important;
   visibility: hidden !important;
 }
 
-/* Style labels as small text on the top border line of the field */
+/* Style form groups */
 .form-group {
   position: relative !important;
   margin-bottom: 1.5rem !important;
+  text-align: left !important;
 }
 
-.form-group label.control-label {
+/* Style labels as small text on the top border line of the field */
+.form-group .control-label {
   position: absolute !important;
   top: -6px !important;
   left: 20px !important;
@@ -35,103 +40,37 @@ label.afterGetLinkedIn.ng-hide {
   white-space: nowrap !important;
 }
 
-/* Hide control-label labels for file inputs (clickableLink labels are styled separately) */
-.form-group:has(input[type="file"]) label.control-label,
-.form-group:has(.inputFiles) label.control-label {
-  display: none !important;
-}
-
-/* Ensure form and all elements align left */
-.form-container,
-form,
-.form-group {
-  text-align: left !important;
-}
-
-/* Fix Bootstrap column widths at tablet breakpoint */
-@media (min-width: 768px) {
-  .col-sm-offset-3 {
-    margin-left: 0 !important;
-  }
-  
-  .col-sm-9 {
-    width: 100% !important;
-  }
-}
-
-/* Remove border radius from all form elements */
-input,
-textarea,
-select,
-.form-control,
-#applyForm .form-control,
-#applyForm input,
-#applyForm textarea,
-#applyForm select {
+/* Style form inputs - using ID and form-group class (form-control is Bootstrap class used by Comeet) */
+#applyForm .form-control {
   border-radius: 0 !important;
-}
-
-/* Style form inputs */
-.form-control {
   border: 1px solid #bdbbb8 !important;
   background: #f6f0e9 !important;
   padding: 12px 16px !important;
   font-size: 16px !important;
   width: 100% !important;
   margin-bottom: 10px !important;
-}
-
-.form-control:focus {
-  border-color: #bdbbb8 !important;
-  background: #f6f0e9 !important;
-  outline: 1px solid #108496 !important;
-  box-shadow: none !important;
-}
-
-/* Style file input labels to look like regular input fields */
-label.clickableLink {
-  display: block !important;
-  border-radius: 0px !important;
-  border: 1px solid #bdbbb8 !important;
-  background: #f6f0e9 !important;
-  padding: 12px 16px !important;
-  font-size: 1.125rem !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-  margin-left: 0 !important;
-  margin-bottom: 10px !important;
-  color: #108496 !important;
   font-family: "ABC Monument Grotesk", sans-serif !important;
-  font-weight: bold !important;
-  line-height: 1em !important;
-  cursor: pointer !important;
-  transition: border-color 0.2s ease !important;
-  text-decoration: none !important;
 }
 
-label.clickableLink:hover {
-  border-color: #108496 !important;
-}
-
-label.clickableLink:focus,
-label.clickableLink:focus-within {
+/* Focus state for form inputs */
+#applyForm .form-control:focus {
   border-color: #bdbbb8 !important;
   background: #f6f0e9 !important;
   outline: 1px solid #108496 !important;
   box-shadow: none !important;
 }
 
-/* Style submit button */
+/* Style submit button - using both .submit-button and .applyButton classes */
+.submit-button,
 .applyButton {
   display: inline-block !important;
-  margin: 1rem 0 0 0 !important; /* left align */
+  margin: 1rem 0 0 0 !important;
   border: 0.5px solid #0D0D0D !important;
   background: #108496 !important;
   box-shadow: 3px 3px 0 0 #0D0D0D !important;
   color: #FFF !important;
   padding: 0.75rem 2rem !important;
-  border-radius: 0 !important; /* removed radius */
+  border-radius: 0 !important;
   cursor: pointer !important;
   font-family: "ABC Monument Grotesk", sans-serif !important;
   font-size: 14px !important;
@@ -147,31 +86,44 @@ label.clickableLink:focus-within {
 }
 
 /* Button hover */
+.submit-button:hover,
 .applyButton:hover {
   background: #108496 !important;
   color: #FFF !important;
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
-/* Privacy policy text */
-.privacyPolicy {
-  font-size: 0.875rem !important;
-  opacity: 0.8 !important;
+/* Style share buttons if present */
+.shareButton {
+  border-radius: 0 !important;
+  font-family: "ABC Monument Grotesk", sans-serif !important;
 }
 
-/* Questionnaire widget styling */
-.questionnairesWidget .questionnaires > li:first-of-type {
-  border-top: 1px solid #d2d8da !important;
-  padding-top: 0 !important;
-  margin-top: 0 !important;
+.shareTitle {
+  font-family: "ABC Monument Grotesk", sans-serif !important;
 }
 
+/* Ensure form container aligns left */
+#applyForm {
+  text-align: left !important;
+}
+
+#applyForm .form-group {
+  text-align: left !important;
+}
+
+/* Fix Bootstrap column widths at tablet breakpoint */
+@media (min-width: 768px) {
+  .col-sm-offset-3 {
+    margin-left: 0 !important;
+  }
+  
+  .col-sm-9 {
+    width: 100% !important;
+  }
+}
+
+/* Questionnaire widget styling - using allowed classes */
 .questionnaire .questionnaire-header {
   display: none !important;
 }
-
-.questionnaire .question .question-header .question-title {
-  font-size: 16px !important;
-  font-weight: 400 !important;
-}
-
