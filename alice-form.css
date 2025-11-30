@@ -102,7 +102,7 @@
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
-/* Style share buttons - same as submit button but with custom bg colors */
+/* Style share buttons - same as submit button but keep original bg colors */
 .shareButton {
   border-radius: 0 !important;
   font-family: "ABC Monument Grotesk", sans-serif !important;
@@ -112,7 +112,39 @@
   display: inline-block !important;
   margin: 0 !important;
   border: 0.5px solid #0D0D0D !important;
-  background: #F7F5F1 !important;
+  /* Keep original background color - don't override */
+  box-shadow: 3px 3px 0 0 #0D0D0D !important;
+  padding: 0.75rem 5.25rem !important;
+  border-radius: 0 !important;
+  cursor: pointer !important;
+  font-family: "ABC Monument Grotesk", sans-serif !important;
+  font-size: 14px !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  line-height: 100% !important;
+  letter-spacing: 0.84px !important;
+  text-align: center !important;
+  text-transform: none !important;
+  transition: box-shadow 0.2s ease !important;
+  width: auto !important;
+  min-width: auto !important;
+  text-decoration: none !important;
+}
+
+/* Share button hover */
+.shareButton a:hover {
+  box-shadow: 1px 1px 0 0 #0D0D0D !important;
+}
+
+.shareTitle {
+  font-family: "ABC Monument Grotesk", sans-serif !important;
+}
+
+/* Style LinkedIn button using .btn-primary class */
+.btn-primary {
+  display: inline-block !important;
+  margin: 0 !important;
+  border: 0.5px solid #0D0D0D !important;
   box-shadow: 3px 3px 0 0 #0D0D0D !important;
   padding: 0.75rem 2rem !important;
   border-radius: 0 !important;
@@ -125,20 +157,19 @@
   letter-spacing: 0.84px !important;
   text-align: center !important;
   text-transform: none !important;
-  transition: box-shadow 0.2s ease, background 0.2s ease !important;
+  transition: box-shadow 0.2s ease !important;
   width: auto !important;
   min-width: auto !important;
-  text-decoration: none !important;
 }
 
-/* Share button hover */
-.shareButton a:hover {
-  background: #F0EBE3 !important;
+/* LinkedIn button hover */
+.btn-primary:hover {
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
-.shareTitle {
-  font-family: "ABC Monument Grotesk", sans-serif !important;
+/* Add bottom padding to .main class */
+.main {
+  padding-bottom: 1rem !important;
 }
 
 /* Ensure form container aligns left and has no button styling */
