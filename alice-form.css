@@ -102,8 +102,8 @@
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
-/* Style LinkedIn/share button - same as submit button but keep original bg color */
-.shareButton {
+/* Style LinkedIn button - same as submit button but keep original bg color */
+#apply-with-linkedin {
   display: inline-block !important;
   margin: 0 !important;
   border: 0.5px solid #0D0D0D !important;
@@ -126,7 +126,7 @@
 }
 
 /* LinkedIn button hover */
-.shareButton:hover {
+#apply-with-linkedin:hover {
   box-shadow: 1px 1px 0 0 #0D0D0D !important;
 }
 
