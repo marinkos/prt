@@ -10,124 +10,127 @@ window.Webflow.push(() => {
     return;
   }
 
-  // Find all tab panes and their videos
+  // Find tab links and videos (similar to the working example)
+  const tabLinks = productTabs.querySelectorAll(".w-tab-link");
   const tabPanes = productTabs.querySelectorAll(".w-tab-pane");
-  console.log("Found tab panes:", tabPanes.length);
+  const videos = productTabs.querySelectorAll("video");
   
-  if (tabPanes.length === 0) {
-    console.warn("No tab panes found");
+  console.log("Found tabs:", tabLinks.length);
+  console.log("Found tab panes:", tabPanes.length);
+  console.log("Found videos:", videos.length);
+  
+  if (tabLinks.length === 0 || videos.length === 0) {
+    console.warn("Missing tabs or videos");
     return;
   }
 
-  // Initialize: pause all videos and ensure they're ready
-  const allVideos = productTabs.querySelectorAll("video");
-  console.log("Found videos:", allVideos.length);
-  
-  allVideos.forEach((video, index) => {
+  let prevIndex = -1;
+
+  // Initialize: pause all videos
+  videos.forEach((video, index) => {
     video.pause();
     video.currentTime = 0;
-    // Remove autoplay attribute to prevent conflicts
+    // Remove autoplay to prevent conflicts
     video.removeAttribute("autoplay");
-    // Set preload to metadata to ensure videos can load
-    video.setAttribute("preload", "auto");
-    // Force load the video
-    video.load();
     console.log(`Video ${index + 1} initialized:`, {
       paused: video.paused,
-      readyState: video.readyState,
-      src: video.querySelector("source")?.src || video.src
+      readyState: video.readyState
     });
   });
 
-  // Function to handle tab changes
-  function handleTabChange() {
-    tabPanes.forEach((pane, index) => {
-      const video = pane.querySelector("video");
-      if (!video) {
-        console.warn(`No video found in tab pane ${index + 1}`);
-        return;
+  // Function to handle video playback for a specific tab
+  function triggerVideo(tabIndex) {
+    console.log("triggerVideo called with tabIndex:", tabIndex, "prevIndex:", prevIndex);
+    
+    // Pause previous video
+    if (prevIndex >= 0 && prevIndex < videos.length) {
+      const prevVideo = videos[prevIndex];
+      if (prevVideo && !prevVideo.paused) {
+        console.log("Pausing previous video at index:", prevIndex);
+        prevVideo.pause();
+        prevVideo.currentTime = 0;
       }
-
-      // Check if this pane is active (Webflow uses w--current class)
-      const isActive = pane.classList.contains("w--current");
-      
-      if (isActive) {
-        console.log(`Tab ${index + 1} is active, playing video`, {
-          readyState: video.readyState,
-          paused: video.paused
+    }
+    
+    // Play current video
+    if (tabIndex >= 0 && tabIndex < videos.length) {
+      const currentVideo = videos[tabIndex];
+      if (currentVideo) {
+        console.log("Playing video at index:", tabIndex, {
+          readyState: currentVideo.readyState,
+          paused: currentVideo.paused
         });
         
-        // Function to attempt playing the video
+        // Function to play the video
         const playVideo = () => {
-          video.play().then(() => {
-            console.log(`Video ${index + 1} playing successfully`);
+          currentVideo.play().then(() => {
+            console.log(`Video ${tabIndex + 1} playing successfully`);
           }).catch(err => {
             console.warn("Video play failed:", err);
           });
         };
         
-        // Ensure video is loaded before playing
-        if (video.readyState < 2) {
-          console.log(`Video ${index + 1} not ready (readyState: ${video.readyState}), loading...`);
-          video.load();
+        // If video isn't ready, load it first
+        if (currentVideo.readyState < 2) {
+          console.log(`Video ${tabIndex + 1} not ready, loading...`);
+          currentVideo.load();
           
-          // Wait for video to be ready to play
+          // Wait for video to be ready
           const onCanPlay = () => {
-            console.log(`Video ${index + 1} can play now`);
+            console.log(`Video ${tabIndex + 1} can play now`);
             playVideo();
-            video.removeEventListener("canplay", onCanPlay);
+            currentVideo.removeEventListener("canplay", onCanPlay);
           };
           
-          video.addEventListener("canplay", onCanPlay, { once: true });
+          currentVideo.addEventListener("canplay", onCanPlay, { once: true });
           
-          // Fallback: try playing after a short delay even if canplay doesn't fire
+          // Fallback timeout
           setTimeout(() => {
-            if (video.paused && video.readyState >= 2) {
-              console.log(`Video ${index + 1} ready after timeout, attempting play`);
+            if (currentVideo.paused) {
+              console.log(`Video ${tabIndex + 1} attempting play after timeout`);
               playVideo();
             }
-          }, 500);
+          }, 1000);
         } else {
-          // Video is already loaded, play immediately
+          // Video is ready, play immediately
           playVideo();
         }
-      } else {
-        // Pause video in inactive tabs
-        if (!video.paused) {
-          console.log(`Tab ${index + 1} is inactive, pausing video`);
-          video.pause();
-          video.currentTime = 0;
-        }
       }
-    });
+    }
+    
+    prevIndex = tabIndex;
   }
 
-  // Listen for tab button clicks
-  const tabButtons = productTabs.querySelectorAll(".w-tab-link");
-  console.log("Found tab buttons:", tabButtons.length);
-  
-  tabButtons.forEach((button, index) => {
-    button.addEventListener("click", () => {
-      console.log(`Tab button ${index + 1} clicked`);
-      // Delay to allow Webflow to update classes
-      setTimeout(handleTabChange, 100);
+  // Set up click handlers for each tab link
+  tabLinks.forEach((link, index) => {
+    link.addEventListener("click", () => {
+      console.log("Tab clicked:", index, "Previous:", prevIndex);
+      if (index !== prevIndex) {
+        // Small delay to ensure Webflow has switched the tab
+        setTimeout(() => {
+          triggerVideo(index);
+        }, 50);
+      }
     });
   });
 
-  // Also use MutationObserver to watch for class changes (more reliable)
+  // Also watch for tab pane class changes (backup method)
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.type === "attributes" && mutation.attributeName === "class") {
-        const target = mutation.target;
-        if (target.classList.contains("w--current")) {
-          console.log("Tab pane became active via class change");
+        const pane = mutation.target;
+        if (pane.classList.contains("w--current")) {
+          const paneIndex = Array.from(tabPanes).indexOf(pane);
+          if (paneIndex !== prevIndex) {
+            console.log("Tab pane became active via class change:", paneIndex);
+            triggerVideo(paneIndex);
+          }
         }
-        handleTabChange();
       }
     });
   });
 
-  // Observe all tab panes for class changes
+  // Observe all tab panes
   tabPanes.forEach(pane => {
     observer.observe(pane, {
       attributes: true,
@@ -135,11 +138,14 @@ window.Webflow.push(() => {
     });
   });
 
-  // Handle initial state (in case a tab is already active on load)
-  // Delay to ensure Webflow has finished initializing
+  // Handle initial state - find which tab is active on load
   setTimeout(() => {
-    console.log("Checking initial tab state");
-    handleTabChange();
-  }, 200);
+    const activePane = productTabs.querySelector(".w-tab-pane.w--current");
+    if (activePane) {
+      const initialIndex = Array.from(tabPanes).indexOf(activePane);
+      console.log("Initial active tab:", initialIndex);
+      triggerVideo(initialIndex);
+    }
+  }, 300);
 });
 
