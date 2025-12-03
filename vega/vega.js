@@ -39,11 +39,11 @@ window.Webflow.push(() => {
   });
 
   // Function to handle video playback for a specific tab
-  function triggerVideo(tabIndex) {
-    console.log("triggerVideo called with tabIndex:", tabIndex, "prevIndex:", prevIndex);
+  function triggerVideo(tabIndex, skipPause = false) {
+    console.log("triggerVideo called with tabIndex:", tabIndex, "prevIndex:", prevIndex, "skipPause:", skipPause);
     
-    // Pause previous video
-    if (prevIndex >= 0 && prevIndex < videos.length) {
+    // Pause previous video (unless we're initializing)
+    if (!skipPause && prevIndex >= 0 && prevIndex < videos.length && prevIndex !== tabIndex) {
       const prevVideo = videos[prevIndex];
       if (prevVideo && !prevVideo.paused) {
         console.log("Pausing previous video at index:", prevIndex);
@@ -138,14 +138,34 @@ window.Webflow.push(() => {
     });
   });
 
-  // Handle initial state - find which tab is active on load
-  setTimeout(() => {
+  // Handle initial state - find which tab is active on load and play its video
+  function initializeActiveVideo() {
+    // Try to find active tab pane
     const activePane = productTabs.querySelector(".w-tab-pane.w--current");
+    let initialIndex = -1;
+    
     if (activePane) {
-      const initialIndex = Array.from(tabPanes).indexOf(activePane);
-      console.log("Initial active tab:", initialIndex);
-      triggerVideo(initialIndex);
+      initialIndex = Array.from(tabPanes).indexOf(activePane);
+    } else {
+      // If no active pane found, check active tab link
+      const activeLink = productTabs.querySelector(".w-tab-link.w--current");
+      if (activeLink) {
+        initialIndex = Array.from(tabLinks).indexOf(activeLink);
+      } else {
+        // Default to first tab if nothing is marked as active
+        initialIndex = 0;
+      }
     }
-  }, 300);
+    
+    if (initialIndex >= 0) {
+      console.log("Initial active tab:", initialIndex);
+      triggerVideo(initialIndex, true); // Skip pausing on initial load
+      prevIndex = initialIndex;
+    }
+  }
+  
+  // Try to initialize immediately and also after a delay
+  initializeActiveVideo();
+  setTimeout(initializeActiveVideo, 300);
 });
 
