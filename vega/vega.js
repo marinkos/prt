@@ -28,10 +28,10 @@ window.Webflow.push(() => {
     video.currentTime = 0;
     // Remove autoplay attribute to prevent conflicts
     video.removeAttribute("autoplay");
-    // Ensure video is loaded
-    if (video.readyState < 2) {
-      video.load();
-    }
+    // Set preload to metadata to ensure videos can load
+    video.setAttribute("preload", "auto");
+    // Force load the video
+    video.load();
     console.log(`Video ${index + 1} initialized:`, {
       paused: video.paused,
       readyState: video.readyState,
@@ -52,20 +52,44 @@ window.Webflow.push(() => {
       const isActive = pane.classList.contains("w--current");
       
       if (isActive) {
-        console.log(`Tab ${index + 1} is active, playing video`);
-        // Ensure video is loaded before playing
-        if (video.readyState < 2) {
-          video.load();
-          video.addEventListener("loadeddata", () => {
-            video.play().catch(err => {
-              console.warn("Video play failed:", err);
-            });
-          }, { once: true });
-        } else {
-          // Play video in active tab
-          video.play().catch(err => {
+        console.log(`Tab ${index + 1} is active, playing video`, {
+          readyState: video.readyState,
+          paused: video.paused
+        });
+        
+        // Function to attempt playing the video
+        const playVideo = () => {
+          video.play().then(() => {
+            console.log(`Video ${index + 1} playing successfully`);
+          }).catch(err => {
             console.warn("Video play failed:", err);
           });
+        };
+        
+        // Ensure video is loaded before playing
+        if (video.readyState < 2) {
+          console.log(`Video ${index + 1} not ready (readyState: ${video.readyState}), loading...`);
+          video.load();
+          
+          // Wait for video to be ready to play
+          const onCanPlay = () => {
+            console.log(`Video ${index + 1} can play now`);
+            playVideo();
+            video.removeEventListener("canplay", onCanPlay);
+          };
+          
+          video.addEventListener("canplay", onCanPlay, { once: true });
+          
+          // Fallback: try playing after a short delay even if canplay doesn't fire
+          setTimeout(() => {
+            if (video.paused && video.readyState >= 2) {
+              console.log(`Video ${index + 1} ready after timeout, attempting play`);
+              playVideo();
+            }
+          }, 500);
+        } else {
+          // Video is already loaded, play immediately
+          playVideo();
         }
       } else {
         // Pause video in inactive tabs
