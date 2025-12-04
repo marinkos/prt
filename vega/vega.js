@@ -6,7 +6,6 @@ window.Webflow ||= [];
 window.Webflow.push(() => {
   const productTabs = document.querySelector(".product_tabs");
   if (!productTabs) {
-    console.warn("Product tabs container not found");
     return;
   }
 
@@ -15,12 +14,7 @@ window.Webflow.push(() => {
   const tabPanes = productTabs.querySelectorAll(".w-tab-pane");
   const videos = productTabs.querySelectorAll("video");
   
-  console.log("Found tabs:", tabLinks.length);
-  console.log("Found tab panes:", tabPanes.length);
-  console.log("Found videos:", videos.length);
-  
   if (tabLinks.length === 0 || videos.length === 0) {
-    console.warn("Missing tabs or videos");
     return;
   }
 
@@ -32,21 +26,14 @@ window.Webflow.push(() => {
     video.currentTime = 0;
     // Remove autoplay to prevent conflicts
     video.removeAttribute("autoplay");
-    console.log(`Video ${index + 1} initialized:`, {
-      paused: video.paused,
-      readyState: video.readyState
-    });
   });
 
   // Function to handle video playback for a specific tab
   function triggerVideo(tabIndex, skipPause = false) {
-    console.log("triggerVideo called with tabIndex:", tabIndex, "prevIndex:", prevIndex, "skipPause:", skipPause);
-    
     // Pause previous video (unless we're initializing)
     if (!skipPause && prevIndex >= 0 && prevIndex < videos.length && prevIndex !== tabIndex) {
       const prevVideo = videos[prevIndex];
       if (prevVideo && !prevVideo.paused) {
-        console.log("Pausing previous video at index:", prevIndex);
         prevVideo.pause();
         prevVideo.currentTime = 0;
       }
@@ -56,28 +43,19 @@ window.Webflow.push(() => {
     if (tabIndex >= 0 && tabIndex < videos.length) {
       const currentVideo = videos[tabIndex];
       if (currentVideo) {
-        console.log("Playing video at index:", tabIndex, {
-          readyState: currentVideo.readyState,
-          paused: currentVideo.paused
-        });
-        
         // Function to play the video
         const playVideo = () => {
-          currentVideo.play().then(() => {
-            console.log(`Video ${tabIndex + 1} playing successfully`);
-          }).catch(err => {
-            console.warn("Video play failed:", err);
+          currentVideo.play().catch(() => {
+            // Video play failed, silently handle
           });
         };
         
         // If video isn't ready, load it first
         if (currentVideo.readyState < 2) {
-          console.log(`Video ${tabIndex + 1} not ready, loading...`);
           currentVideo.load();
           
           // Wait for video to be ready
           const onCanPlay = () => {
-            console.log(`Video ${tabIndex + 1} can play now`);
             playVideo();
             currentVideo.removeEventListener("canplay", onCanPlay);
           };
@@ -87,7 +65,6 @@ window.Webflow.push(() => {
           // Fallback timeout
           setTimeout(() => {
             if (currentVideo.paused) {
-              console.log(`Video ${tabIndex + 1} attempting play after timeout`);
               playVideo();
             }
           }, 1000);
@@ -104,7 +81,6 @@ window.Webflow.push(() => {
   // Set up click handlers for each tab link
   tabLinks.forEach((link, index) => {
     link.addEventListener("click", () => {
-      console.log("Tab clicked:", index, "Previous:", prevIndex);
       if (index !== prevIndex) {
         // Small delay to ensure Webflow has switched the tab
         setTimeout(() => {
@@ -122,7 +98,6 @@ window.Webflow.push(() => {
         if (pane.classList.contains("w--current")) {
           const paneIndex = Array.from(tabPanes).indexOf(pane);
           if (paneIndex !== prevIndex) {
-            console.log("Tab pane became active via class change:", paneIndex);
             triggerVideo(paneIndex);
           }
         }
@@ -158,7 +133,6 @@ window.Webflow.push(() => {
     }
     
     if (initialIndex >= 0) {
-      console.log("Initial active tab:", initialIndex);
       triggerVideo(initialIndex, true); // Skip pausing on initial load
       prevIndex = initialIndex;
     }
