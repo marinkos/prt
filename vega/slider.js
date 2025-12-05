@@ -48,6 +48,14 @@ window.Webflow.push(() => {
       // Desktop: disable slider, show all cards
       wrapper.style.transform = 'translateX(0)';
       wrapper.style.transition = 'none';
+      // Reset card widths
+      cards.forEach(card => {
+        card.style.width = '';
+        card.style.flexShrink = '';
+      });
+      wrapper.style.display = '';
+      wrapper.style.flexWrap = '';
+      currentIndex = 0;
       return;
     }
 
@@ -61,21 +69,23 @@ window.Webflow.push(() => {
     wrapper.style.flexWrap = 'nowrap';
     wrapper.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // Swiper-like easing
     
+    // Get gap between cards if it exists
+    const computedStyle = window.getComputedStyle(wrapper);
+    const gap = parseFloat(computedStyle.gap) || 0;
+    
     // Calculate card width based on slides per view
     const containerWidth = container.offsetWidth;
     const slidesPerView = getSlidesPerView();
-    const cardWidth = containerWidth / slidesPerView;
+    // Account for gaps: (containerWidth - (slidesPerView - 1) * gap) / slidesPerView
+    const cardWidth = (containerWidth - (slidesPerView - 1) * gap) / slidesPerView;
     
     cards.forEach(card => {
       card.style.flexShrink = '0';
       card.style.width = `${cardWidth}px`;
     });
 
-    // Reset to valid index if needed
-    const maxIndex = Math.max(0, cards.length - slidesPerView);
-    if (currentIndex > maxIndex) {
-      currentIndex = maxIndex;
-    }
+    // Always reset to first slide on initialization
+    currentIndex = 0;
 
     // Set initial position
     updateSliderPosition();
@@ -102,10 +112,15 @@ window.Webflow.push(() => {
   function updateSliderPosition() {
     if (!isTabletOrBelow()) return;
     
+    // Get gap between cards if it exists
+    const computedStyle = window.getComputedStyle(wrapper);
+    const gap = parseFloat(computedStyle.gap) || 0;
+    
     const containerWidth = container.offsetWidth;
     const slidesPerView = getSlidesPerView();
-    const cardWidth = containerWidth / slidesPerView;
-    const translateX = -currentIndex * cardWidth;
+    const cardWidth = (containerWidth - (slidesPerView - 1) * gap) / slidesPerView;
+    // Calculate translateX: move by card width + gap for each step
+    const translateX = -currentIndex * (cardWidth + gap);
     wrapper.style.transform = `translateX(${translateX}px)`;
   }
 
