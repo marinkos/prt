@@ -2,181 +2,234 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    // Create a mapping of variants to their class IDs
+    // Create mappings for both button types
 
-    const variantMapping = {
+    const buttonConfigs = {
 
-        'yellow': {
+        // Large pixel buttons
 
-            hover: 'w-variant-674b5082-f866-8331-8af3-0290108bb159',
+        'pixel-button': {
 
-            pressed: 'w-variant-bd444676-cad2-fc89-1dc1-83704c709910'
+            selector: '[data-wf--pixel-button--variant]',
+
+            variants: {
+
+                'yellow': {
+
+                    hover: 'w-variant-674b5082-f866-8331-8af3-0290108bb159',
+
+                    pressed: 'w-variant-bd444676-cad2-fc89-1dc1-83704c709910'
+
+                },
+
+                'blue': {
+
+                    hover: 'w-variant-ac00ad32-c97c-dbd0-5838-b779a417f045',
+
+                    pressed: 'w-variant-6ebdb744-0a09-3855-23b4-ef4244eca941'
+
+                }
+
+            },
+
+            elementSelectors: ['.pixel-grid', '.light', '.button-middle']
 
         },
 
-        'blue': {
+        // Small pixel buttons
 
-            hover: 'w-variant-ac00ad32-c97c-dbd0-5838-b779a417f045',
+        'small-button': {
 
-            pressed: 'w-variant-6ebdb744-0a09-3855-23b4-ef4244eca941'
+            selector: '[data-wf--small-button--variant]',
+
+            variants: {
+
+                'base': {
+
+                    hover: 'w-variant-f9956f97-b6b2-0bcc-5c80-2816469cb898',
+
+                    pressed: 'w-variant-db4e5dd9-a545-03dd-e16b-bc96aa0fc9f9'
+
+                },
+
+                'blue': {
+
+                    hover: 'w-variant-a6d2d869-fc50-8e44-0084-518fa5623bfe',
+
+                    pressed: 'w-variant-36d8dfc7-d071-70b6-f1ad-88829fe670a0'
+
+                },
+
+                'yellow': {
+
+                    hover: 'w-variant-ad02b9c2-406f-e1ae-b91d-73bffea85415',
+
+                    pressed: 'w-variant-5918a9f3-2243-04b7-f4da-82da57743b1e'
+
+                }
+
+            },
+
+            elementSelectors: ['.small-pixel-grid', '.small-middle', '.small-corner', '.small-pixel-end']
 
         }
 
     };
 
-    // Get all pixel buttons with base variants (yellow, blue, etc.)
+    // Function to handle button interactions
 
-    const baseButtons = document.querySelectorAll('[data-wf--pixel-button--variant]');
+    function setupButtonInteractions(config) {
 
-    
-
-    baseButtons.forEach(button => {
-
-        const variant = button.getAttribute('data-wf--pixel-button--variant');
+        const buttons = document.querySelectorAll(config.selector);
 
         
 
-        // Skip if it's already a hover/pressed variant
+        buttons.forEach(button => {
 
-        if (variant.includes('-hover') || variant.includes('-pressed')) {
+            const variant = button.getAttribute(config.selector.match(/\[(.*?)\]/)[1]);
 
-            return;
+            
 
-        }
+            // Skip if it's already a hover/pressed variant
 
-        
+            if (variant.includes('-hover') || variant.includes('-pressed')) {
 
-        // Get the base color (yellow, blue, etc.)
-
-        const baseColor = variant;
-
-        
-
-        // Check if we have mapping for this variant
-
-        if (!variantMapping[baseColor]) {
-
-            return;
-
-        }
-
-        
-
-        const hoverClass = variantMapping[baseColor].hover;
-
-        const pressedClass = variantMapping[baseColor].pressed;
-
-        
-
-        // Get all elements that should receive variant classes
-
-        const variantElements = [
-
-            button,
-
-            ...button.querySelectorAll('.pixel-grid'),
-
-            ...button.querySelectorAll('.light'),
-
-            ...button.querySelectorAll('.button-middle')
-
-        ];
-
-        
-
-        // Hover state
-
-        button.addEventListener('mouseenter', function() {
-
-            // Only add hover if not currently pressed
-
-            if (!button.classList.contains(pressedClass)) {
-
-                variantElements.forEach(el => {
-
-                    el.classList.add(hoverClass);
-
-                });
+                return;
 
             }
 
-        });
+            
 
-        
+            // Get the base color/type
 
-        button.addEventListener('mouseleave', function() {
+            const baseVariant = variant;
 
-            // Remove hover variant from all elements
+            
 
-            variantElements.forEach(el => {
+            // Check if we have mapping for this variant
 
-                el.classList.remove(hoverClass);
+            if (!config.variants[baseVariant]) {
 
-            });
-
-        });
-
-        
-
-        // Pressed state
-
-        button.addEventListener('mousedown', function() {
-
-            // Remove hover and add pressed to all elements
-
-            variantElements.forEach(el => {
-
-                el.classList.remove(hoverClass);
-
-                el.classList.add(pressedClass);
-
-            });
-
-        });
-
-        
-
-        button.addEventListener('mouseup', function() {
-
-            // Remove pressed from all elements
-
-            variantElements.forEach(el => {
-
-                el.classList.remove(pressedClass);
-
-            });
-
-            // Add back hover if mouse is still over button
-
-            if (this.matches(':hover')) {
-
-                variantElements.forEach(el => {
-
-                    el.classList.add(hoverClass);
-
-                });
+                return;
 
             }
 
-        });
+            
 
-        
+            const hoverClass = config.variants[baseVariant].hover;
 
-        // Handle case where mouse is released outside the button
+            const pressedClass = config.variants[baseVariant].pressed;
 
-        button.addEventListener('mouseleave', function() {
+            
 
-            variantElements.forEach(el => {
+            // Get all elements that should receive variant classes
 
-                el.classList.remove(pressedClass);
+            const variantElements = [
 
-                el.classList.remove(hoverClass);
+                button,
+
+                ...config.elementSelectors.flatMap(selector => 
+
+                    [...button.querySelectorAll(selector)]
+
+                )
+
+            ];
+
+            
+
+            // Hover state
+
+            button.addEventListener('mouseenter', function() {
+
+                if (!button.classList.contains(pressedClass)) {
+
+                    variantElements.forEach(el => {
+
+                        el.classList.add(hoverClass);
+
+                    });
+
+                }
+
+            });
+
+            
+
+            button.addEventListener('mouseleave', function() {
+
+                variantElements.forEach(el => {
+
+                    el.classList.remove(hoverClass);
+
+                });
+
+            });
+
+            
+
+            // Pressed state
+
+            button.addEventListener('mousedown', function() {
+
+                variantElements.forEach(el => {
+
+                    el.classList.remove(hoverClass);
+
+                    el.classList.add(pressedClass);
+
+                });
+
+            });
+
+            
+
+            button.addEventListener('mouseup', function() {
+
+                variantElements.forEach(el => {
+
+                    el.classList.remove(pressedClass);
+
+                });
+
+                if (this.matches(':hover')) {
+
+                    variantElements.forEach(el => {
+
+                        el.classList.add(hoverClass);
+
+                    });
+
+                }
+
+            });
+
+            
+
+            // Handle case where mouse is released outside the button
+
+            button.addEventListener('mouseleave', function() {
+
+                variantElements.forEach(el => {
+
+                    el.classList.remove(pressedClass);
+
+                    el.classList.remove(hoverClass);
+
+                });
 
             });
 
         });
+
+    }
+
+    // Setup interactions for both button types
+
+    Object.values(buttonConfigs).forEach(config => {
+
+        setupButtonInteractions(config);
 
     });
 
 });
-
