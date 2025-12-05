@@ -122,19 +122,75 @@ document.addEventListener('DOMContentLoaded', function() {
 
             
 
+            // Find the component container (if button is inside a component)
+
+            let componentContainer = button.closest('[data-w-id]') || 
+
+                                     button.closest('[class*="w-component"]') ||
+
+                                     null;
+
+            
+
             // Get all elements that should receive variant classes
 
-            const variantElements = [
+            // Always search within button first (for standalone buttons)
 
-                button,
+            // Also search in component container if it exists (for component buttons)
 
-                ...config.elementSelectors.flatMap(selector => 
+            const variantElements = [button];
 
-                    [...button.querySelectorAll(selector)]
+            
 
-                )
+            config.elementSelectors.forEach(selector => {
 
-            ];
+                // Search within the button (works for standalone buttons)
+
+                const elementsInButton = button.querySelectorAll(selector);
+
+                elementsInButton.forEach(el => {
+
+                    if (!variantElements.includes(el)) {
+
+                        variantElements.push(el);
+
+                    }
+
+                });
+
+                
+
+                // If inside a component, also search in component container
+
+                // This ensures we find elements even if they're siblings or in component scope
+
+                if (componentContainer && componentContainer !== button) {
+
+                    const elementsInComponent = componentContainer.querySelectorAll(selector);
+
+                    elementsInComponent.forEach(el => {
+
+                        // Only add if not already included and is related to this button
+
+                        if (!variantElements.includes(el)) {
+
+                            // Check if element belongs to this button (not another button in same component)
+
+                            const closestButton = el.closest(config.selector);
+
+                            if (closestButton === button || !closestButton) {
+
+                                variantElements.push(el);
+
+                            }
+
+                        }
+
+                    });
+
+                }
+
+            });
 
             
 
