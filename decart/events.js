@@ -65,10 +65,46 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check if successWrapper became visible → means successful submission
             if (successWrapper.style.display !== 'none') {
 
+                // Helper function to collect all form field values
+                const collectFormData = (formElement) => {
+                    const formData = {};
+                    
+                    // Get all input fields (text, email, tel, etc.)
+                    const inputs = formElement.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="hidden"]');
+                    inputs.forEach(input => {
+                        if (input.name && input.value) {
+                            // Convert field names to snake_case for consistency
+                            const key = input.name.replace(/-/g, '_').toLowerCase();
+                            formData[key] = input.value;
+                        }
+                    });
+                    
+                    // Get all select fields
+                    const selects = formElement.querySelectorAll('select');
+                    selects.forEach(select => {
+                        if (select.name && select.value) {
+                            const key = select.name.replace(/-/g, '_').toLowerCase();
+                            formData[key] = select.value;
+                        }
+                    });
+                    
+                    // Get all textarea fields
+                    const textareas = formElement.querySelectorAll('textarea');
+                    textareas.forEach(textarea => {
+                        if (textarea.name && textarea.value) {
+                            const key = textarea.name.replace(/-/g, '_').toLowerCase();
+                            formData[key] = textarea.value;
+                        }
+                    });
+                    
+                    return formData;
+                };
+
+                const formData = collectFormData(form);
                 const emailField = form.querySelector('input[type="email"]');
                 const userEmail = emailField ? emailField.value : 'anonymous';
 
-                const formLocation = form.getAttribute('data-form-location') || 'body';
+                const formLocation = form.getAttribute('data-form-location') || form.getAttribute('data-form') || 'body';
                 const params = new URLSearchParams(window.location.search);
 
                 window.dataLayer = window.dataLayer || [];
@@ -76,6 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     event: 'lead_form_submit',
                     user_id: userEmail,
                     cta_location: formLocation,
+                    ...formData, // Spread all form field values
                     utm_source: params.get('utm_source') || '',
                     utm_medium: params.get('utm_medium') || '',
                     utm_campaign: params.get('utm_campaign') || '',
@@ -83,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     utm_content: params.get('utm_content') || ''
                 });
 
-                console.log('Form successfully submitted → GTM event sent');
+                console.log('Form successfully submitted → GTM event sent', formData);
             }
         });
 
