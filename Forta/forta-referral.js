@@ -338,15 +338,15 @@ function filterPayors(state, type) {
         return jsonData.filter(item =>
             item.state === state &&
             (item.payor_type === 'Medicaid' || item.payor_type === 'MCO') &&
-            item.tofu_payor_name != null &&
-            item.tofu_payor_name.trim() !== ''
+            item.payor_name != null &&
+            item.payor_name.trim() !== ''
         );
     } else if (type === 'No') {
         return jsonData.filter(item =>
             item.state === state &&
             (item.payor_type === 'Commercial' || item.payor_type === 'Government Plan') &&
-            item.tofu_payor_name != null &&
-            item.tofu_payor_name.trim() !== ''
+            item.payor_name != null &&
+            item.payor_name.trim() !== ''
         );
     }
     return [];
@@ -373,19 +373,19 @@ function updateInsuranceDropdown(state, type) {
     defaultOption.text = 'Select one...';
     insuranceDropdown.appendChild(defaultOption);
 
-    // Filter out entries with null or empty 'tofu_payor_name' and sort alphabetically
-    const filteredPayors = payorNames.filter(payor => payor.tofu_payor_name && payor.tofu_payor_name.trim() !== '');
+    // Filter out entries with null or empty 'payor_name' and sort alphabetically
+    const filteredPayors = payorNames.filter(payor => payor.payor_name && payor.payor_name.trim() !== '');
     filteredPayors.sort((a, b) => {
-        const nameA = a.tofu_payor_name.toUpperCase();
-        const nameB = b.tofu_payor_name.toUpperCase();
+        const nameA = a.payor_name.toUpperCase();
+        const nameB = b.payor_name.toUpperCase();
         return nameA.localeCompare(nameB);
     });
 
     // Add new options
     filteredPayors.forEach(payor => {
         const option = document.createElement('option');
-        option.value = payor.tofu_payor_name;
-        option.text = payor.tofu_payor_name;
+        option.value = payor.payor_name;
+        option.text = payor.payor_name;
         insuranceDropdown.appendChild(option);
     });
 
@@ -405,7 +405,7 @@ function findInsuranceData(state, insuranceName) {
     }
     return jsonData.find(item =>
         item.state === state &&
-        item.tofu_payor_name === insuranceName
+        item.payor_name === insuranceName
     );
 }
 
