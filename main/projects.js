@@ -30,8 +30,8 @@ const images = [
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e754aff0f5394a252a_koi.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e79a7da07ce4b79e9d_reflection.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e6114beeb6006a3543_eon.avif',
+    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/693d550624b178bc11278c6f_decart.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e735b067eddebcf47e_snapscan.avif',
-    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e7afe47c28b849fcfe_coastal.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e78b85adce878637a1_flarion.avif',
     'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e751a8b2f1e38d9588_vocai.avif'
 ];
