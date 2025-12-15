@@ -24,7 +24,6 @@ window.Webflow.push(() => {
                    (window.innerWidth <= 768);
   
   let prevIndex = -1;
-  const loadedVideos = new Set(); // Track which videos have been loaded
 
   // Initialize: optimize all videos for performance
   videos.forEach((video, index) => {
@@ -33,52 +32,24 @@ window.Webflow.push(() => {
     // Remove autoplay to prevent conflicts
     video.removeAttribute("autoplay");
     
-    // Set preload strategy: 'none' for inactive videos to save bandwidth
-    // We'll change this to 'metadata' or 'auto' when needed
+    // Set preload strategy: use metadata for better mobile performance
+    // Don't force 'none' as it might prevent videos from showing
     if (!video.hasAttribute("preload")) {
-      video.preload = "none";
+      video.preload = isMobile ? "metadata" : "auto";
     }
     
-    // Optimize for mobile: disable playsinline if not needed
+    // Optimize for mobile: ensure playsinline for proper mobile playback
     if (isMobile && !video.hasAttribute("playsinline")) {
       video.setAttribute("playsinline", "");
     }
   });
 
-  // Preload video metadata and prepare for playback
-  function preloadVideo(video, priority = "metadata") {
-    if (!video || loadedVideos.has(video)) {
-      return;
-    }
-    
-    // Set preload level based on priority
-    if (priority === "auto") {
-      video.preload = "auto";
-    } else {
+  // Preload video metadata (lightweight, doesn't call load())
+  function preloadVideoMetadata(video) {
+    if (!video) return;
+    // Just set preload to metadata, don't call load() to avoid conflicts
+    if (video.preload === "none") {
       video.preload = "metadata";
-    }
-    
-    // Load the video
-    video.load();
-    loadedVideos.add(video);
-  }
-  
-  // Preload adjacent videos for smoother transitions
-  function preloadAdjacentVideos(activeIndex) {
-    // Preload next video (if exists)
-    if (activeIndex + 1 < videos.length) {
-      const nextVideo = videos[activeIndex + 1];
-      if (!loadedVideos.has(nextVideo)) {
-        preloadVideo(nextVideo, "metadata");
-      }
-    }
-    
-    // Preload previous video (if exists)
-    if (activeIndex - 1 >= 0) {
-      const prevVideo = videos[activeIndex - 1];
-      if (!loadedVideos.has(prevVideo)) {
-        preloadVideo(prevVideo, "metadata");
-      }
     }
   }
 
@@ -97,71 +68,53 @@ window.Webflow.push(() => {
     if (tabIndex >= 0 && tabIndex < videos.length) {
       const currentVideo = videos[tabIndex];
       if (currentVideo) {
-        // Ensure video is preloaded for faster playback
-        if (!loadedVideos.has(currentVideo)) {
-          // For active video, use auto preload for faster start
-          currentVideo.preload = isMobile ? "metadata" : "auto";
-          currentVideo.load();
-          loadedVideos.add(currentVideo);
-        } else {
-          // If already loaded, ensure preload is set to auto for smooth playback
-          currentVideo.preload = "auto";
-        }
+        // Set preload to auto for active video to ensure it loads
+        currentVideo.preload = "auto";
         
         // Function to play the video
         const playVideo = () => {
-          currentVideo.play().catch(() => {
+          currentVideo.play().catch((error) => {
             // Video play failed, silently handle
+            console.warn("Video play failed:", error);
           });
         };
         
         // Check if video has enough data to play
         // readyState 2 = HAVE_CURRENT_DATA, 3 = HAVE_FUTURE_DATA, 4 = HAVE_ENOUGH_DATA
         if (currentVideo.readyState < 2) {
-          // Wait for video to have current data (faster than waiting for canplay)
-          const onLoadedData = () => {
-            playVideo();
-            currentVideo.removeEventListener("loadeddata", onLoadedData);
-          };
-          
-          // Also listen for canplay as backup
+          // Wait for video to be ready
           const onCanPlay = () => {
             playVideo();
             currentVideo.removeEventListener("canplay", onCanPlay);
           };
           
-          currentVideo.addEventListener("loadeddata", onLoadedData, { once: true });
           currentVideo.addEventListener("canplay", onCanPlay, { once: true });
           
-          // Reduced timeout for mobile (faster fallback)
-          const timeout = isMobile ? 500 : 1000;
+          // Fallback timeout
           setTimeout(() => {
             if (currentVideo.paused && currentVideo.readyState >= 2) {
               playVideo();
             }
-          }, timeout);
+          }, 1000);
         } else {
           // Video is ready, play immediately
           playVideo();
         }
-        
-        // Preload adjacent videos for smoother navigation
-        preloadAdjacentVideos(tabIndex);
       }
     }
     
     prevIndex = tabIndex;
   }
 
-  // Set up click handlers and preload on hover/touch for each tab link
+  // Set up click handlers and light preload on hover/touch for each tab link
   tabLinks.forEach((link, index) => {
     const video = videos[index];
     
-    // Preload video on hover (desktop) or touchstart (mobile) for faster loading
+    // Light preload on hover (desktop) or touchstart (mobile) - just set metadata, don't call load()
     if (video) {
       const preloadOnInteraction = () => {
-        if (!loadedVideos.has(video) && index !== prevIndex) {
-          preloadVideo(video, "metadata");
+        if (index !== prevIndex) {
+          preloadVideoMetadata(video);
         }
       };
       
@@ -226,16 +179,6 @@ window.Webflow.push(() => {
     }
     
     if (initialIndex >= 0) {
-      const initialVideo = videos[initialIndex];
-      if (initialVideo) {
-        // Preload initial video with metadata first for faster initial load
-        if (!loadedVideos.has(initialVideo)) {
-          initialVideo.preload = isMobile ? "metadata" : "auto";
-          initialVideo.load();
-          loadedVideos.add(initialVideo);
-        }
-      }
-      
       triggerVideo(initialIndex, true); // Skip pausing on initial load
       prevIndex = initialIndex;
     }
