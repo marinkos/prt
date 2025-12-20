@@ -1,5 +1,6 @@
 const RIVE_FILE_URL_DESKTOP = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/6936de754db85caa025b6e88_mole_dressupV2.riv'
 const RIVE_FILE_URL_MOBILE = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/6942d5944f95b5535234f011_mole_dressup_mobile.riv'
+const COIN_SOUND_URL = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/69465b16593c2d2cc3051575_coin-sound.mp3'
 const MOBILE_BREAKPOINT = 479
 const STATE_MACHINE_NAME = 'DressUp'
 const DEFAULT_COMBINATION = 'green-googles-watercan'
@@ -92,26 +93,10 @@ function handlePopupOpen() {
         popup.style.display = 'flex'
     }
 
-    // Hide coin and machine
-    const coin = document.querySelector(COIN_SELECTOR)
-    const machine = document.querySelector(MACHINE_SELECTOR)
-    if (coin) coin.style.display = 'none'
-    if (machine) machine.style.display = 'none'
-
-    // Show moles
-    const moles = document.querySelector(MOLES_SELECTOR)
-    if (moles) moles.style.display = 'flex'
-
     // Add game-over class to .padding-global
     const paddingGlobal = document.querySelector(PADDING_GLOBAL_SELECTOR)
     if (paddingGlobal) {
         paddingGlobal.classList.add('game-over')
-    }
-
-    // Reset button text to default
-    const buttonText = document.querySelector(BUTTON_TEXT_SELECTOR)
-    if (buttonText) {
-        buttonText.textContent = 'Insert a coin'
     }
 
     // Check if this is the first time opening the popup
@@ -191,21 +176,40 @@ function setupCoinDrag() {
                     x: machine.offsetLeft - coin.offsetLeft,
                     y: machine.offsetTop - coin.offsetTop,
                     duration: 0.4,
-                    ease: "power2.out"
-                })
+                    ease: "power2.out",
+                    onComplete: () => {
+                        // Play coin sound
+                        const audio = new Audio(COIN_SOUND_URL)
+                        audio.play().catch(err => console.log('Audio play failed:', err))
 
-                // Open popup after snap animation
-                setTimeout(() => {
-                    handlePopupOpen()
-                    // Reset coin position for next time
-                    gsap.set(coin, { x: 0, y: 0 })
-                    coinDraggable[0].disable()
-                }, 400)
+                        // Hide coin
+                        coin.style.display = 'none'
+                        
+                        // Reset coin position for next time
+                        gsap.set(coin, { x: 0, y: 0 })
+                        coinDraggable[0].disable()
+
+                        // Open popup
+                        handlePopupOpen()
+
+                        // Change button text to "go again"
+                        setTimeout(() => {
+                            const buttonText = document.querySelector(BUTTON_TEXT_SELECTOR)
+                            if (buttonText) {
+                                buttonText.textContent = 'go again'
+                            }
+                        }, 50)
+
+                        // Show moles
+                        const moles = document.querySelector(MOLES_SELECTOR)
+                        if (moles) moles.style.display = 'flex'
+                    }
+                })
             }
         }
     })
 
-    // Button click → buzz animation + enable drag (or open popup directly if coin hidden)
+    // Button click → buzz animation + enable drag
     button.addEventListener('click', () => {
         // If coin is hidden (after first play), open popup directly
         if (coin.style.display === 'none') {
@@ -323,12 +327,20 @@ sessionStorage.removeItem('popupOpened')
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+        // Hide moles by default
+        const moles = document.querySelector(MOLES_SELECTOR)
+        if (moles) moles.style.display = 'none'
+        
         showDefaultImage()
         init()
         setupPopupOpenHandler()
         setupPopupCloseHandler()
     })
 } else {
+    // Hide moles by default
+    const moles = document.querySelector(MOLES_SELECTOR)
+    if (moles) moles.style.display = 'none'
+    
     showDefaultImage()
     init()
     setupPopupOpenHandler()
