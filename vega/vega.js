@@ -1,6 +1,7 @@
 const RIVE_FILE_URL_DESKTOP = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/6936de754db85caa025b6e88_mole_dressupV2.riv'
 const RIVE_FILE_URL_MOBILE = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/6942d5944f95b5535234f011_mole_dressup_mobile.riv'
 const COIN_SOUND_URL = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/69465b16593c2d2cc3051575_coin-sound.mp3'
+const COIN_TOOLTIP_SVG_URL = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/69466436038420ec0c118542_coin-tooplip.svg'
 const MOBILE_BREAKPOINT = 479
 const STATE_MACHINE_NAME = 'DressUp'
 const DEFAULT_COMBINATION = 'green-googles-watercan'
@@ -93,6 +94,10 @@ function handlePopupOpen() {
         popup.style.display = 'flex'
     }
 
+    // Hide machine
+    const machine = document.querySelector(MACHINE_SELECTOR)
+    if (machine) machine.style.display = 'none'
+
     // Add game-over class to .padding-global
     const paddingGlobal = document.querySelector(PADDING_GLOBAL_SELECTOR)
     if (paddingGlobal) {
@@ -151,6 +156,38 @@ function handlePopupClose() {
     updateMoleImage()
 }
 
+// Inject CSS for tooltip (only once)
+let tooltipCSSInjected = false
+function injectTooltipCSS() {
+    if (tooltipCSSInjected) return
+    tooltipCSSInjected = true
+    
+    const style = document.createElement('style')
+    style.textContent = `
+        #gameCoin.show-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 102px;
+            height: 57px;
+            background-image: url('${COIN_TOOLTIP_SVG_URL}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            pointer-events: none;
+            z-index: 1000;
+            animation: fadeInOut 2s ease-in-out;
+        }
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+            20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+    `
+    document.head.appendChild(style)
+}
+
 // Set up coin drag functionality
 function setupCoinDrag() {
     const coin = document.querySelector(COIN_SELECTOR)
@@ -162,6 +199,14 @@ function setupCoinDrag() {
         return
     }
 
+    // Inject tooltip CSS
+    injectTooltipCSS()
+
+    // Ensure coin has position relative for tooltip positioning
+    if (window.getComputedStyle(coin).position === 'static') {
+        coin.style.position = 'relative'
+    }
+
     // Create draggable (disabled by default)
     coinDraggable = Draggable.create(coin, {
         type: "x,y",
@@ -171,10 +216,18 @@ function setupCoinDrag() {
         onDragEnd() {
             // Hit test — check if coin reached the machine
             if (Draggable.hitTest(coin, machine, "50%")) {
-                // Snap coin into machine
+                // Calculate bottom left position
+                const coinRect = coin.getBoundingClientRect()
+                const machineRect = machine.getBoundingClientRect()
+                const coinX = coin.offsetLeft
+                const coinY = coin.offsetTop
+                const targetX = machine.offsetLeft - coinX
+                const targetY = machine.offsetTop + machine.offsetHeight - coin.offsetHeight - coinY
+
+                // Snap coin into machine (bottom left)
                 gsap.to(coin, {
-                    x: machine.offsetLeft - coin.offsetLeft,
-                    y: machine.offsetTop - coin.offsetTop,
+                    x: targetX,
+                    y: targetY,
                     duration: 0.4,
                     ease: "power2.out",
                     onComplete: () => {
@@ -216,6 +269,15 @@ function setupCoinDrag() {
             handlePopupOpen()
             return
         }
+
+        // Kill any existing animations on coin to prevent conflicts
+        gsap.killTweensOf(coin)
+
+        // Show tooltip
+        coin.classList.add('show-tooltip')
+        setTimeout(() => {
+            coin.classList.remove('show-tooltip')
+        }, 2000)
 
         // Buzz animation on coin
         gsap.fromTo(coin,
