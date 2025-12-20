@@ -52,7 +52,17 @@ function showMoleImage(combination) {
     })
 
     // Add is-active class to the matching image
-    const targetImage = document.querySelector(`[data-mole-combination="${combination}"]`)
+    let targetImage = document.querySelector(`[data-mole-combination="${combination}"]`)
+    
+    // If not found, try alternate spelling (goggles/googles)
+    if (!targetImage && combination.includes('googles')) {
+        const alternateCombination = combination.replace('googles', 'goggles')
+        targetImage = document.querySelector(`[data-mole-combination="${alternateCombination}"]`)
+    } else if (!targetImage && combination.includes('goggles')) {
+        const alternateCombination = combination.replace('goggles', 'googles')
+        targetImage = document.querySelector(`[data-mole-combination="${alternateCombination}"]`)
+    }
+    
     if (targetImage) {
         targetImage.classList.add('is-active')
     } else {
