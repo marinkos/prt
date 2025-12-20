@@ -8,13 +8,10 @@ const DEFAULT_COMBINATION = 'green-googles-watercan'
 function getRiveFileUrl() {
     return window.innerWidth <= MOBILE_BREAKPOINT ? RIVE_FILE_URL_MOBILE : RIVE_FILE_URL_DESKTOP
 }
-const BUTTON_TEXT_SELECTOR = '#openPopup .button-middle > div'
+const BUTTON_SELECTOR = '[data-w-id="67f6784f-661d-7a70-cf0a-5373d2d3cb82"]'
 const CLOSE_BUTTON_SELECTOR = '#gameClose'
 const POPUP_SELECTOR = '#gamePopup'
 const OPEN_POPUP_SELECTOR = '#openPopup'
-const COIN_SELECTOR = '#gameCoin'
-const MACHINE_SELECTOR = '#gameMachine'
-const MOLES_SELECTOR = '#gameMoles'
 const PADDING_GLOBAL_SELECTOR = '.padding-global.padding-section-huge'
 
 // State tracking
@@ -23,16 +20,14 @@ let currentGlasses = 'Goggles'
 let currentTool = 'WaterCan'
 let riveInstance = null
 let hasReceivedInitialState = false
-let coinDraggable = null
 
 // Map Rive state names to data attribute format
 const mapToDataAttribute = (hat, glasses, tool) => {
     // Convert hat: Pink -> pink, Yellow -> yellow, Green -> green
     const hatLower = hat.toLowerCase()
 
-    // Convert glasses: Goggles -> googles (typo in data attributes), Cayeye -> cateye, Sunnies -> sunnies
+    // Convert glasses: Goggles -> googles, Cayeye -> cateye, Sunnies -> sunnies
     let glassesLower = glasses.toLowerCase()
-    if (glassesLower === 'goggles') glassesLower = 'googles'
     if (glassesLower === 'cayeye') glassesLower = 'cateye'
 
     // Convert tool: Flower -> flower, Cocktail -> cocktail, WaterCan -> watercan
@@ -82,16 +77,6 @@ function handlePopupOpen() {
         popup.style.display = 'flex'
     }
 
-    // Hide coin and machine
-    const coin = document.querySelector(COIN_SELECTOR)
-    const machine = document.querySelector(MACHINE_SELECTOR)
-    if (coin) coin.style.display = 'none'
-    if (machine) machine.style.display = 'none'
-
-    // Show moles
-    const moles = document.querySelector(MOLES_SELECTOR)
-    if (moles) moles.style.display = 'flex'
-
     // Add game-over class to .padding-global
     const paddingGlobal = document.querySelector(PADDING_GLOBAL_SELECTOR)
     if (paddingGlobal) {
@@ -99,9 +84,12 @@ function handlePopupOpen() {
     }
 
     // Reset button text to default
-    const buttonText = document.querySelector(BUTTON_TEXT_SELECTOR)
-    if (buttonText) {
-        buttonText.textContent = 'Insert a coin'
+    const buttonWrapper = document.querySelector(BUTTON_SELECTOR)
+    if (buttonWrapper) {
+        const buttonText = buttonWrapper.querySelector('.button-middle > div')
+        if (buttonText) {
+            buttonText.textContent = 'Insert a coin'
+        }
     }
 
     // Check if this is the first time opening the popup
@@ -144,88 +132,27 @@ function handlePopupClose() {
         popup.style.display = 'none'
     }
 
-    // Update button text (with delay to override Webflow)
-    setTimeout(() => {
-        const buttonText = document.querySelector(BUTTON_TEXT_SELECTOR)
+    // Update button text
+    const buttonWrapper = document.querySelector(BUTTON_SELECTOR)
+    if (buttonWrapper) {
+        const buttonText = buttonWrapper.querySelector('.button-middle > div')
         if (buttonText) {
             buttonText.textContent = 'go again'
         }
-    }, 50)
+    }
 
     // Ensure mole image shows current state
     updateMoleImage()
 }
 
-// Set up coin drag functionality
-function setupCoinDrag() {
-    const coin = document.querySelector(COIN_SELECTOR)
-    const machine = document.querySelector(MACHINE_SELECTOR)
-    const button = document.querySelector(OPEN_POPUP_SELECTOR)
-
-    if (!coin || !machine || !button) {
-        setTimeout(setupCoinDrag, 500)
-        return
-    }
-
-    // Create draggable (disabled by default)
-    coinDraggable = Draggable.create(coin, {
-        type: "x,y",
-        inertia: true,
-        enabled: false,
-
-        onDragEnd() {
-            // Hit test — check if coin reached the machine
-            if (Draggable.hitTest(coin, machine, "50%")) {
-                // Snap coin into machine
-                gsap.to(coin, {
-                    x: machine.offsetLeft - coin.offsetLeft,
-                    y: machine.offsetTop - coin.offsetTop,
-                    duration: 0.4,
-                    ease: "power2.out"
-                })
-
-                // Open popup after snap animation
-                setTimeout(() => {
-                    handlePopupOpen()
-                    // Reset coin position for next time
-                    gsap.set(coin, { x: 0, y: 0 })
-                    coinDraggable[0].disable()
-                }, 400)
-            }
-        }
-    })
-
-    // Button click → buzz animation + enable drag (or open popup directly if coin hidden)
-    button.addEventListener('click', () => {
-        // If coin is hidden (after first play), open popup directly
-        if (coin.style.display === 'none') {
-            handlePopupOpen()
-            return
-        }
-
-        // Buzz animation on coin
-        gsap.fromTo(coin,
-            { rotation: -5 },
-            {
-                rotation: 5,
-                repeat: 6,
-                yoyo: true,
-                duration: 0.05,
-                onComplete: () => {
-                    gsap.set(coin, { rotation: 0 })
-                }
-            }
-        )
-
-        // Enable dragging
-        coinDraggable[0].enable()
-    })
-}
-
-// Set up popup open handler (kept for backwards compatibility if needed)
+// Set up popup open handler
 function setupPopupOpenHandler() {
-    // Now handled by setupCoinDrag
-    setupCoinDrag()
+    const openButton = document.querySelector(OPEN_POPUP_SELECTOR)
+    if (openButton) {
+        openButton.addEventListener('click', handlePopupOpen)
+    } else {
+        setTimeout(setupPopupOpenHandler, 500)
+    }
 }
 
 // Set up popup close handler
