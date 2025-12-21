@@ -2,6 +2,7 @@ const RIVE_FILE_URL_DESKTOP = 'https://cdn.prod.website-files.com/68791f04ead013
 const RIVE_FILE_URL_MOBILE = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/6942d5944f95b5535234f011_mole_dressup_mobile.riv'
 const COIN_SOUND_URL = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/69465b16593c2d2cc3051575_coin-sound.mp3'
 const COIN_TOOLTIP_SVG_URL = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/69466436038420ec0c118542_coin-tooplip.svg'
+const MACHINE_TOOLTIP_SVG_URL = 'https://cdn.prod.website-files.com/68791f04ead01339340acbbe/6947e477c290d2303cca70f0_machine-tooplip.svg'
 const MOBILE_BREAKPOINT = 479
 const STATE_MACHINE_NAME = 'DressUp'
 const DEFAULT_COMBINATION = 'green-googles-watercan'
@@ -180,6 +181,22 @@ function injectTooltipCSS() {
             z-index: 1000;
             animation: fadeInOut 2s ease-in-out;
         }
+        #gameMachine.show-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 102px;
+            height: 57px;
+            background-image: url('${MACHINE_TOOLTIP_SVG_URL}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            pointer-events: none;
+            z-index: 1000;
+            animation: fadeInOut 2s ease-in-out;
+        }
         @keyframes fadeInOut {
             0%, 100% { opacity: 0; transform: translateX(-50%) translateY(10px); }
             20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -205,6 +222,11 @@ function setupCoinDrag() {
     // Ensure coin has position relative for tooltip positioning
     if (window.getComputedStyle(coin).position === 'static') {
         coin.style.position = 'relative'
+    }
+
+    // Ensure machine has position relative for tooltip positioning
+    if (window.getComputedStyle(machine).position === 'static') {
+        machine.style.position = 'relative'
     }
 
     // Create draggable (disabled by default)
@@ -270,13 +292,36 @@ function setupCoinDrag() {
             return
         }
 
-        // Kill any existing animations on coin to prevent conflicts
+        // Kill any existing animations on coin and machine to prevent conflicts
         gsap.killTweensOf(coin)
+        gsap.killTweensOf(machine)
 
-        // Show tooltip
+        // Show coin tooltip
         coin.classList.add('show-tooltip')
         setTimeout(() => {
             coin.classList.remove('show-tooltip')
+            
+            // After coin tooltip disappears, show machine tooltip and buzz
+            machine.classList.add('show-tooltip')
+            
+            // Buzz animation on machine
+            gsap.fromTo(machine,
+                { rotation: -5 },
+                {
+                    rotation: 5,
+                    repeat: 6,
+                    yoyo: true,
+                    duration: 0.05,
+                    onComplete: () => {
+                        gsap.set(machine, { rotation: 0 })
+                    }
+                }
+            )
+            
+            // Remove machine tooltip after 2 seconds
+            setTimeout(() => {
+                machine.classList.remove('show-tooltip')
+            }, 2000)
         }, 2000)
 
         // Buzz animation on coin
