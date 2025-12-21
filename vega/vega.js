@@ -195,11 +195,16 @@ function injectTooltipCSS() {
             background-position: center;
             pointer-events: none;
             z-index: 1000;
-            animation: fadeInOut 2s ease-in-out;
+            animation: fadeInOut 2s ease-in-out, tooltipBuzz 0.3s ease-in-out 0.2s;
         }
         @keyframes fadeInOut {
             0%, 100% { opacity: 0; transform: translateX(-50%) translateY(10px); }
             20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes tooltipBuzz {
+            0%, 100% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-50%) rotate(-3deg); }
+            75% { transform: translateX(-50%) rotate(3deg); }
         }
     `
     document.head.appendChild(style)
@@ -292,37 +297,24 @@ function setupCoinDrag() {
             return
         }
 
-        // Kill any existing animations on coin and machine to prevent conflicts
+        // Kill any existing animations on coin to prevent conflicts
         gsap.killTweensOf(coin)
-        gsap.killTweensOf(machine)
 
         // Show coin tooltip
         coin.classList.add('show-tooltip')
         setTimeout(() => {
             coin.classList.remove('show-tooltip')
-            
-            // After coin tooltip disappears, show machine tooltip and buzz
+        }, 2000)
+
+        // Show machine tooltip after 1 second (while coin tooltip is still visible)
+        setTimeout(() => {
             machine.classList.add('show-tooltip')
-            
-            // Buzz animation on machine
-            gsap.fromTo(machine,
-                { rotation: -5 },
-                {
-                    rotation: 5,
-                    repeat: 6,
-                    yoyo: true,
-                    duration: 0.05,
-                    onComplete: () => {
-                        gsap.set(machine, { rotation: 0 })
-                    }
-                }
-            )
             
             // Remove machine tooltip after 2 seconds
             setTimeout(() => {
                 machine.classList.remove('show-tooltip')
             }, 2000)
-        }, 2000)
+        }, 1000)
 
         // Buzz animation on coin
         gsap.fromTo(coin,
