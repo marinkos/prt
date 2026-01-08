@@ -214,27 +214,52 @@
     }
   
     function findHitLayerByName(name) {
-      console.log(`  🔎 Searching by name: ${name}`);
+      console.log(`  🔎 Searching by name: ${name} (exact match)`);
       
-      let found = svg.querySelector(`[id="${name}"]`);
+      const allElements = svg.querySelectorAll('*');
+      console.log(`  📊 Total elements in SVG: ${allElements.length}`);
+      
+      const allGroups = Array.from(svg.querySelectorAll('g'));
+      console.log(`  📊 Total groups in SVG: ${allGroups.length} (including nested)`);
+      
+      let found = null;
+      
+      for (let element of allElements) {
+        const elementId = element.id || '';
+        const elementDataName = element.getAttribute('data-name') || '';
+        
+        if (elementId === name) {
+          console.log(`  ✓ Found by exact id match: "${elementId}"`);
+          found = element;
+          break;
+        }
+        
+        if (elementDataName === name) {
+          console.log(`  ✓ Found by exact data-name match: "${elementDataName}"`);
+          found = element;
+          break;
+        }
+      }
+      
       if (found) {
-        console.log(`  ✓ Found by id attribute`);
+        console.log(`  ✓ Element details:`, {
+          tag: found.tagName,
+          id: found.id,
+          dataName: found.getAttribute('data-name'),
+          className: found.className?.baseVal || found.className,
+          parent: found.parentElement?.tagName
+        });
         return found;
       }
       
-      found = svg.querySelector(`[data-name="${name}"]`);
-      if (found) {
-        console.log(`  ✓ Found by data-name attribute`);
-        return found;
-      }
-      
-      found = Array.from(svg.querySelectorAll('g')).find(
-        g => g.getAttribute('data-name') === name || g.id === name
+      console.log(`  ✗ No exact match found for "${name}"`);
+      console.log(`  💡 Sample of all element ids/data-names (first 30):`, 
+        Array.from(allElements).slice(0, 30).map(el => ({
+          tag: el.tagName,
+          id: el.id || null,
+          dataName: el.getAttribute('data-name') || null
+        })).filter(el => el.id || el.dataName)
       );
-      if (found) {
-        console.log(`  ✓ Found by iterating groups`);
-        return found;
-      }
       
       return null;
     }
