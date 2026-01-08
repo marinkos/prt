@@ -137,18 +137,37 @@
       console.log('🎯 Setting up hit areas...');
       console.log('📋 Config keys:', Object.keys(config));
       
+      let animationData;
+      try {
+        animationData = player.getLottie();
+        console.log('✓ Got animation data, layers:', animationData?.layers?.length);
+      } catch (e) {
+        console.error('❌ Could not get animation data:', e);
+      }
+      
+      const layers = animationData?.layers || [];
+      const layerGroups = Array.from(svg.querySelectorAll('g'));
+      console.log(`📊 Found ${layerGroups.length} groups in SVG, ${layers.length} layers in animation`);
+      
       Object.keys(config).forEach(key => {
         const hitName = config[key].hitLayer;
         console.log(`🔍 Looking for hit layer: ${hitName} (for ${key})`);
         
-        const hitEl = findHitLayer(hitName);
-  
+        let hitEl = findHitLayerByName(hitName);
+        
+        if (!hitEl && layers.length > 0) {
+          console.log('  Trying to find by layer index from animation data...');
+          hitEl = findHitLayerByIndex(hitName, layers, layerGroups);
+        }
+        
         if (!hitEl) {
           console.warn(`⚠️ Hit layer not found: ${hitName}`);
-          console.log('💡 Available groups in SVG:', Array.from(svg.querySelectorAll('g')).map(g => ({
+          console.log('💡 Sample groups (first 10):', Array.from(svg.querySelectorAll('g')).slice(0, 10).map((g, i) => ({
+            index: i,
             id: g.id,
             dataName: g.getAttribute('data-name'),
-            className: g.className.baseVal
+            className: g.className?.baseVal || g.className,
+            ariaLabel: g.getAttribute('aria-label')
           })));
           return;
         }
@@ -172,8 +191,8 @@
       console.log('✅ Hit areas setup complete');
     }
   
-    function findHitLayer(name) {
-      console.log(`  🔎 Searching for: ${name}`);
+    function findHitLayerByName(name) {
+      console.log(`  🔎 Searching by name: ${name}`);
       
       let found = svg.querySelector(`[id="${name}"]`);
       if (found) {
@@ -188,14 +207,48 @@
       }
       
       found = Array.from(svg.querySelectorAll('g')).find(
-        g => g.getAttribute('data-name') === name
+        g => g.getAttribute('data-name') === name || g.id === name
       );
       if (found) {
         console.log(`  ✓ Found by iterating groups`);
         return found;
       }
       
-      console.log(`  ✗ Not found by any method`);
+      return null;
+    }
+    
+    function findHitLayerByIndex(hitLayerName, layers, layerGroups) {
+      console.log(`  🔎 Searching by layer index for: ${hitLayerName}`);
+      
+      const hitLayerIndex = layers.findIndex(layer => layer.nm === hitLayerName);
+      if (hitLayerIndex === -1) {
+        console.log(`  ✗ Layer "${hitLayerName}" not found in animation layers`);
+        console.log(`  💡 Available layer names (first 20):`, layers.slice(0, 20).map(l => l.nm).filter(Boolean));
+        return null;
+      }
+      
+      console.log(`  ✓ Found layer "${hitLayerName}" at index ${hitLayerIndex} in animation data`);
+      
+      const svgIndex = layers.length - 1 - hitLayerIndex;
+      console.log(`  📍 Looking for SVG group at index ${svgIndex} (reverse order)`);
+      
+      if (layerGroups[svgIndex]) {
+        console.log(`  ✓ Found group at index ${svgIndex}`);
+        return layerGroups[svgIndex];
+      }
+      
+      console.log(`  ⚠️ Group not found at expected index, trying nearby indices...`);
+      for (let offset = 1; offset <= 5; offset++) {
+        if (layerGroups[svgIndex + offset]) {
+          console.log(`  ✓ Found group at index ${svgIndex + offset} (offset: +${offset})`);
+          return layerGroups[svgIndex + offset];
+        }
+        if (layerGroups[svgIndex - offset]) {
+          console.log(`  ✓ Found group at index ${svgIndex - offset} (offset: -${offset})`);
+          return layerGroups[svgIndex - offset];
+        }
+      }
+      
       return null;
     }
   
