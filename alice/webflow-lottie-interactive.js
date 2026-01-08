@@ -30,6 +30,8 @@
     let loopTimeout = null;
     let isLooping = false;
     let totalFrames = 0;
+    let idleRanges = [];
+    let currentIdleRangeIndex = 0;
   
     /* ------------------ INIT ------------------ */
   
@@ -158,6 +160,9 @@
           console.log('✓ Got animation data, layers:', animationData?.layers?.length);
           totalFrames = animationData.op || animationData.totalFrames || 0;
           console.log('✓ Total frames:', totalFrames);
+          if (totalFrames > 0) {
+            idleRanges = calculateIdleRanges();
+          }
         }
       } catch (e) {
         console.error('❌ Could not get animation data:', e);
@@ -360,34 +365,73 @@
   
     /* ------------------ LOOP LOGIC ------------------ */
   
-    function startIdleLoop() {
-      console.log('🔄 Starting idle loop (full animation)...');
-      isLooping = true;
-      clearTimeout(loopTimeout);
-      playFullAnimation();
+    function calculateIdleRanges() {
+      if (!totalFrames || totalFrames === 0) {
+        console.warn('⚠️ Total frames not available, cannot calculate idle ranges');
+        return [];
+      }
+  
+      const hoverRanges = Object.values(config).map(c => c.frameRange);
+      const ranges = [];
+      let currentStart = 0;
+  
+      hoverRanges.sort((a, b) => a[0] - b[0]);
+  
+      for (const [hoverStart, hoverEnd] of hoverRanges) {
+        if (currentStart < hoverStart) {
+          ranges.push([currentStart, hoverStart - 1]);
+        }
+        currentStart = Math.max(currentStart, hoverEnd + 1);
+      }
+  
+      if (currentStart < totalFrames) {
+        ranges.push([currentStart, totalFrames - 1]);
+      }
+  
+      console.log('📋 Calculated idle ranges (excluding hover segments):', ranges);
+      return ranges;
     }
   
-    function playFullAnimation() {
+    function startIdleLoop() {
+      console.log('🔄 Starting idle loop (non-hover segments)...');
+      isLooping = true;
+      clearTimeout(loopTimeout);
+      
+      if (idleRanges.length === 0) {
+        idleRanges = calculateIdleRanges();
+      }
+      
+      if (idleRanges.length === 0) {
+        console.warn('⚠️ No idle ranges to play');
+        return;
+      }
+      
+      currentIdleRangeIndex = 0;
+      playNextIdleRange();
+    }
+  
+    function playNextIdleRange() {
       if (!isLooping || hoveredElement) {
         console.log(`⏸️ Loop paused - isLooping: ${isLooping}, hoveredElement: ${hoveredElement}`);
         return;
       }
   
-      if (!totalFrames || totalFrames === 0) {
-        console.warn('⚠️ Total frames not available, cannot play full animation');
+      if (idleRanges.length === 0) {
+        console.warn('⚠️ No idle ranges available');
         return;
       }
   
-      const duration = frameDuration(0, totalFrames);
-      console.log(`▶️ Playing full animation: frames 0-${totalFrames} (${duration}ms)`);
+      const [start, end] = idleRanges[currentIdleRangeIndex];
+      const duration = frameDuration(start, end);
+      console.log(`▶️ Playing idle range: frames ${start}-${end} (${duration}ms)`);
       
-      player.seek(0);
+      player.seek(start);
       player.play();
   
       loopTimeout = setTimeout(() => {
         if (!hoveredElement) {
-          console.log(`⏹️ Full animation complete, looping...`);
-          playFullAnimation();
+          currentIdleRangeIndex = (currentIdleRangeIndex + 1) % idleRanges.length;
+          playNextIdleRange();
         }
       }, duration);
     }
@@ -405,7 +449,15 @@
       hoveredElement = key;
       isLooping = false;
       clearTimeout(loopTimeout);
-      console.log(`  ⏸️ Stopped idle loop`);
+      console.log(`  ⏸️ Paused idle loop`);
+  
+      playHoverSegment(key);
+    }
+  
+    function playHoverSegment(key) {
+      if (hoveredElement !== key) {
+        return;
+      }
   
       const [start, end] = config[key].frameRange;
       const duration = frameDuration(start, end);
@@ -416,8 +468,8 @@
   
       loopTimeout = setTimeout(() => {
         if (hoveredElement === key) {
-          console.log(`  ⏹️ Animation complete for ${key}`);
-          player.stop();
+          console.log(`  🔄 Looping ${key} segment`);
+          playHoverSegment(key);
         }
       }, duration);
     }
