@@ -33,25 +33,65 @@
       console.log('🚀 Initializing Lottie interactive script...');
       console.log('🔍 Looking for element with ID:', PLAYER_ID);
       
-      player = document.getElementById(PLAYER_ID);
-      if (!player) {
+      const container = document.getElementById(PLAYER_ID);
+      if (!container) {
         console.error(`❌ #${PLAYER_ID} not found`);
         console.log('💡 Make sure your lottie-player has id="interactiveLottie"');
         return;
       }
-  
-      console.log('✓ Found lottie-player:', player);
+
+      console.log('✓ Found container:', container);
+      console.log('  - Tag name:', container.tagName);
+      console.log('  - Classes:', container.className);
+      
+      if (container.tagName === 'LOTTIE-PLAYER') {
+        player = container;
+        console.log('✓ Container is lottie-player');
+      } else {
+        player = container.querySelector('lottie-player');
+        if (!player) {
+          console.error('❌ lottie-player not found inside container');
+          console.log('💡 Available children:', Array.from(container.children).map(c => c.tagName));
+          return;
+        }
+        console.log('✓ Found lottie-player inside container:', player);
+      }
+
       console.log('⏳ Waiting for player to be ready...');
+      console.log('  - Player loaded:', player.loaded);
+      console.log('  - Player ready:', player.ready);
+      
+      const tryInit = () => {
+        if (player.shadowRoot && player.shadowRoot.querySelector('svg')) {
+          console.log('SVG is available, initializing...');
+          onPlayerReady();
+        } else {
+          console.log('SVG not ready yet, will retry...');
+        }
+      };
       
       if (player.loaded) {
-        console.log('Player already loaded, calling onPlayerReady immediately');
-        onPlayerReady();
+        console.log('Player already loaded');
+        setTimeout(tryInit, 200);
       } else {
-        player.addEventListener('ready', onPlayerReady);
-        player.addEventListener('loaded', () => {
-          console.log('Player loaded event fired');
-          if (!svg) onPlayerReady();
+        console.log('Player not loaded yet, waiting for events...');
+        
+        player.addEventListener('ready', () => {
+          console.log('✅ Player ready event received');
+          setTimeout(tryInit, 100);
         });
+        
+        player.addEventListener('loaded', () => {
+          console.log('✅ Player loaded event received');
+          setTimeout(tryInit, 100);
+        });
+        
+        setTimeout(() => {
+          if (!svg) {
+            console.log('⏰ Timeout waiting for ready event, trying anyway...');
+            tryInit();
+          }
+        }, 3000);
       }
     }
   
