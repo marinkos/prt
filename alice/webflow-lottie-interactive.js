@@ -17,7 +17,7 @@
       board: {
         hitLayer: 'hit_board',
         frameRange: [233, 279],
-        auto: false // hover only
+        auto: true // changed to true so it plays in the loop
       }
     };
   
@@ -137,10 +137,22 @@
       console.log('🎯 Setting up hit areas...');
       console.log('📋 Config keys:', Object.keys(config));
       
-      let animationData;
+      let animationData = null;
       try {
         animationData = player.getLottie();
-        console.log('✓ Got animation data, layers:', animationData?.layers?.length);
+        if (!animationData) {
+          console.log('⚠️ getLottie() returned null/undefined, trying alternative methods...');
+          if (player.lottie) {
+            animationData = player.lottie.animationData || player.lottie;
+            console.log('✓ Got animation data from player.lottie');
+          } else if (player._lottie) {
+            animationData = player._lottie.animationData || player._lottie;
+            console.log('✓ Got animation data from player._lottie');
+          }
+        }
+        if (animationData) {
+          console.log('✓ Got animation data, layers:', animationData?.layers?.length);
+        }
       } catch (e) {
         console.error('❌ Could not get animation data:', e);
       }
@@ -148,6 +160,10 @@
       const layers = animationData?.layers || [];
       const layerGroups = Array.from(svg.querySelectorAll('g'));
       console.log(`📊 Found ${layerGroups.length} groups in SVG, ${layers.length} layers in animation`);
+      
+      if (layers.length === 0) {
+        console.log('⚠️ No layers from animation data, will search SVG groups directly');
+      }
       
       Object.keys(config).forEach(key => {
         const hitName = config[key].hitLayer;
@@ -161,13 +177,19 @@
         }
         
         if (!hitEl) {
+          console.log('  Trying broader search in all SVG groups...');
+          hitEl = findHitLayerByBroadSearch(hitName, layerGroups);
+        }
+        
+        if (!hitEl) {
           console.warn(`⚠️ Hit layer not found: ${hitName}`);
-          console.log('💡 Sample groups (first 10):', Array.from(svg.querySelectorAll('g')).slice(0, 10).map((g, i) => ({
+          console.log('💡 Sample groups (first 20):', Array.from(svg.querySelectorAll('g')).slice(0, 20).map((g, i) => ({
             index: i,
             id: g.id,
             dataName: g.getAttribute('data-name'),
             className: g.className?.baseVal || g.className,
-            ariaLabel: g.getAttribute('aria-label')
+            ariaLabel: g.getAttribute('aria-label'),
+            title: g.querySelector('title')?.textContent
           })));
           return;
         }
@@ -212,6 +234,41 @@
       if (found) {
         console.log(`  ✓ Found by iterating groups`);
         return found;
+      }
+      
+      return null;
+    }
+    
+    function findHitLayerByBroadSearch(name, layerGroups) {
+      console.log(`  🔎 Broad search for: ${name}`);
+      
+      const nameLower = name.toLowerCase();
+      const nameParts = name.split('_');
+      
+      for (let group of layerGroups) {
+        const groupId = (group.id || '').toLowerCase();
+        const groupDataName = (group.getAttribute('data-name') || '').toLowerCase();
+        const groupClass = (group.className?.baseVal || group.className || '').toLowerCase();
+        const groupTitle = (group.querySelector('title')?.textContent || '').toLowerCase();
+        
+        if (groupId.includes(nameLower) || 
+            groupDataName.includes(nameLower) ||
+            groupClass.includes(nameLower) ||
+            groupTitle.includes(nameLower)) {
+          console.log(`  ✓ Found by broad search (id: ${group.id}, data-name: ${group.getAttribute('data-name')})`);
+          return group;
+        }
+        
+        if (nameParts.length > 1) {
+          const allPartsMatch = nameParts.every(part => 
+            groupId.includes(part.toLowerCase()) || 
+            groupDataName.includes(part.toLowerCase())
+          );
+          if (allPartsMatch) {
+            console.log(`  ✓ Found by matching name parts`);
+            return group;
+          }
+        }
       }
       
       return null;
