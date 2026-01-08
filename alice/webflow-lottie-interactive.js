@@ -54,9 +54,13 @@
         
         console.log('✓ Found #interactiveLottie container:', targetContainer);
         
-        if (targetContainer.tagName === 'LOTTIE-PLAYER') {
+        const lottiePlayer = targetContainer.tagName === 'LOTTIE-PLAYER' 
+            ? targetContainer 
+            : targetContainer.querySelector('lottie-player');
+        
+        if (lottiePlayer) {
             console.log('Found lottie-player component');
-            initLottiePlayer(targetContainer);
+            initLottiePlayer(lottiePlayer);
             return;
         }
         
@@ -315,21 +319,63 @@
     }
 
     function initLottiePlayer(player) {
-        player.addEventListener('ready', () => {
-            if (player.lottie) {
-                animation = player.lottie;
-                setupAnimation();
-            } else {
-                console.log('Using lottie-player API');
-                setupLottiePlayerInteractions(player);
-            }
-        });
+        console.log('Initializing lottie-player...');
+        
+        if (player.loaded) {
+            console.log('lottie-player already loaded');
+            handleLottiePlayerReady(player);
+        } else {
+            player.addEventListener('ready', () => {
+                console.log('lottie-player ready event fired');
+                handleLottiePlayerReady(player);
+            });
+            
+            player.addEventListener('loaded', () => {
+                console.log('lottie-player loaded event fired');
+                handleLottiePlayerReady(player);
+            });
+            
+            setTimeout(() => {
+                if (!isInitialized) {
+                    console.log('lottie-player timeout, trying anyway...');
+                    handleLottiePlayerReady(player);
+                }
+            }, 2000);
+        }
+    }
+    
+    function handleLottiePlayerReady(player) {
+        if (isInitialized) return;
+        
+        console.log('Handling lottie-player ready...');
+        
+        if (player.lottie && player.lottie.totalFrames !== undefined) {
+            console.log('Found player.lottie instance');
+            animation = player.lottie;
+            setupAnimation();
+        } else {
+            console.log('Using lottie-player API directly');
+            setupLottiePlayerInteractions(player);
+        }
     }
 
     function setupLottiePlayerInteractions(player) {
-        const animationData = player.getLottie();
-        if (!animationData) return;
+        console.log('Setting up lottie-player interactions...');
+        
+        let animationData;
+        try {
+            animationData = player.getLottie();
+        } catch (e) {
+            console.error('Error getting Lottie data:', e);
+        }
+        
+        if (!animationData) {
+            console.log('Animation data not available yet, retrying...');
+            setTimeout(() => setupLottiePlayerInteractions(player), 500);
+            return;
+        }
 
+        console.log('Animation data loaded, layers:', animationData.layers?.length);
         isInitialized = true;
         setupHoverListenersForPlayer(player);
         startLoopingForPlayer(player);
@@ -510,16 +556,49 @@
     }
 
     function setupHoverListenersForPlayer(player) {
-        const container = player.parentElement;
-        const svg = container.querySelector('svg');
+        console.log('Setting up hover listeners for lottie-player...');
+        
+        let svg = player.querySelector('svg');
+        if (!svg) {
+            const shadowRoot = player.shadowRoot;
+            if (shadowRoot) {
+                svg = shadowRoot.querySelector('svg');
+                console.log('Found SVG in shadow DOM');
+            }
+        }
         
         if (!svg) {
+            const container = player.parentElement;
+            if (container) {
+                svg = container.querySelector('svg');
+            }
+        }
+        
+        if (!svg) {
+            console.log('SVG not found, retrying...');
             setTimeout(() => setupHoverListenersForPlayer(player), 500);
             return;
         }
 
-        const animationData = player.getLottie();
-        const layers = animationData?.layers || [];
+        console.log('SVG found:', svg);
+        
+        let animationData;
+        try {
+            animationData = player.getLottie();
+        } catch (e) {
+            console.error('Error getting animation data:', e);
+            setTimeout(() => setupHoverListenersForPlayer(player), 500);
+            return;
+        }
+        
+        if (!animationData) {
+            console.log('Animation data not available, retrying...');
+            setTimeout(() => setupHoverListenersForPlayer(player), 500);
+            return;
+        }
+
+        const layers = animationData.layers || [];
+        console.log('Total layers:', layers.length);
 
         const hitLayerIndices = {};
         layers.forEach((layer, index) => {
@@ -528,30 +607,65 @@
                 const elementKey = layerName.replace('hit_', '');
                 if (config[elementKey]) {
                     hitLayerIndices[elementKey] = index;
+                    console.log(`Found hit layer: ${layerName} -> ${elementKey} at index ${index}`);
                 }
             }
         });
 
+        console.log('Hit layer indices:', hitLayerIndices);
+
         const layerGroups = Array.from(svg.querySelectorAll('g'));
-        
+        console.log('Found', layerGroups.length, 'group elements in SVG');
+
         Object.keys(hitLayerIndices).forEach(elementKey => {
             const layerIndex = hitLayerIndices[elementKey];
             const svgIndex = layers.length - 1 - layerIndex;
             
+            console.log(`Looking for ${elementKey}: layerIndex=${layerIndex}, svgIndex=${svgIndex}`);
+            
+            let hitElement = null;
+            
             if (layerGroups[svgIndex]) {
-                const hitElement = layerGroups[svgIndex];
+                hitElement = layerGroups[svgIndex];
+                console.log(`✓ Found element for ${elementKey} at index ${svgIndex}`);
+            } else {
+                console.warn(`Could not find element at index ${svgIndex} for ${elementKey}, trying search...`);
+                hitElement = findLayerGroupByName(svg, config[elementKey].hitLayer);
+            }
+            
+            if (hitElement) {
                 hitElement.style.pointerEvents = 'auto';
                 hitElement.style.cursor = 'pointer';
                 
-                hitElement.addEventListener('mouseenter', () => {
+                hitElement.addEventListener('mouseenter', (e) => {
+                    e.stopPropagation();
+                    console.log(`Mouse enter: ${elementKey}`);
                     handleHoverInForPlayer(elementKey, player);
                 });
                 
-                hitElement.addEventListener('mouseleave', () => {
+                hitElement.addEventListener('mouseleave', (e) => {
+                    e.stopPropagation();
+                    console.log(`Mouse leave: ${elementKey}`);
                     handleHoverOutForPlayer(elementKey, player);
                 });
+                
+                console.log(`✓ Hover listener attached to ${elementKey}`);
+            } else {
+                console.error(`✗ Could not find SVG element for ${elementKey}`);
             }
         });
+    }
+    
+    function findLayerGroupByName(svg, layerName) {
+        const groups = svg.querySelectorAll('g');
+        for (let group of groups) {
+            if (group.getAttribute('data-name') === layerName || 
+                group.getAttribute('id') === layerName ||
+                group.id === layerName) {
+                return group;
+            }
+        }
+        return null;
     }
 
     function attachHoverToGroupBySearch(elementKey, svg) {
@@ -621,18 +735,27 @@
     function handleHoverInForPlayer(elementKey, player) {
         if (hoveredElement === elementKey) return;
         
+        console.log(`Hover in: ${elementKey}`);
         hoveredElement = elementKey;
         isLooping = false;
         
         if (loopTimeout) {
             clearTimeout(loopTimeout);
+            loopTimeout = null;
         }
 
         const { frameRange } = config[elementKey];
         const [startFrame, endFrame] = frameRange;
         
-        player.seek(startFrame);
-        player.play();
+        console.log(`Playing ${elementKey} from frame ${startFrame} to ${endFrame}`);
+        
+        try {
+            player.seek(startFrame);
+            player.setDirection(1);
+            player.play();
+        } catch (e) {
+            console.error('Error playing animation:', e);
+        }
 
         const otherElements = Object.keys(config).filter(el => el !== elementKey);
         if (otherElements.length > 0) {
@@ -643,9 +766,25 @@
     function handleHoverOutForPlayer(elementKey, player) {
         if (hoveredElement !== elementKey) return;
         
-        hoveredElement = null;
-        isLooping = true;
-        startLoopingForPlayer(player);
+        console.log(`Hover out: ${elementKey}`);
+        
+        const { frameRange } = config[elementKey];
+        const [startFrame, endFrame] = frameRange;
+        const currentFrame = player.currentFrame || player.getLottie()?.currentFrame || startFrame;
+        const remainingFrames = Math.max(0, endFrame - currentFrame);
+        const frameRate = player.getLottie()?.fr || 60;
+        const remainingDuration = (remainingFrames / frameRate) * 1000;
+        
+        if (loopTimeout) {
+            clearTimeout(loopTimeout);
+            loopTimeout = null;
+        }
+        
+        setTimeout(() => {
+            hoveredElement = null;
+            isLooping = true;
+            startLoopingForPlayer(player);
+        }, Math.max(remainingDuration, 100));
     }
 
     window.debugLottieInteractive = function() {
