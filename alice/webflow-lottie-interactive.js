@@ -6,18 +6,21 @@
     const config = {
       bush: {
         hitLayer: 'hit_bush',
+        hitId: '617',
         frameRange: [0, 94],
-        auto: true
+        auto: false
       },
       bird: {
         hitLayer: 'hit_bird',
+        hitId: '616',
         frameRange: [95, 220],
-        auto: true
+        auto: false
       },
       board: {
         hitLayer: 'hit_board',
+        hitId: '619',
         frameRange: [233, 279],
-        auto: true // changed to true so it plays in the loop
+        auto: false
       }
     };
   
@@ -167,9 +170,15 @@
       
       Object.keys(config).forEach(key => {
         const hitName = config[key].hitLayer;
+        const hitId = config[key].hitId;
         console.log(`🔍 Looking for hit layer: ${hitName} (for ${key})`);
         
         let hitEl = findHitLayerByName(hitName);
+        
+        if (!hitEl && hitId) {
+          console.log(`  Trying to find by ID: ${hitId}`);
+          hitEl = findHitLayerByName(hitId);
+        }
         
         if (!hitEl && layers.length > 0) {
           console.log('  Trying to find by layer index from animation data...');
