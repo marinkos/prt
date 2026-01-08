@@ -246,10 +246,22 @@
       const nameParts = name.split('_');
       
       for (let group of layerGroups) {
-        const groupId = (group.id || '').toLowerCase();
-        const groupDataName = (group.getAttribute('data-name') || '').toLowerCase();
-        const groupClass = (group.className?.baseVal || group.className || '').toLowerCase();
-        const groupTitle = (group.querySelector('title')?.textContent || '').toLowerCase();
+        const groupId = String(group.id || '').toLowerCase();
+        const groupDataName = String(group.getAttribute('data-name') || '').toLowerCase();
+        
+        let groupClass = '';
+        if (group.className) {
+          if (typeof group.className === 'string') {
+            groupClass = group.className.toLowerCase();
+          } else if (group.className.baseVal) {
+            groupClass = String(group.className.baseVal).toLowerCase();
+          } else {
+            groupClass = String(group.className).toLowerCase();
+          }
+        }
+        
+        const titleEl = group.querySelector('title');
+        const groupTitle = titleEl ? String(titleEl.textContent || '').toLowerCase() : '';
         
         if (groupId.includes(nameLower) || 
             groupDataName.includes(nameLower) ||
