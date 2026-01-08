@@ -29,6 +29,7 @@
     let hoveredElement = null;
     let loopTimeout = null;
     let isLooping = false;
+    let totalFrames = 0;
   
     /* ------------------ INIT ------------------ */
   
@@ -155,6 +156,8 @@
         }
         if (animationData) {
           console.log('✓ Got animation data, layers:', animationData?.layers?.length);
+          totalFrames = animationData.op || animationData.totalFrames || 0;
+          console.log('✓ Total frames:', totalFrames);
         }
       } catch (e) {
         console.error('❌ Could not get animation data:', e);
@@ -357,42 +360,35 @@
   
     /* ------------------ LOOP LOGIC ------------------ */
   
-    function getAutoElements() {
-      return Object.keys(config).filter(k => config[k].auto);
-    }
-  
     function startIdleLoop() {
-      console.log('🔄 Starting idle loop...');
+      console.log('🔄 Starting idle loop (full animation)...');
       isLooping = true;
       clearTimeout(loopTimeout);
-      playNextAuto(0);
+      playFullAnimation();
     }
   
-    function playNextAuto(index) {
+    function playFullAnimation() {
       if (!isLooping || hoveredElement) {
         console.log(`⏸️ Loop paused - isLooping: ${isLooping}, hoveredElement: ${hoveredElement}`);
         return;
       }
   
-      const autoEls = getAutoElements();
-      if (!autoEls.length) {
-        console.warn('⚠️ No auto elements found');
+      if (!totalFrames || totalFrames === 0) {
+        console.warn('⚠️ Total frames not available, cannot play full animation');
         return;
       }
   
-      const key = autoEls[index % autoEls.length];
-      const [start, end] = config[key].frameRange;
-      const duration = frameDuration(start, end);
-  
-      console.log(`▶️ Playing ${key}: frames ${start}-${end} (${duration}ms)`);
+      const duration = frameDuration(0, totalFrames);
+      console.log(`▶️ Playing full animation: frames 0-${totalFrames} (${duration}ms)`);
       
-      player.seek(start);
+      player.seek(0);
       player.play();
   
       loopTimeout = setTimeout(() => {
-        console.log(`⏹️ Stopping ${key}`);
-        player.stop();
-        playNextAuto(index + 1);
+        if (!hoveredElement) {
+          console.log(`⏹️ Full animation complete, looping...`);
+          playFullAnimation();
+        }
       }, duration);
     }
   
@@ -442,13 +438,13 @@
     /* ------------------ UTILS ------------------ */
   
     function frameDuration(start, end) {
-      let fps = 60;
+      let fps = 30;
       try {
         const lottieData = player.getLottie();
-        fps = lottieData?.fr || 60;
+        fps = lottieData?.fr || 30;
         console.log(`  📊 Frame rate: ${fps} fps`);
       } catch (e) {
-        console.warn('  ⚠️ Could not get frame rate, using default 60');
+        console.warn('  ⚠️ Could not get frame rate, using default 30');
       }
       return ((end - start) / fps) * 1000;
     }
