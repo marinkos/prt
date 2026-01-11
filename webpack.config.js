@@ -60,4 +60,31 @@ module.exports = [
     },
     mode: 'production',
   },
+  // Config for portfolio/main/lottie-opt.js -> portfolio/lottie-opt.min.js
+  {
+    entry: './portfolio/main/lottie-opt.js',
+    output: {
+      filename: 'lottie-opt.min.js',
+      path: path.resolve(__dirname, 'portfolio'),
+    },
+    module: {
+      rules: [
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env'],
+            },
+          },
+        },
+      ],
+    },
+    optimization: {
+      minimize: true,
+      minimizer: [new TerserPlugin()],
+    },
+    mode: 'production',
+  },
 ]; 
