@@ -5,8 +5,8 @@
   "main": "app.js",
   "scripts": {
     "build": "npm run build:main && npm run build:calc",
-    "build:main": "webpack --config webpack.config.js --env entry=main/index.js --env output=main.min.js --config webpack.config.js --mode production --progress --color",
-    "build:calc": "webpack --config webpack.config.js --env entry=main/calc.js --env output=calc.min.js --config webpack.config.js --mode production --progress --color"
+    "build:main": "webpack --config webpack.config.js --env entry=portfolio/main/index.js --env output=main.min.js --config webpack.config.js --mode production --progress --color",
+    "build:calc": "webpack --config webpack.config.js --env entry=portfolio/main/calc.js --env output=calc.min.js --config webpack.config.js --mode production --progress --color"
   },
   "keywords": [],
   "author": "",
