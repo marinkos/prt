@@ -325,6 +325,20 @@
                 return;
             }
 
+            event.preventDefault();
+            const submitButton = form.querySelector('[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
+
+            fetch(form.action, {
+                method: form.method || 'POST',
+                body: new FormData(form),
+                mode: 'no-cors'
+            }).catch(error => {
+                console.error('Submission error:', error);
+            });
+
             const formWrapper = document.getElementById('webinarForm');
             const successWrapper = document.getElementById('webinarSuccess');
             if (formWrapper) {
