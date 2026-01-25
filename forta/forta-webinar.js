@@ -229,11 +229,19 @@
         renderRecaptcha();
     };
 
-    document.addEventListener('DOMContentLoaded', function () {
+    let formInitialized = false;
+
+    function initWebinarForm() {
+        if (formInitialized) {
+            return;
+        }
+
         const form = document.getElementById('form_wrapper');
         if (!form) {
             return;
         }
+
+        formInitialized = true;
 
         const emailInput = document.getElementById('email');
         const phoneInput = document.getElementById('phone');
@@ -287,16 +295,10 @@
             });
         }
 
-        // Fetch insurance data and populate dropdown
-        fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
-            .then(response => response.json())
-            .then(data => {
-                jsonData = data;
-                if (stateSelect) {
-                    updateInsuranceDropdown(stateSelect.value, insuranceSelect);
-                }
-            })
-            .catch(error => console.error('Error fetching JSON:', error));
+        // Populate dropdown once data is ready
+        if (stateSelect) {
+            updateInsuranceDropdown(stateSelect.value, insuranceSelect);
+        }
 
         // Submission handler with spam + recaptcha validation
         form.addEventListener('submit', function (event) {
@@ -348,5 +350,48 @@
                 successWrapper.style.display = 'block';
             }
         });
-    });
+    }
+
+    function observeForForm() {
+        if (document.getElementById('form_wrapper')) {
+            initWebinarForm();
+            return null;
+        }
+
+        if (document.body && 'MutationObserver' in window) {
+            const observer = new MutationObserver(function () {
+                if (document.getElementById('form_wrapper')) {
+                    initWebinarForm();
+                    observer.disconnect();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+            return observer;
+        }
+        return null;
+    }
+
+    function initializePage() {
+        // Fetch insurance data early
+        fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
+            .then(response => response.json())
+            .then(data => {
+                jsonData = data;
+                const stateSelect = document.getElementById('state');
+                const insuranceSelect = document.getElementById('00N8b00000EQM3J');
+                if (stateSelect && insuranceSelect) {
+                    updateInsuranceDropdown(stateSelect.value, insuranceSelect);
+                }
+            })
+            .catch(error => console.error('Error fetching JSON:', error));
+
+        initWebinarForm();
+        observeForForm();
+    }
+
+    document.addEventListener('DOMContentLoaded', initializePage);
+
+    if (window.Webflow && typeof window.Webflow.push === 'function') {
+        window.Webflow.push(initializePage);
+    }
 })();
