@@ -231,6 +231,13 @@
 
     let formInitialized = false;
 
+    function getWebinarForm() {
+        return document.getElementById('form_wrapper') ||
+            document.getElementById('wf-form-WebinarForm') ||
+            document.querySelector('form[name="wf-form-WebinarForm"]') ||
+            document.querySelector('form.sf-form');
+    }
+
     function populateInsuranceFromState() {
         const stateSelect = document.getElementById('state');
         const insuranceSelect = document.getElementById('00N8b00000EQM3J');
@@ -245,7 +252,7 @@
             return;
         }
 
-        const form = document.getElementById('form_wrapper');
+        const form = getWebinarForm();
         if (!form) {
             return;
         }
@@ -359,14 +366,14 @@
     }
 
     function observeForForm() {
-        if (document.getElementById('form_wrapper')) {
+        if (getWebinarForm()) {
             initWebinarForm();
             return null;
         }
 
         if (document.body && 'MutationObserver' in window) {
             const observer = new MutationObserver(function () {
-                if (document.getElementById('form_wrapper')) {
+                if (getWebinarForm()) {
                     initWebinarForm();
                     observer.disconnect();
                 }
@@ -378,7 +385,7 @@
     }
 
     function observeForStateSelect() {
-        const form = document.getElementById('form_wrapper');
+        const form = getWebinarForm();
         if (!form) {
             return null;
         }
@@ -417,6 +424,13 @@
     }
 
     document.addEventListener('DOMContentLoaded', initializePage);
+
+    document.addEventListener('change', function (event) {
+        if (event.target && event.target.id === 'state') {
+            fieldInteractions.state = true;
+            populateInsuranceFromState();
+        }
+    });
 
     if (window.Webflow && typeof window.Webflow.push === 'function') {
         window.Webflow.push(initializePage);
