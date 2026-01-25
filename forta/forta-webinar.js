@@ -231,6 +231,15 @@
 
     let formInitialized = false;
 
+    function populateInsuranceFromState() {
+        const stateSelect = document.getElementById('state');
+        const insuranceSelect = document.getElementById('00N8b00000EQM3J');
+        if (!stateSelect || !insuranceSelect) {
+            return;
+        }
+        updateInsuranceDropdown(stateSelect.value, insuranceSelect);
+    }
+
     function initWebinarForm() {
         if (formInitialized) {
             return;
@@ -246,7 +255,6 @@
         const emailInput = document.getElementById('email');
         const phoneInput = document.getElementById('phone');
         const stateSelect = document.getElementById('state');
-        const insuranceSelect = document.getElementById('00N8b00000EQM3J');
 
         populateHiddenFields();
         renderRecaptcha();
@@ -287,18 +295,16 @@
             phoneInput.value = phoneFormat(phoneInput.value);
         }
 
-        // State change handler
-        if (stateSelect) {
-            stateSelect.addEventListener('change', function () {
+        // State change handler (delegated to handle dynamic elements)
+        form.addEventListener('change', function (event) {
+            if (event.target && event.target.id === 'state') {
                 fieldInteractions.state = true;
-                updateInsuranceDropdown(this.value, insuranceSelect);
-            });
-        }
+                populateInsuranceFromState();
+            }
+        });
 
         // Populate dropdown once data is ready
-        if (stateSelect) {
-            updateInsuranceDropdown(stateSelect.value, insuranceSelect);
-        }
+        populateInsuranceFromState();
 
         // Submission handler with spam + recaptcha validation
         form.addEventListener('submit', function (event) {
@@ -371,22 +377,43 @@
         return null;
     }
 
+    function observeForStateSelect() {
+        const form = document.getElementById('form_wrapper');
+        if (!form) {
+            return null;
+        }
+
+        if (document.getElementById('state') && document.getElementById('00N8b00000EQM3J')) {
+            populateInsuranceFromState();
+            return null;
+        }
+
+        if ('MutationObserver' in window) {
+            const observer = new MutationObserver(function () {
+                if (document.getElementById('state') && document.getElementById('00N8b00000EQM3J')) {
+                    populateInsuranceFromState();
+                    observer.disconnect();
+                }
+            });
+            observer.observe(form, { childList: true, subtree: true });
+            return observer;
+        }
+        return null;
+    }
+
     function initializePage() {
         // Fetch insurance data early
         fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
             .then(response => response.json())
             .then(data => {
                 jsonData = data;
-                const stateSelect = document.getElementById('state');
-                const insuranceSelect = document.getElementById('00N8b00000EQM3J');
-                if (stateSelect && insuranceSelect) {
-                    updateInsuranceDropdown(stateSelect.value, insuranceSelect);
-                }
+                populateInsuranceFromState();
             })
             .catch(error => console.error('Error fetching JSON:', error));
 
         initWebinarForm();
         observeForForm();
+        observeForStateSelect();
     }
 
     document.addEventListener('DOMContentLoaded', initializePage);
