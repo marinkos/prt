@@ -173,6 +173,11 @@
         defaultOption.text = 'Select';
         insuranceSelect.appendChild(defaultOption);
 
+        const noInsuranceOption = document.createElement('option');
+        noInsuranceOption.value = 'No Insurance';
+        noInsuranceOption.text = 'No Insurance';
+        insuranceSelect.appendChild(noInsuranceOption);
+
         if (!state || jsonData.length === 0) {
             insuranceSelect.selectedIndex = 0;
             return;
@@ -309,6 +314,34 @@
                 populateInsuranceFromState();
             }
         });
+
+        // Show/hide Insurance question only when "Tell us about yourself" starts with "Parent"
+        const aboutYourselfSelect = document.getElementById('00NRc00000nmRhd');
+        const insuranceGroup = document.getElementById('insuranceName');
+        const insuranceSelect = document.getElementById('00N8b00000EQM3J');
+
+        function toggleInsuranceVisibility() {
+            if (!aboutYourselfSelect || !insuranceGroup || !insuranceSelect) {
+                return;
+            }
+            const value = (aboutYourselfSelect.value || '').trim();
+            const isParent = value.indexOf('Parent') === 0;
+            if (isParent) {
+                insuranceGroup.style.display = '';
+                insuranceSelect.removeAttribute('data-optional');
+                insuranceSelect.required = true;
+            } else {
+                insuranceGroup.style.display = 'none';
+                insuranceSelect.required = false;
+                insuranceSelect.setAttribute('data-optional', 'true');
+                insuranceSelect.value = '';
+            }
+        }
+
+        if (aboutYourselfSelect && insuranceGroup) {
+            toggleInsuranceVisibility(); // set initial visibility
+            aboutYourselfSelect.addEventListener('change', toggleInsuranceVisibility);
+        }
 
         // Populate dropdown once data is ready
         populateInsuranceFromState();
