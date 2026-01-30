@@ -170,15 +170,36 @@ function loadJsonAndInitialize() {
         });
 }
 
-// Initialize on DOM ready
+// Initialize on DOM ready; if form isn't in DOM yet (e.g. Webflow), watch for it
+function tryInit() {
+    const stateSelect = document.getElementById('state');
+    const typeSelect = document.getElementById('type');
+    const insuranceSelect = document.getElementById('00N8b00000EQM3J');
+    if (stateSelect && typeSelect && insuranceSelect) {
+        loadJsonAndInitialize();
+        return true;
+    }
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Set default "Child Has Health Insurance?" to "Yes"
     const hasInsuranceField = document.getElementById('00N8b00000Bz6et');
     if (hasInsuranceField) {
         hasInsuranceField.value = 'yes';
     }
-    
-    loadJsonAndInitialize();
+
+    if (tryInit()) return;
+
+    // Form may load later (e.g. Webflow) – watch for state/type/insurance to appear
+    if (typeof MutationObserver !== 'undefined') {
+        const observer = new MutationObserver(function() {
+            if (tryInit()) observer.disconnect();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        // Stop observing after 15s to avoid leaking
+        setTimeout(function() { observer.disconnect(); }, 15000);
+    }
 });
 
 // Keep this function for when reCAPTCHA loads
@@ -215,11 +236,15 @@ function initializeScript() {
     // ---------------------------------------
     if (stateSelect) {
         stateSelect.addEventListener('change', function () {
-            // Clear and reset insurance dropdown when state changes
+            const newState = this.value;
             if (insuranceSelect) {
                 insuranceSelect.innerHTML = '<option value="">Select one...</option>';
-                // Clear insurance hidden fields when state changes
                 clearInsuranceFields();
+                // Repopulate insurance list if type is already selected
+                const currentType = typeSelect ? typeSelect.value : '';
+                if (newState && currentType && normalizeInsuranceType(currentType)) {
+                    updateInsuranceDropdown(newState, currentType);
+                }
             }
         });
     }
@@ -326,6 +351,19 @@ function initializeScript() {
 }
 
 // -------------------------------------------------
+// Normalize insurance type from form (Yes/No or Medicaid/Commercial etc.)
+// -------------------------------------------------
+function normalizeInsuranceType(type) {
+    if (!type || typeof type !== 'string') return null;
+    const t = type.trim();
+    // "Yes" path: Medicaid or MCO
+    if (/^yes$/i.test(t) || /^medicaid$/i.test(t) || /^mco$/i.test(t)) return 'Yes';
+    // "No" path: Commercial or Government Plan
+    if (/^no$/i.test(t) || /^commercial$/i.test(t) || /^government\s*plan$/i.test(t)) return 'No';
+    return null;
+}
+
+// -------------------------------------------------
 // Function to Filter Payors Based on State and Type
 // -------------------------------------------------
 function filterPayors(state, type) {
@@ -334,14 +372,15 @@ function filterPayors(state, type) {
         return [];
     }
 
-    if (type === 'Yes') {
+    const normalizedType = normalizeInsuranceType(type);
+    if (normalizedType === 'Yes') {
         return jsonData.filter(item =>
             item.state === state &&
             (item.payor_type === 'Medicaid' || item.payor_type === 'MCO') &&
             item.tofu_payor_name != null &&
             item.tofu_payor_name.trim() !== ''
         );
-    } else if (type === 'No') {
+    } else if (normalizedType === 'No') {
         return jsonData.filter(item =>
             item.state === state &&
             (item.payor_type === 'Commercial' || item.payor_type === 'Government Plan') &&
