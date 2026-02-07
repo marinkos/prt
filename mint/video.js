@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
       stepRewind();
     }
   
-    // Handle link clicks - fast rewind to part start, then play
+    // Handle link clicks - play at 3x to target time (forward or rewind), then normal
     function handleLinkClick(e) {
       e.preventDefault();
       const part = parseInt(this.dataset.part);
@@ -113,18 +113,25 @@ document.addEventListener("DOMContentLoaded", function () {
   
       isClickAnimating = true;
       gsap.killTweensOf(video);
-      video.pause();
   
-      if (currentTime <= targetTime) {
-        // Already at or before target - just seek and play
-        video.currentTime = targetTime;
-        currentPartIndex = parts.findIndex((p) => p.part === part);
-        updateActiveLink(part);
-        video.playbackRate = normalPlaybackRate;
+      if (currentTime < targetTime) {
+        // Forward: play at 3x until we reach targetTime, then normal
+        video.playbackRate = speedUpMultiplier;
         video.play();
-        setTimeout(() => { isClickAnimating = false; }, 100);
-      } else {
-        // Rewind to target time
+        const onReachTarget = () => {
+          if (video.currentTime >= targetTime) {
+            video.currentTime = targetTime;
+            video.playbackRate = normalPlaybackRate;
+            currentPartIndex = parts.findIndex((p) => p.part === part);
+            updateActiveLink(part);
+            video.removeEventListener("timeupdate", onReachTarget);
+            isClickAnimating = false;
+          }
+        };
+        video.addEventListener("timeupdate", onReachTarget);
+      } else if (currentTime > targetTime) {
+        // Backward: rewind at 3x to targetTime, then play normal
+        video.pause();
         rewindToTime(targetTime, () => {
           currentPartIndex = parts.findIndex((p) => p.part === part);
           updateActiveLink(part);
@@ -132,6 +139,10 @@ document.addEventListener("DOMContentLoaded", function () {
           video.play();
           setTimeout(() => { isClickAnimating = false; }, 100);
         });
+      } else {
+        // Already at target
+        updateActiveLink(part);
+        isClickAnimating = false;
       }
     }
   
@@ -193,6 +204,8 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       video.addEventListener("ended", () => {
+        video.pause();
+        video.currentTime = 0;
         const hero = document.getElementById("heroSection");
         if (hero) {
           hero.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -209,6 +222,8 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       // Mobile behavior
       video.addEventListener("ended", () => {
+        video.pause();
+        video.currentTime = 0;
         const hero = document.getElementById("heroSection");
         if (hero) {
           hero.scrollIntoView({ behavior: "smooth", block: "start" });
