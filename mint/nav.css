@@ -1,0 +1,12 @@
+/* Nav: default state (above the fold) */
+.nav_component {
+  position: absolute;
+  margin-top: 5rem;
+}
+
+/* Nav: sticky with reduced margin when scrolling from hero section */
+.nav_component.is-sticky {
+  position: sticky;
+  top: 1rem;
+  margin-top: 1rem;
+}

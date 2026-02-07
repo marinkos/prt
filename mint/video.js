@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let scrollTimeout = null;
     let currentPartIndex = 0;
     let lastScrollY = 0;
+    let scrollingToHeroAfterEnd = false;
   
     // Timestamp mappings
     const parts = [
@@ -39,12 +40,14 @@ document.addEventListener("DOMContentLoaded", function () {
           isVideoInView = entry.isIntersecting;
   
           if (entry.isIntersecting) {
+            if (scrollingToHeroAfterEnd) return; // don't auto-play when we're scrolling to hero after end
             if (video.currentTime === 0) {
               updateActiveLink(1);
             }
             video.playbackRate = normalPlaybackRate;
             video.play().catch((error) => console.log("Video play failed:", error));
           } else {
+            scrollingToHeroAfterEnd = false; // clear flag once video is out of view
             video.currentTime = 0;
             video.pause();
           }
@@ -204,6 +207,8 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       video.addEventListener("ended", () => {
+        scrollingToHeroAfterEnd = true;
+        video.removeAttribute("loop");
         video.pause();
         video.currentTime = 0;
         const hero = document.getElementById("heroSection");
@@ -222,6 +227,8 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       // Mobile behavior
       video.addEventListener("ended", () => {
+        scrollingToHeroAfterEnd = true;
+        video.removeAttribute("loop");
         video.pause();
         video.currentTime = 0;
         const hero = document.getElementById("heroSection");
