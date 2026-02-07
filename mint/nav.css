@@ -4,8 +4,3 @@
   margin-top: 5rem;
 }
 
-/* Nav: when pinned by ScrollTrigger (position: fixed), sit 1rem from top */
-.nav_component.is-sticky {
-  top: 1rem !important;
-  margin-top: 0 !important;
-}
