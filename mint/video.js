@@ -17,17 +17,17 @@ document.addEventListener("DOMContentLoaded", function () {
     let lastScrollY = 0;
     let scrollingToHeroAfterEnd = false;
   
-    // Timestamp mappings
+    // Timestamp mappings (exact playback timeframes; video duration 29.56)
     const parts = [
-      { part: 1, time: 0, endTime: 5.5 },
-      { part: 2, time: 5.5, endTime: 8 },
-      { part: 3, time: 8, endTime: 10 },
-      { part: 4, time: 10, endTime: 15 },
-      { part: 5, time: 15, endTime: 19 },
-      { part: 6, time: 19, endTime: 30 },
+      { part: 1, time: 0, endTime: 5.1 },
+      { part: 2, time: 5.1, endTime: 7.6 },
+      { part: 3, time: 7.6, endTime: 10.367 },
+      { part: 4, time: 10.367, endTime: 15.067 },
+      { part: 5, time: 15.067, endTime: 19.3 },
+      { part: 6, time: 19.3, endTime: 29.56 },
     ];
   
-    const videoDuration = 30;
+    const videoDuration = 29.56;
     const speedUpMultiplier = 3;
     const normalPlaybackRate = 1;
     const scrollsPerPart = 2;
@@ -57,7 +57,14 @@ document.addEventListener("DOMContentLoaded", function () {
     );
   
     videoObserver.observe(video);
-  
+
+    // Block any play() while we're scrolling to hero after end (prevents restart flash)
+    video.addEventListener("play", function onPlayBlock() {
+      if (scrollingToHeroAfterEnd) {
+        video.pause();
+      }
+    }, true);
+
     // Update active link
     function updateActiveLink(part) {
       videoLinks.forEach((link) => {
@@ -210,11 +217,13 @@ document.addEventListener("DOMContentLoaded", function () {
         scrollingToHeroAfterEnd = true;
         video.removeAttribute("loop");
         video.pause();
-        video.currentTime = 0;
         const hero = document.getElementById("heroSection");
         if (hero) {
           hero.scrollIntoView({ behavior: "auto", block: "start" });
         }
+        requestAnimationFrame(() => {
+          video.currentTime = 0;
+        });
       }, true);
   
       videoLinks.forEach((link) => {
@@ -230,11 +239,13 @@ document.addEventListener("DOMContentLoaded", function () {
         scrollingToHeroAfterEnd = true;
         video.removeAttribute("loop");
         video.pause();
-        video.currentTime = 0;
         const hero = document.getElementById("heroSection");
         if (hero) {
           hero.scrollIntoView({ behavior: "auto", block: "start" });
         }
+        requestAnimationFrame(() => {
+          video.currentTime = 0;
+        });
       }, true);
 
       videoLinks.forEach((link) => {
