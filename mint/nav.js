@@ -1,9 +1,5 @@
-// nav.js – sticky nav: 5rem margin at top, 1rem when scrolling from hero section
-//
-// Required CSS for .nav_component:
-//   .nav_component { position: absolute; margin-top: 5rem; }
-//   .nav_component.is-sticky { position: sticky; top: 1rem; margin-top: 1rem; }
-//
+// nav.js – sticky nav: 5rem margin at top, pins with 1rem from top when scrolling from hero section
+// Uses ScrollTrigger pin (position: fixed) so it works even with overflow/transform on parents.
 document.addEventListener("DOMContentLoaded", function () {
   if (typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") {
     console.warn("nav.js: GSAP/ScrollTrigger required");
@@ -15,14 +11,23 @@ document.addEventListener("DOMContentLoaded", function () {
   const heroSection = document.getElementById("heroSection");
   if (!nav) return;
 
-  // Trigger from hero section: when hero top hits viewport top, nav becomes sticky with 1rem
-  const triggerEl = heroSection || document.querySelector(".main-wrapper") || document.body;
+  const triggerEl = heroSection || document.querySelector(".main-wrapper");
+  if (!triggerEl) return;
 
+  // Pin nav when hero/main top hits viewport top; keep pinned until scroll back up
   ScrollTrigger.create({
     trigger: triggerEl,
     start: "top top",
-    end: "bottom top",
-    onEnter: () => nav.classList.add("is-sticky"),
-    onLeaveBack: () => nav.classList.remove("is-sticky"),
+    end: "bottom bottom",
+    pin: nav,
+    pinSpacing: true,
+    onEnter: () => {
+      nav.classList.add("is-sticky");
+      gsap.set(nav, { top: "1rem", marginTop: 0 });
+    },
+    onLeaveBack: () => {
+      nav.classList.remove("is-sticky");
+      gsap.set(nav, { clearProps: "top,marginTop" });
+    },
   });
 });

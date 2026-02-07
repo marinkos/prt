@@ -4,9 +4,8 @@
   margin-top: 5rem;
 }
 
-/* Nav: sticky with reduced margin when scrolling from hero section */
+/* Nav: when pinned by ScrollTrigger (position: fixed), sit 1rem from top */
 .nav_component.is-sticky {
-  position: sticky;
-  top: 1rem;
-  margin-top: 1rem;
+  top: 1rem !important;
+  margin-top: 0 !important;
 }

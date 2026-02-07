@@ -213,9 +213,9 @@ document.addEventListener("DOMContentLoaded", function () {
         video.currentTime = 0;
         const hero = document.getElementById("heroSection");
         if (hero) {
-          hero.scrollIntoView({ behavior: "smooth", block: "start" });
+          hero.scrollIntoView({ behavior: "auto", block: "start" });
         }
-      });
+      }, true);
   
       videoLinks.forEach((link) => {
         link.addEventListener("click", handleLinkClick);
@@ -233,9 +233,9 @@ document.addEventListener("DOMContentLoaded", function () {
         video.currentTime = 0;
         const hero = document.getElementById("heroSection");
         if (hero) {
-          hero.scrollIntoView({ behavior: "smooth", block: "start" });
+          hero.scrollIntoView({ behavior: "auto", block: "start" });
         }
-      });
+      }, true);
 
       videoLinks.forEach((link) => {
         link.addEventListener("click", handleLinkClick);
