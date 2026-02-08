@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let isClickAnimating = false;
     let currentPartIndex = 0;
     let scrollingToHeroAfterEnd = false;
+    let videoIsInView = false;
   
     const parts = [
       { part: 1, time: 0, endTime: 5.1 },
@@ -23,6 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const videoObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          videoIsInView = entry.isIntersecting;
           if (entry.isIntersecting) {
             if (scrollingToHeroAfterEnd) return; // don't auto-play when we're scrolling to hero after end
             if (video.currentTime === 0) {
@@ -162,7 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
       video.pause();
       const hero = document.getElementById("heroSection");
       if (hero) {
-        hero.scrollIntoView({ behavior: "smooth", block: "start" });
+        hero.scrollIntoView({ behavior: "auto", block: "start" });
         document.dispatchEvent(new CustomEvent("mint:scroll-to-hero"));
       }
       requestAnimationFrame(() => {
@@ -171,6 +173,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }, true);
 
     videoLinks.forEach((link) => link.addEventListener("click", handleLinkClick));
+
+    function scrollToHero() {
+      const hero = document.getElementById("heroSection");
+      if (!hero) return;
+      scrollingToHeroAfterEnd = true;
+      video.pause();
+      video.currentTime = 0;
+      hero.scrollIntoView({ behavior: "auto", block: "start" });
+      document.dispatchEvent(new CustomEvent("mint:scroll-to-hero"));
+      requestAnimationFrame(() => { video.currentTime = 0; });
+    }
+
+    window.addEventListener(
+      "wheel",
+      (e) => {
+        if (!videoIsInView || e.deltaY <= 0) return;
+        e.preventDefault();
+        scrollToHero();
+      },
+      { passive: false }
+    );
 
     video.currentTime = 0;
     updateActiveLink(1);
