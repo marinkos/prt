@@ -78,9 +78,10 @@ document.addEventListener("DOMContentLoaded", function () {
       updateActiveLink(activePart);
     }
   
-    // Fast rewind to target time (decrease currentTime until target)
+    // Rewind to target time; complete in ~1.5s regardless of distance
     function rewindToTime(targetTime, onComplete) {
-      const rewindSpeed = speedUpMultiplier / 60; // per frame
+      const initialDistance = video.currentTime - targetTime;
+      const rewindSpeed = initialDistance / 90;
       
       function stepRewind() {
         if (video.currentTime <= targetTime) {
@@ -91,7 +92,6 @@ document.addEventListener("DOMContentLoaded", function () {
         video.currentTime = Math.max(targetTime, video.currentTime - rewindSpeed);
         requestAnimationFrame(stepRewind);
       }
-      
       stepRewind();
     }
   
@@ -109,20 +109,21 @@ document.addEventListener("DOMContentLoaded", function () {
       isClickAnimating = true;
       updateActiveLink(part);
       if (currentTime < targetTime) {
-        // Forward: play at 3x until we reach targetTime, then normal
+        // Forward: play at 3x, use rAF to stop exactly at target (avoids overshoot then rewind)
         video.playbackRate = speedUpMultiplier;
         video.play();
-        const onReachTarget = () => {
+        function checkReachTarget() {
           if (video.currentTime >= targetTime) {
             video.currentTime = targetTime;
             video.playbackRate = normalPlaybackRate;
             currentPartIndex = parts.findIndex((p) => p.part === part);
             updateActiveLink(part);
-            video.removeEventListener("timeupdate", onReachTarget);
             isClickAnimating = false;
+            return;
           }
-        };
-        video.addEventListener("timeupdate", onReachTarget);
+          requestAnimationFrame(checkReachTarget);
+        }
+        requestAnimationFrame(checkReachTarget);
       } else if (currentTime > targetTime) {
         // Backward: rewind at 3x to targetTime, then play normal
         video.pause();
