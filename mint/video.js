@@ -1,23 +1,12 @@
-// video.js
-// New Hero Video with Scroll Control
+// video.js – hero video: normal playback, click links to fast-forward/rewind to part
 document.addEventListener("DOMContentLoaded", function () {
-    gsap.registerPlugin(ScrollTrigger);
-  
     const video = document.getElementById("heroVideo");
+    if (!video) return;
     const videoLinks = document.querySelectorAll(".video_link");
-    const videoWrapper = video.closest('[class*="video-wrapper"]') || video.parentElement;
-    const videoScrollContainer = videoWrapper.parentElement;
-  
-    const isMobile = window.innerWidth <= 479;
-  
-    let isVideoInView = false;
     let isClickAnimating = false;
-    let scrollTimeout = null;
     let currentPartIndex = 0;
-    let lastScrollY = 0;
     let scrollingToHeroAfterEnd = false;
   
-    // Timestamp mappings (exact playback timeframes; video duration 29.56)
     const parts = [
       { part: 1, time: 0, endTime: 5.1 },
       { part: 2, time: 5.1, endTime: 7.6 },
@@ -27,18 +16,13 @@ document.addEventListener("DOMContentLoaded", function () {
       { part: 6, time: 19.3, endTime: 29.56 },
     ];
   
-    const videoDuration = 29.56;
     const speedUpMultiplier = 3;
     const normalPlaybackRate = 1;
-    const scrollsPerPart = 2;
-    const totalParts = 5;
   
-    // Intersection Observer
+    // Intersection Observer – play when in view, pause and reset when out of view
     const videoObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          isVideoInView = entry.isIntersecting;
-  
           if (entry.isIntersecting) {
             if (scrollingToHeroAfterEnd) return; // don't auto-play when we're scrolling to hero after end
             if (video.currentTime === 0) {
@@ -122,8 +106,6 @@ document.addEventListener("DOMContentLoaded", function () {
       const currentTime = video.currentTime;
   
       isClickAnimating = true;
-      gsap.killTweensOf(video);
-  
       if (currentTime < targetTime) {
         // Forward: play at 3x until we reach targetTime, then normal
         video.playbackRate = speedUpMultiplier;
@@ -156,100 +138,24 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   
-    if (!isMobile) {
-      let scrollTrigger;
-      
-      // Calculate total scroll height (2 scrolls per part × 5 parts = 10 viewport heights)
-      const totalScrollHeight = window.innerHeight * scrollsPerPart * totalParts;
-      
-      // Create scroll trigger
-      scrollTrigger = ScrollTrigger.create({
-        trigger: videoScrollContainer,
-        start: "top top",
-        end: `+=${totalScrollHeight}`,
-        pin: videoWrapper,
-        pinSpacing: true,
-        scrub: false,
-        onUpdate: (self) => {
-          if (isClickAnimating) return;
-          
-          const currentScrollY = window.scrollY;
-          const isScrollingDown = currentScrollY > lastScrollY;
-          const scrollSpeed = Math.abs(currentScrollY - lastScrollY);
-          lastScrollY = currentScrollY;
-          
-          if (scrollSpeed > 0 && isScrollingDown) {
-            clearTimeout(scrollTimeout);
-            video.playbackRate = speedUpMultiplier;
-            if (video.paused) {
-              video.play();
-            }
-            scrollTimeout = setTimeout(() => {
-              video.playbackRate = normalPlaybackRate;
-              video.play();
-            }, 150);
-          }
-        },
-        onEnter: () => {
-          video.currentTime = 0;
-          video.playbackRate = normalPlaybackRate;
-          video.play();
-          updateActiveLink(1);
-        },
-        onLeave: () => {
-          video.pause();
-        },
-        onEnterBack: () => {
-          video.playbackRate = normalPlaybackRate;
-          video.play();
-        },
-        onLeaveBack: () => {
-          video.currentTime = 0;
-          video.pause();
-        },
-      });
-  
-      video.addEventListener("timeupdate", () => {
-        updateActiveLinkByTime();
-      });
+    video.addEventListener("timeupdate", () => updateActiveLinkByTime());
 
-      video.addEventListener("ended", () => {
-        scrollingToHeroAfterEnd = true;
-        video.removeAttribute("loop");
-        video.pause();
-        const hero = document.getElementById("heroSection");
-        if (hero) {
-          hero.scrollIntoView({ behavior: "auto", block: "start" });
-        }
-        requestAnimationFrame(() => {
-          video.currentTime = 0;
-        });
-      }, true);
-  
-      videoLinks.forEach((link) => {
-        link.addEventListener("click", handleLinkClick);
+    video.addEventListener("ended", () => {
+      scrollingToHeroAfterEnd = true;
+      video.removeAttribute("loop");
+      video.pause();
+      const hero = document.getElementById("heroSection");
+      if (hero) {
+        hero.scrollIntoView({ behavior: "auto", block: "start" });
+        document.dispatchEvent(new CustomEvent("mint:scroll-to-hero"));
+      }
+      requestAnimationFrame(() => {
+        video.currentTime = 0;
       });
-  
-      video.currentTime = 0;
-      updateActiveLink(1);
-      
-    } else {
-      // Mobile behavior
-      video.addEventListener("ended", () => {
-        scrollingToHeroAfterEnd = true;
-        video.removeAttribute("loop");
-        video.pause();
-        const hero = document.getElementById("heroSection");
-        if (hero) {
-          hero.scrollIntoView({ behavior: "auto", block: "start" });
-        }
-        requestAnimationFrame(() => {
-          video.currentTime = 0;
-        });
-      }, true);
+    }, true);
 
-      videoLinks.forEach((link) => {
-        link.addEventListener("click", handleLinkClick);
-      });
-    }
+    videoLinks.forEach((link) => link.addEventListener("click", handleLinkClick));
+
+    video.currentTime = 0;
+    updateActiveLink(1);
   });
