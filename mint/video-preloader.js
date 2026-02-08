@@ -29,7 +29,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (isHidden) return;
     isHidden = true;
     video.pause();
-    videoWrapper.classList.add("video-wrapper--hidden");
+    videoWrapper.style.transition = "opacity " + fadeDurationMs / 1000 + "s ease";
+    videoWrapper.style.opacity = "0";
+    videoWrapper.style.pointerEvents = "none";
     function setDisplayNone() {
       videoWrapper.style.display = "none";
     }
