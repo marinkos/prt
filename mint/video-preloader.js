@@ -189,6 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }, { passive: false });
 
+  videoWrapper.style.display = "block";
   video.currentTime = 0;
   updateActiveLink(1);
   video.play().catch(() => {});
