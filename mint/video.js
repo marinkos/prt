@@ -61,8 +61,9 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
   
-    // Update based on time
+    // Update based on time (skip while user is seeking via link click)
     function updateActiveLinkByTime() {
+      if (isClickAnimating) return;
       const time = video.currentTime;
       let activePart = 1;
   
@@ -106,6 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const currentTime = video.currentTime;
   
       isClickAnimating = true;
+      updateActiveLink(part);
       if (currentTime < targetTime) {
         // Forward: play at 3x until we reach targetTime, then normal
         video.playbackRate = speedUpMultiplier;
