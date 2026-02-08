@@ -7,6 +7,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentPartIndex = 0;
     let scrollingToHeroAfterEnd = false;
     let videoIsInView = false;
+    const scrollsNeeded = 2;
+    let scrollDownCount = 0;
   
     const parts = [
       { part: 1, time: 0, endTime: 5.1 },
@@ -188,9 +190,17 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener(
       "wheel",
       (e) => {
-        if (!videoIsInView || e.deltaY <= 0) return;
+        if (!videoIsInView) return;
+        if (e.deltaY <= 0) {
+          scrollDownCount = 0;
+          return;
+        }
         e.preventDefault();
-        scrollToHero();
+        scrollDownCount += 1;
+        if (scrollDownCount >= scrollsNeeded) {
+          scrollDownCount = 0;
+          scrollToHero();
+        }
       },
       { passive: false }
     );
