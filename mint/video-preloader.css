@@ -1,0 +1,9 @@
+/* Video preloader: .video-wrapper is the fixed container */
+.video-wrapper {
+  transition: opacity 0.6s ease;
+}
+
+.video-wrapper.video-wrapper--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
