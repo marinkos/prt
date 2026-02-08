@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
       video.pause();
       const hero = document.getElementById("heroSection");
       if (hero) {
-        hero.scrollIntoView({ behavior: "auto", block: "start" });
+        hero.scrollIntoView({ behavior: "smooth", block: "start" });
         document.dispatchEvent(new CustomEvent("mint:scroll-to-hero"));
       }
       requestAnimationFrame(() => {
