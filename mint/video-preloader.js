@@ -3,8 +3,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const video = document.getElementById("heroVideo");
   if (!video) return;
   const videoWrapper = video.closest(".video-wrapper");
-  const skipBtn = document.getElementById("skipBtn");
+  if (!videoWrapper) return;
   const videoLinks = document.querySelectorAll(".video_link");
+  const fadeDurationMs = 600;
 
   let isClickAnimating = false;
   let currentPartIndex = 0;
@@ -25,10 +26,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const normalPlaybackRate = 1;
 
   function hidePreloader() {
-    if (isHidden || !videoWrapper) return;
+    if (isHidden) return;
     isHidden = true;
     video.pause();
     videoWrapper.classList.add("video-wrapper--hidden");
+    function setDisplayNone() {
+      videoWrapper.style.display = "none";
+    }
+    videoWrapper.addEventListener("transitionend", setDisplayNone, { once: true });
+    setTimeout(setDisplayNone, fadeDurationMs);
   }
 
   function updateActiveLink(part) {
@@ -127,7 +133,12 @@ document.addEventListener("DOMContentLoaded", function () {
     hidePreloader();
   }, true);
 
-  if (skipBtn) skipBtn.addEventListener("click", hidePreloader);
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("#skipBtn") || e.target.closest("[data-skip-video]")) {
+      e.preventDefault();
+      hidePreloader();
+    }
+  });
   videoLinks.forEach((link) => link.addEventListener("click", handleLinkClick));
 
   // Playback on scroll/wheel: scroll down = 3x play, scroll up = rewind, stop = 1x
