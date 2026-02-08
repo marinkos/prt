@@ -78,13 +78,22 @@ document.addEventListener("DOMContentLoaded", function () {
       updateActiveLink(activePart);
     }
   
-    // Rewind to target time; complete in ~1.5s regardless of distance
+    // Rewind: short distance = single seek; longer = stepped, then one final seek
     function rewindToTime(targetTime, onComplete) {
-      const initialDistance = video.currentTime - targetTime;
-      const rewindSpeed = initialDistance / 90;
-      
+      const distance = video.currentTime - targetTime;
+      if (distance <= 0) {
+        if (onComplete) onComplete();
+        return;
+      }
+      if (distance < 1) {
+        video.currentTime = targetTime;
+        if (onComplete) onComplete();
+        return;
+      }
+      const rewindSpeed = distance / 90;
+      const doneThreshold = 0.05;
       function stepRewind() {
-        if (video.currentTime <= targetTime) {
+        if (video.currentTime <= targetTime + doneThreshold) {
           video.currentTime = targetTime;
           if (onComplete) onComplete();
           return;
@@ -109,30 +118,34 @@ document.addEventListener("DOMContentLoaded", function () {
       isClickAnimating = true;
       updateActiveLink(part);
       if (currentTime < targetTime) {
-        // Forward: play at 3x, use rAF to stop exactly at target (avoids overshoot then rewind)
+        // Forward: play at 3x; when we reach target, pause then seek (smoother), then play
         video.playbackRate = speedUpMultiplier;
         video.play();
         function checkReachTarget() {
           if (video.currentTime >= targetTime) {
-            video.currentTime = targetTime;
+            video.pause();
+            if (Math.abs(video.currentTime - targetTime) > 0.04) {
+              video.currentTime = targetTime;
+            }
             video.playbackRate = normalPlaybackRate;
             currentPartIndex = parts.findIndex((p) => p.part === part);
             updateActiveLink(part);
             isClickAnimating = false;
+            video.play();
             return;
           }
           requestAnimationFrame(checkReachTarget);
         }
         requestAnimationFrame(checkReachTarget);
       } else if (currentTime > targetTime) {
-        // Backward: rewind at 3x to targetTime, then play normal
+        // Backward: rewind to targetTime, then play normal
         video.pause();
         rewindToTime(targetTime, () => {
           currentPartIndex = parts.findIndex((p) => p.part === part);
           updateActiveLink(part);
           video.playbackRate = normalPlaybackRate;
+          isClickAnimating = false;
           video.play();
-          setTimeout(() => { isClickAnimating = false; }, 100);
         });
       } else {
         // Already at target
