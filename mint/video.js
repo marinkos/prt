@@ -166,6 +166,7 @@ document.addEventListener("DOMContentLoaded", function () {
       video.pause();
       const hero = document.getElementById("heroSection");
       if (hero) {
+        slideInNav();
         hero.scrollIntoView({ behavior: "auto", block: "start" });
         document.dispatchEvent(new CustomEvent("mint:scroll-to-hero"));
       }
@@ -176,12 +177,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
     videoLinks.forEach((link) => link.addEventListener("click", handleLinkClick));
 
+    function slideInNav() {
+      const nav = document.querySelector(".nav_component");
+      if (!nav) return;
+      nav.style.transform = "translateY(-10rem)";
+      nav.style.transition = "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)";
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          nav.style.transform = "translateY(0)";
+        });
+      });
+    }
+
     function scrollToHero() {
       const hero = document.getElementById("heroSection");
       if (!hero) return;
       scrollingToHeroAfterEnd = true;
       video.pause();
       video.currentTime = 0;
+      slideInNav();
       hero.scrollIntoView({ behavior: "auto", block: "start" });
       document.dispatchEvent(new CustomEvent("mint:scroll-to-hero"));
       requestAnimationFrame(() => { video.currentTime = 0; });
