@@ -39,10 +39,18 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function lockBodyScroll() {
+    document.body.style.overflow = "hidden";
+  }
+  function unlockBodyScroll() {
+    document.body.style.overflow = "";
+  }
+
   function hidePreloader() {
     if (isHidden) return;
     isHidden = true;
     video.pause();
+    unlockBodyScroll();
     slideInNav();
     videoWrapper.style.transition = "opacity " + fadeDurationMs / 1000 + "s ease";
     videoWrapper.style.opacity = "0";
@@ -202,10 +210,13 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
       handleScrollOrWheel(e.deltaY > 0);
     }
-  }, { passive: false });
+  }, { passive: false, capture: true });
+
+  lockBodyScroll();
 
   videoWrapper.style.display = "block";
   video.currentTime = 0;
   updateActiveLink(1);
   video.play().catch(() => {});
 });
+
