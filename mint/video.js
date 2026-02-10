@@ -184,7 +184,9 @@ document.addEventListener("DOMContentLoaded", function () {
       nav.style.transition = "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)";
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          nav.style.transform = "translateY(0)";
+          setTimeout(() => {
+            nav.style.transform = "translateY(0)";
+          }, 500);
         });
       });
     }
