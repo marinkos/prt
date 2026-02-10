@@ -25,10 +25,23 @@ document.addEventListener("DOMContentLoaded", function () {
   const speedUpMultiplier = 3;
   const normalPlaybackRate = 1;
 
+  function slideInNav() {
+    const nav = document.querySelector(".nav_component");
+    if (!nav) return;
+    nav.style.transform = "translateY(-10rem)";
+    nav.style.transition = "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        nav.style.transform = "translateY(0)";
+      });
+    });
+  }
+
   function hidePreloader() {
     if (isHidden) return;
     isHidden = true;
     video.pause();
+    slideInNav();
     videoWrapper.style.transition = "opacity " + fadeDurationMs / 1000 + "s ease";
     videoWrapper.style.opacity = "0";
     videoWrapper.style.pointerEvents = "none";
