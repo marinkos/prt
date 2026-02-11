@@ -1,0 +1,61 @@
+/* HubSpot embedded form – styles loaded via hbspt.forms.create({ css: "..." }) */
+
+.hs-form {
+  font-family: inherit;
+}
+
+.hs-form label,
+.hs-form .hs-form-field > label {
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 0.25em;
+}
+
+.hs-form-field {
+  margin-bottom: 1rem;
+}
+
+.hs-form input[type="text"],
+.hs-form input[type="email"],
+.hs-form input[type="tel"],
+.hs-form input[type="number"],
+.hs-form textarea {
+  width: 100%;
+  border: 1px solid rgba(111, 111, 111, 0.70);
+  background: #FFFDF7;
+  border-radius: 0.25rem;
+  padding: 10px 12px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.hs-form input:focus,
+.hs-form textarea:focus {
+  outline: none;
+  border-color: rgba(111, 111, 111, 0.9);
+}
+
+.hs-form .hs-button,
+.hs-form input[type="submit"] {
+  background: #2DAF5E;
+  color: #fff;
+  border: none;
+  border-radius: 1.772px;
+  box-shadow: 2.872px 2.872px 0 0 #005504;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.hs-form .hs-button:hover,
+.hs-form input[type="submit"]:hover {
+  background: #279a52;
+  box-shadow: 1px 1px 0 0 #005504;
+}
+
+/* Wrapper (use on your page if the form is in the same origin, or for layout) */
+.form_embed .hbspt-form {
+  max-width: 100%;
+}
