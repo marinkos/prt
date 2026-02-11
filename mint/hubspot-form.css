@@ -1,61 +1,31 @@
-/* HubSpot embedded form – styles loaded via hbspt.forms.create({ css: "..." }) */
+/* HubSpot embedded form v2 – use CSS variables (loaded via hbspt.forms.create({ css: "URL" }) )
+   Ref: https://developers.hubspot.com/docs/cms/start-building/features/forms/forms */
 
-.hs-form {
-  font-family: inherit;
+:root,
+[data-hs-forms-root] {
+  /* Field inputs */
+  --hsf-field-input__background-color: #FFFDF7;
+  --hsf-field-input__border-color: rgba(111, 111, 111, 0.70);
+  --hsf-field-input__border-width: 1px;
+  --hsf-field-input__border-style: solid;
+  --hsf-field-input__border-radius: 0.25rem;
+
+  /* Field textarea (same as input) */
+  --hsf-field-textarea__background-color: #FFFDF7;
+  --hsf-field-textarea__border-color: rgba(111, 111, 111, 0.70);
+  --hsf-field-textarea__border-width: 1px;
+  --hsf-field-textarea__border-style: solid;
+  --hsf-field-textarea__border-radius: 0.25rem;
+
+  /* Button */
+  --hsf-button__background-color: #2DAF5E;
+  --hsf-button__color: #fff;
+  --hsf-button__border-radius: 1.772px;
+  --hsf-button__box-shadow: 2.872px 2.872px 0 0 #005504;
 }
 
-.hs-form label,
-.hs-form .hs-form-field > label {
-  color: #333;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 0.25em;
-}
-
-.hs-form-field {
-  margin-bottom: 1rem;
-}
-
-.hs-form input[type="text"],
-.hs-form input[type="email"],
-.hs-form input[type="tel"],
-.hs-form input[type="number"],
-.hs-form textarea {
-  width: 100%;
-  border: 1px solid rgba(111, 111, 111, 0.70);
-  background: #FFFDF7;
-  border-radius: 0.25rem;
-  padding: 10px 12px;
-  font-size: 16px;
-  box-sizing: border-box;
-}
-
-.hs-form input:focus,
-.hs-form textarea:focus {
-  outline: none;
-  border-color: rgba(111, 111, 111, 0.9);
-}
-
-.hs-form .hs-button,
-.hs-form input[type="submit"] {
-  background: #2DAF5E;
-  color: #fff;
-  border: none;
-  border-radius: 1.772px;
-  box-shadow: 2.872px 2.872px 0 0 #005504;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.hs-form .hs-button:hover,
-.hs-form input[type="submit"]:hover {
-  background: #279a52;
-  box-shadow: 1px 1px 0 0 #005504;
-}
-
-/* Wrapper (use on your page if the form is in the same origin, or for layout) */
-.form_embed .hbspt-form {
-  max-width: 100%;
+/* Button hover: smaller shadow (variables can't do hover, so we override) */
+[data-hs-forms-root] input[type="submit"]:hover,
+[data-hs-forms-root] button[type="submit"]:hover {
+  box-shadow: 1px 1px 0 0 #005504 !important;
 }
