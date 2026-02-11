@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!video) return;
   const videoWrapper = video.closest(".video-wrapper");
   if (!videoWrapper) return;
+  const pageWrapper = document.querySelector(".page-wrapper");
   const videoLinks = document.querySelectorAll(".video_link");
   const fadeDurationMs = 600;
 
@@ -52,6 +53,10 @@ document.addEventListener("DOMContentLoaded", function () {
     video.pause();
     unlockBodyScroll();
     slideInNav();
+    if (pageWrapper) {
+      pageWrapper.style.transition = "opacity " + fadeDurationMs / 1000 + "s ease";
+      pageWrapper.style.opacity = "1";
+    }
     videoWrapper.style.transition = "opacity " + fadeDurationMs / 1000 + "s ease";
     videoWrapper.style.opacity = "0";
     videoWrapper.style.pointerEvents = "none";
@@ -213,6 +218,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }, { passive: false, capture: true });
 
   lockBodyScroll();
+  if (pageWrapper) pageWrapper.style.opacity = "0";
 
   videoWrapper.style.display = "block";
   video.currentTime = 0;
