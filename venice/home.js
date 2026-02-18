@@ -25,25 +25,6 @@ pinSections.forEach((pinSection, index) => {
   });
 });
 
-// Footer z-index: reveal when entering the section with data-footer
-const footerSection = document.querySelector("[data-footer]");
-if (footerSection && footer) {
-  ScrollTrigger.create({
-    trigger: footerSection,
-    start: "top bottom",
-    end: "bottom top",
-    onEnter: () => {
-      footer.style.zIndex = "2";
-    },
-    onLeaveBack: () => {
-      footer.style.zIndex = "0";
-    },
-  });
-}
-
-/* -----------------------------
-   FOOTER REVEAL
------------------------------ */
 const smoothContent = document.querySelector("#smooth-content");
 
 function updateFooterSpacing() {
