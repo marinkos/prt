@@ -30,7 +30,7 @@ const footerSection = document.querySelector("[data-footer]");
 if (footerSection && footer) {
   ScrollTrigger.create({
     trigger: footerSection,
-    start: "bottom bottom",
+    start: "top bottom",
     end: "bottom top",
     onEnter: () => {
       footer.style.zIndex = "2";
