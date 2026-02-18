@@ -8,7 +8,6 @@ pinSections.forEach((pinSection, index) => {
   if (!next) return;
 
   const isFirst = index === 0;
-  const isLast = index === pinSections.length - 1;
 
   ScrollTrigger.create({
     trigger: pinSection,
@@ -22,25 +21,25 @@ pinSections.forEach((pinSection, index) => {
     },
     onEnterBack: () => {
       pinSection.style.zIndex = isFirst ? 1 : 2;
-      // Scrolling back up into the last pinned section → footer goes behind again
-      if (isLast && footer) {
-        footer.style.zIndex = "0";
-      }
-    },
-    onLeave: () => {
-      // Only when we've scrolled past the last pinned section → reveal footer on top
-      if (isLast && footer) {
-        footer.style.zIndex = "10";
-      }
-    },
-    onLeaveBack: () => {
-      // Scrolling up away from footer zone (back into content) → footer behind
-      if (isLast && footer) {
-        footer.style.zIndex = "0";
-      }
     },
   });
 });
+
+// Footer z-index: reveal when entering the section with data-foote
+const footerSection = document.querySelector("[data-foote]");
+if (footerSection && footer) {
+  ScrollTrigger.create({
+    trigger: footerSection,
+    start: "top bottom",
+    end: "bottom top",
+    onEnter: () => {
+      footer.style.zIndex = "10";
+    },
+    onLeaveBack: () => {
+      footer.style.zIndex = "0";
+    },
+  });
+}
 
 /* -----------------------------
    FOOTER REVEAL
