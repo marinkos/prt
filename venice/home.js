@@ -25,6 +25,40 @@ pinSections.forEach((pinSection, index) => {
   });
 });
 
+/* -----------------------------
+   INTRO SECTION: .intro_left pinned, .intro_item sticky at 6rem
+----------------------------- */
+const introLeft = document.querySelector(".intro_left");
+const introRight = document.querySelector(".intro_right");
+if (introLeft && introRight) {
+  const introSection = introLeft.closest("section");
+  const introItems = introRight.querySelectorAll(".intro_item");
+
+  introItems.forEach((item) => {
+    item.style.position = "sticky";
+    item.style.top = "6rem";
+  });
+
+  if (introSection) {
+    ScrollTrigger.create({
+      trigger: introSection,
+      start: "top top",
+      end: "bottom bottom",
+      pin: introLeft,
+      pinSpacing: false,
+      onEnter: () => {
+        introLeft.style.top = "6rem";
+      },
+      onLeave: () => {
+        introLeft.style.top = "";
+      },
+      onLeaveBack: () => {
+        introLeft.style.top = "";
+      },
+    });
+  }
+}
+
 const smoothContent = document.querySelector("#smooth-content");
 
 function updateFooterSpacing() {
