@@ -26,19 +26,18 @@ pinSections.forEach((pinSection, index) => {
 });
 
 /* -----------------------------
-   INTRO SECTION: .intro_left pinned, .intro_item sticky at 6rem
+   INTRO SECTION (ScrollSmoother): .intro_left pinned, .intro_item stuck at 6rem
 ----------------------------- */
+const smoothWrapper = document.querySelector("#smooth-wrapper");
 const introLeft = document.querySelector(".intro_left");
 const introRight = document.querySelector(".intro_right");
-if (introLeft && introRight) {
+if (introLeft && introRight && smoothWrapper) {
   const introSection = introLeft.closest("section");
   const introItems = introRight.querySelectorAll(".intro_item");
+  const scroller = smoothWrapper;
+  const startStick = "top 6rem";
 
-  introItems.forEach((item) => {
-    item.style.position = "sticky";
-    item.style.top = "6rem";
-  });
-
+  // .intro_left: pinned 6rem from top for the section
   if (introSection) {
     ScrollTrigger.create({
       trigger: introSection,
@@ -46,6 +45,7 @@ if (introLeft && introRight) {
       end: "bottom bottom",
       pin: introLeft,
       pinSpacing: false,
+      scroller,
       onEnter: () => {
         introLeft.style.top = "6rem";
       },
@@ -57,6 +57,29 @@ if (introLeft && introRight) {
       },
     });
   }
+
+  // .intro_item: each sticks at 6rem (pin-based, works with ScrollSmoother)
+  introItems.forEach((item, i) => {
+    const nextItem = introItems[i + 1];
+    ScrollTrigger.create({
+      trigger: item,
+      start: startStick,
+      endTrigger: nextItem ? nextItem : introSection,
+      end: nextItem ? "top 6rem" : "bottom top",
+      pin: item,
+      pinSpacing: false,
+      scroller,
+      onEnter: () => {
+        item.style.top = "6rem";
+      },
+      onLeave: () => {
+        item.style.top = "";
+      },
+      onLeaveBack: () => {
+        item.style.top = "";
+      },
+    });
+  });
 }
 
 const smoothContent = document.querySelector("#smooth-content");
