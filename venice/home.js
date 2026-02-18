@@ -1,13 +1,15 @@
 gsap.registerPlugin(ScrollTrigger);
 
+const footer = document.querySelector("#footer");
 const pinSections = gsap.utils.toArray("[data-pin]");
 
 pinSections.forEach((pinSection, index) => {
   const next = pinSection.nextElementSibling;
   if (!next) return;
-  
+
+  const isFirst = index === 0;
   const isLast = index === pinSections.length - 1;
-  
+
   ScrollTrigger.create({
     trigger: pinSection,
     start: "top top",
@@ -16,31 +18,38 @@ pinSections.forEach((pinSection, index) => {
     pin: true,
     pinSpacing: false,
     onEnter: () => {
-      pinSection.style.zIndex = 1;
-      // If this is the last pinned section, bring footer up
-      if (isLast) {
-        footer.style.zIndex = 2;
-      }
+      pinSection.style.zIndex = isFirst ? 1 : 2;
     },
     onEnterBack: () => {
-      pinSection.style.zIndex = 2;
-      // If scrolling back, push footer down again
-      if (isLast) {
-        footer.style.zIndex = 0;
+      pinSection.style.zIndex = isFirst ? 1 : 2;
+      // Scrolling back up into the last pinned section → footer goes behind again
+      if (isLast && footer) {
+        footer.style.zIndex = "0";
       }
-    }
+    },
+    onLeave: () => {
+      // Only when we've scrolled past the last pinned section → reveal footer on top
+      if (isLast && footer) {
+        footer.style.zIndex = "10";
+      }
+    },
+    onLeaveBack: () => {
+      // Scrolling up away from footer zone (back into content) → footer behind
+      if (isLast && footer) {
+        footer.style.zIndex = "0";
+      }
+    },
   });
 });
 
 /* -----------------------------
    FOOTER REVEAL
 ----------------------------- */
-const footer = document.querySelector("#footer");
 const smoothContent = document.querySelector("#smooth-content");
 
 function updateFooterSpacing() {
-  const footerHeight = footer.offsetHeight;
-  smoothContent.style.paddingBottom = `${footerHeight}px`;
+  if (!footer || !smoothContent) return;
+  smoothContent.style.paddingBottom = `${footer.offsetHeight}px`;
 }
 
 window.addEventListener("load", () => {
