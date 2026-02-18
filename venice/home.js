@@ -1,4 +1,3 @@
-<script
 gsap.registerPlugin(ScrollTrigger);
 
 const pinSections = gsap.utils.toArray("[data-pin]");
