@@ -33,7 +33,7 @@ if (footerSection && footer) {
     start: "top bottom",
     end: "bottom top",
     onEnter: () => {
-      footer.style.zIndex = "3";
+      footer.style.zIndex = "2";
     },
     onLeaveBack: () => {
       footer.style.zIndex = "0";
