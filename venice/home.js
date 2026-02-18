@@ -1,6 +1,5 @@
 gsap.registerPlugin(ScrollTrigger);
 
-const footer = document.querySelector("#footer");
 const pinSections = gsap.utils.toArray("[data-pin]");
 
 pinSections.forEach((pinSection, index) => {
@@ -82,23 +81,12 @@ if (introLeft && introRight && smoothWrapper) {
   });
 }
 
-const smoothContent = document.querySelector("#smooth-content");
-
-function updateFooterSpacing() {
-  if (!footer || !smoothContent) return;
-  smoothContent.style.paddingBottom = `${footer.offsetHeight}px`;
-}
-
 window.addEventListener("load", () => {
-  updateFooterSpacing();
   ScrollTrigger.refresh();
 });
 
 let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    updateFooterSpacing();
-    ScrollTrigger.refresh();
-  }, 250);
+  resizeTimer = setTimeout(() => ScrollTrigger.refresh(), 250);
 });
