@@ -1,3 +1,4 @@
+/* text scramble */
 (function () {
   "use strict";
 
@@ -11,7 +12,6 @@
   const randChar = (pool)     => pool[Math.floor(Math.random() * pool.length)];
 
   function scrambleText(el, opts) {
-    // Cache original text so repeats start clean
     const original = el.dataset.scrambleOriginal || el.textContent;
     el.dataset.scrambleOriginal = original;
 
@@ -20,7 +20,6 @@
     const chars    = original.split("");
     const total    = chars.length;
 
-    // Each character gets a staggered lock-in time (roughly left-to-right)
     const lockTimes = chars
       .map((_, i) => rand(duration * (i / total) * 0.4, duration * 0.9))
       .sort((a, b) => a - b);
@@ -49,7 +48,7 @@
       if (!resolved.every(Boolean)) {
         el._scrambleRaf = requestAnimationFrame(render);
       } else {
-        el.textContent = original; // guarantee exact final text
+        el.textContent = original;
       }
     }
 
@@ -84,5 +83,104 @@
     document.addEventListener("DOMContentLoaded", init);
   } else {
     init();
+  }
+})();
+
+/* cookies */
+(function () {
+  function run() {
+    const STORAGE_KEY = "cookie_consent";
+    const banner = document.getElementById("cookieBanner");
+
+    if (!banner || localStorage.getItem(STORAGE_KEY)) return;
+
+    banner.style.display = "block";
+
+    banner.addEventListener("click", function (e) {
+      const action = e.target.closest("[data-action]")?.dataset.action;
+      if (!action) return;
+
+      e.preventDefault();
+      localStorage.setItem(STORAGE_KEY, action === "accept" ? "accepted" : "dismissed");
+      banner.style.display = "none";
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
+
+/* nav back buttons */
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".nav_back-button").forEach(function (btn) {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const dropdown = btn.closest(".w-dropdown");
+      if (!dropdown) return;
+
+      dropdown.classList.remove("w--nav-dropdown-open");
+
+      const toggle = dropdown.querySelector(".w-dropdown-toggle");
+      if (toggle) {
+        toggle.classList.remove("w--open", "w--nav-dropdown-toggle-open");
+        toggle.setAttribute("aria-expanded", "false");
+      }
+
+      const list = dropdown.querySelector(".w-dropdown-list");
+      if (list) {
+        list.classList.remove("w--open", "w--nav-dropdown-list-open");
+      }
+    });
+  });
+});
+
+/* nav dropdown dot */
+(function () {
+  function run() {
+    if (window.innerWidth < 992) return;
+
+    const indicator = document.createElement('div');
+    indicator.style.cssText = `
+      position: fixed;
+      width: 0.25rem;
+      height: 0.25rem;
+      background-color: #0D70FF;
+      transition: left 0.15s cubic-bezier(0.4, 0, 0.2, 1), top 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9999;
+    `;
+    document.body.appendChild(indicator);
+
+    function moveTo(toggle) {
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const rect = toggle.getBoundingClientRect();
+      indicator.style.left = (rect.left + rect.width / 2 - (0.125 * rem)) + 'px';
+      indicator.style.top  = (rect.bottom - (0.25 * rem)) + 'px';
+      indicator.style.opacity = '1';
+    }
+
+    function checkActive() {
+      const open = document.querySelector('.nav_dropdown-toggle.w--open');
+      if (open) {
+        moveTo(open);
+      } else {
+        indicator.style.opacity = '0';
+      }
+    }
+
+    const observer = new MutationObserver(checkActive);
+    document.querySelectorAll('.nav_dropdown-toggle').forEach(el => {
+      observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
   }
 })();
