@@ -184,3 +184,63 @@ document.addEventListener("DOMContentLoaded", function () {
     run();
   }
 })();
+
+/* float up (GSAP) */
+(function () {
+  const BATCH_WINDOW_MS = 150;
+  const STAGGER_MS      = 90;
+  const THRESHOLD       = 0.15;
+
+  function run() {
+    if (typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") return;
+    gsap.registerPlugin(ScrollTrigger);
+
+    const els = document.querySelectorAll("[data-float]");
+    if (!els.length) return;
+
+    let batchTimer   = null;
+    let currentBatch = [];
+
+    gsap.set(els, { y: 20, opacity: 0 });
+
+    function flushBatch() {
+      currentBatch.sort((a, b) => {
+        const ra = a.getBoundingClientRect();
+        const rb = b.getBoundingClientRect();
+        if (Math.abs(ra.top - rb.top) > 10) return ra.top - rb.top;
+        return ra.left - rb.left;
+      });
+
+      gsap.to(currentBatch, {
+        y: 0,
+        opacity: 1,
+        duration: 0.5,
+        stagger: STAGGER_MS / 1000,
+        ease: "power2.out",
+        overwrite: true,
+      });
+
+      currentBatch = [];
+      batchTimer   = null;
+    }
+
+    els.forEach((el) => {
+      ScrollTrigger.create({
+        trigger: el,
+        start: "top " + (100 - THRESHOLD * 100) + "%",
+        once: true,
+        onEnter: () => {
+          currentBatch.push(el);
+          clearTimeout(batchTimer);
+          batchTimer = setTimeout(flushBatch, BATCH_WINDOW_MS);
+        },
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
