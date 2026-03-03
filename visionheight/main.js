@@ -189,7 +189,6 @@ document.addEventListener("DOMContentLoaded", function () {
 (function () {
   const BATCH_WINDOW_MS = 150;
   const STAGGER_MS      = 90;
-  const THRESHOLD       = 0.15;
 
   function run() {
     if (typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") return;
@@ -201,9 +200,10 @@ document.addEventListener("DOMContentLoaded", function () {
     let batchTimer   = null;
     let currentBatch = [];
 
-    gsap.set(els, { y: 20, opacity: 0 });
+    gsap.set(els, { y: 20, autoAlpha: 0 });
 
     function flushBatch() {
+      if (!currentBatch.length) return;
       currentBatch.sort((a, b) => {
         const ra = a.getBoundingClientRect();
         const rb = b.getBoundingClientRect();
@@ -213,7 +213,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       gsap.to(currentBatch, {
         y: 0,
-        opacity: 1,
+        autoAlpha: 1,
         duration: 0.5,
         stagger: STAGGER_MS / 1000,
         ease: "power2.out",
@@ -227,7 +227,7 @@ document.addEventListener("DOMContentLoaded", function () {
     els.forEach((el) => {
       ScrollTrigger.create({
         trigger: el,
-        start: "top " + (100 - THRESHOLD * 100) + "%",
+        start: "top 90%",
         once: true,
         onEnter: () => {
           currentBatch.push(el);
@@ -235,6 +235,10 @@ document.addEventListener("DOMContentLoaded", function () {
           batchTimer = setTimeout(flushBatch, BATCH_WINDOW_MS);
         },
       });
+    });
+
+    requestAnimationFrame(function () {
+      ScrollTrigger.refresh();
     });
   }
 
