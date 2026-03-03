@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 })();
 
-/* float up (GSAP) */
+/* float up */
 (function () {
   const BATCH_WINDOW_MS = 150;
   const STAGGER_MS      = 90;
@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let batchTimer   = null;
     let currentBatch = [];
 
-    gsap.set(els, { y: 20, autoAlpha: 0 });
+    gsap.set(els, { y: 16 });
 
     function flushBatch() {
       if (!currentBatch.length) return;
@@ -213,10 +213,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
       gsap.to(currentBatch, {
         y: 0,
-        autoAlpha: 1,
-        duration: 0.5,
+        duration: 0.8,
         stagger: STAGGER_MS / 1000,
-        ease: "power2.out",
+        ease: "power3.out",
         overwrite: true,
       });
 
