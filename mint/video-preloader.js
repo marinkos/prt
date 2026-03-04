@@ -13,6 +13,12 @@ document.addEventListener("DOMContentLoaded", function () {
   let scrollTimeout = null;
   let lastScrollY = 0;
   let isHidden = false;
+  let lastScrollDirection = null;
+  let scrollDirectionCount = 0;
+
+  const MIN_SCROLL_DELTA_PX = 15;
+  const MIN_WHEEL_DELTA = 15;
+  const DIRECTION_CONFIRM_COUNT = 2;
 
   const parts = [
     { part: 1, time: 0, endTime: 5.1 },
@@ -172,6 +178,20 @@ document.addEventListener("DOMContentLoaded", function () {
   videoLinks.forEach((link) => link.addEventListener("click", handleLinkClick));
 
   // Playback on scroll/wheel: scroll down = 3x play, scroll up = rewind, stop = 1x
+  // Only react after direction is "confirmed" (same direction N times) to avoid jitter restarting video.
+  function commitScrollDirection(isScrollingDown) {
+    if (lastScrollDirection === (isScrollingDown ? "down" : "up")) {
+      scrollDirectionCount++;
+    } else {
+      lastScrollDirection = isScrollingDown ? "down" : "up";
+      scrollDirectionCount = 1;
+    }
+    if (scrollDirectionCount < DIRECTION_CONFIRM_COUNT) return;
+    scrollDirectionCount = 0;
+    lastScrollDirection = null;
+    handleScrollOrWheel(isScrollingDown);
+  }
+
   function handleScrollOrWheel(isScrollingDown) {
     if (isHidden || isClickAnimating) return;
     clearTimeout(scrollTimeout);
@@ -201,20 +221,21 @@ document.addEventListener("DOMContentLoaded", function () {
       video.play();
     }, 150);
   }
+
   window.addEventListener("scroll", () => {
     if (isHidden) return;
     const currentScrollY = window.scrollY;
-    const isScrollingDown = currentScrollY > lastScrollY;
     const scrollSpeed = Math.abs(currentScrollY - lastScrollY);
+    if (scrollSpeed < MIN_SCROLL_DELTA_PX) return;
+    const isScrollingDown = currentScrollY > lastScrollY;
     lastScrollY = currentScrollY;
-    if (scrollSpeed === 0) return;
-    handleScrollOrWheel(isScrollingDown);
+    commitScrollDirection(isScrollingDown);
   });
   window.addEventListener("wheel", (e) => {
-    if (!isHidden && e.deltaY !== 0) {
-      e.preventDefault();
-      handleScrollOrWheel(e.deltaY > 0);
-    }
+    if (isHidden) return;
+    if (Math.abs(e.deltaY) < MIN_WHEEL_DELTA) return;
+    e.preventDefault();
+    commitScrollDirection(e.deltaY > 0);
   }, { passive: false, capture: true });
 
   lockBodyScroll();
