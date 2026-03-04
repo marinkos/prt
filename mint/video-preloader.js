@@ -177,8 +177,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   videoLinks.forEach((link) => link.addEventListener("click", handleLinkClick));
 
-  // Playback on scroll/wheel: scroll down = 3x play, scroll up = rewind, stop = 1x
-  // Only react after direction is "confirmed" (same direction N times) to avoid jitter restarting video.
+  // Playback on scroll/wheel: scroll down only = 3x play forward, scroll up does nothing. Stop = 1x.
   function commitScrollDirection(isScrollingDown) {
     if (lastScrollDirection === (isScrollingDown ? "down" : "up")) {
       scrollDirectionCount++;
@@ -195,27 +194,9 @@ document.addEventListener("DOMContentLoaded", function () {
   function handleScrollOrWheel(isScrollingDown) {
     if (isHidden || isClickAnimating) return;
     clearTimeout(scrollTimeout);
-    if (isScrollingDown) {
-      video.playbackRate = speedUpMultiplier;
-      if (video.paused) video.play();
-    } else {
-      video.pause();
-      const rewindSpeed = speedUpMultiplier / 60;
-      function stepRewind() {
-        if (video.currentTime <= 0) {
-          video.currentTime = 0;
-          scrollTimeout = setTimeout(() => {
-            video.playbackRate = normalPlaybackRate;
-            video.play();
-          }, 150);
-          return;
-        }
-        video.currentTime = Math.max(0, video.currentTime - rewindSpeed);
-        requestAnimationFrame(stepRewind);
-      }
-      stepRewind();
-      return;
-    }
+    if (!isScrollingDown) return;
+    video.playbackRate = speedUpMultiplier;
+    if (video.paused) video.play();
     scrollTimeout = setTimeout(() => {
       video.playbackRate = normalPlaybackRate;
       video.play();
