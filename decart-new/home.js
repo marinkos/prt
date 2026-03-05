@@ -16,6 +16,8 @@
         position: relative;
         overflow: hidden;
         display: block;
+        width: fit-content;
+        max-width: 100%;
       }
       [data-reveal] .reveal-line-wrapper .reveal-bar {
         position: absolute;
@@ -26,7 +28,7 @@
         background: ${BAR_COLOR};
         border-radius: ${BAR_RADIUS}px;
         transform: skewX(${BAR_SKEW_DEG}deg);
-        transform-origin: left center;
+        transform-origin: right center;
         pointer-events: none;
       }
     `;
@@ -68,9 +70,9 @@
             observer.unobserve(entry.target);
             gsap.to(bars, {
               scaleX: 0,
-              duration: 0.7,
+              duration: 1.15,
               ease: 'power2.out',
-              stagger: 0.08,
+              stagger: 0.12,
             });
           });
         },
