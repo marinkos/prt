@@ -6,7 +6,7 @@
   }
 
   const BAR_COLOR = '#2548F6';
-  const BAR_SKEW_DEG = 8;
+  const BAR_SKEW_DEG = -8;
   const BAR_RADIUS = 10;
   /* Extra space so skewed bar isn't clipped (skewX extends ~height*tan(8deg) each side) */
   const BAR_SKEW_PADDING = 10;
