@@ -6,7 +6,7 @@
   }
 
   const BAR_COLOR = '#2548F6';
-  const BAR_SKEW_DEG = 8;
+  const BAR_SKEW_DEG = 0;
   const BAR_RADIUS = 10;
 
   function createBarStyles() {
