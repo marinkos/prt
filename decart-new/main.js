@@ -68,5 +68,6 @@
     el.textContent = '(X ' + e.clientX.toFixed(1) + ', Y ' + e.clientY.toFixed(1) + ')';
     el.style.left = e.clientX + 'px';
     el.style.top = e.clientY + 'px';
+    el.style.display = 'block';
   });
 })();
