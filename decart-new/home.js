@@ -14,6 +14,10 @@
   function createBarStyles() {
     const style = document.createElement('style');
     style.textContent = `
+      [data-reveal] {
+        display: block;
+        text-align: center;
+      }
       [data-reveal] .reveal-line-wrapper {
         position: relative;
         overflow: visible;
@@ -23,6 +27,7 @@
         margin-inline: auto;
         padding-inline: ${BAR_SKEW_PADDING}px;
         padding-block: 2px;
+        text-align: inherit;
       }
       [data-reveal] .reveal-line-wrapper .reveal-bar {
         position: absolute;
