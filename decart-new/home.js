@@ -39,9 +39,9 @@
             observer.unobserve(entry.target);
             gsap.to(bars, {
               scaleX: 0,
-              duration: 1.15,
+              duration: 0.6,
               ease: 'power2.out',
-              stagger: 0.12,
+              stagger: 0.06,
             });
           });
         },
