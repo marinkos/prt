@@ -6,18 +6,23 @@
   }
 
   const BAR_COLOR = '#2548F6';
-  const BAR_SKEW_DEG = 0;
+  const BAR_SKEW_DEG = 8;
   const BAR_RADIUS = 10;
+  /* Extra space so skewed bar isn't clipped (skewX extends ~height*tan(8deg) each side) */
+  const BAR_SKEW_PADDING = 10;
 
   function createBarStyles() {
     const style = document.createElement('style');
     style.textContent = `
       [data-reveal] .reveal-line-wrapper {
         position: relative;
-        overflow: hidden;
+        overflow: visible;
         display: block;
         width: fit-content;
         max-width: 100%;
+        margin-inline: auto;
+        padding-inline: ${BAR_SKEW_PADDING}px;
+        padding-block: 2px;
       }
       [data-reveal] .reveal-line-wrapper .reveal-bar {
         position: absolute;
@@ -83,9 +88,17 @@
     });
   }
 
+  function runAfterFonts() {
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(initMarkerReveal);
+    } else {
+      initMarkerReveal();
+    }
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMarkerReveal);
+    document.addEventListener('DOMContentLoaded', runAfterFonts);
   } else {
-    initMarkerReveal();
+    runAfterFonts();
   }
 })();
