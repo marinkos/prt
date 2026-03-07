@@ -1,3 +1,38 @@
+/* Silicone video: play only when in view */
+(function () {
+  function initSiliconeVideo() {
+    const container = document.getElementById('siliconeVideo') || document.querySelector('.silicone_video');
+    if (!container) return;
+
+    const video = container.querySelector('video');
+    if (!video) return;
+
+    /* Start paused; IntersectionObserver will play when in view */
+    video.pause();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+          }
+        });
+      },
+      { threshold: 0.25, rootMargin: '0px' }
+    );
+
+    observer.observe(container);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSiliconeVideo);
+  } else {
+    initSiliconeVideo();
+  }
+})();
+
 /* Scroll Marker Reveal — [data-reveal] (GSAP + SplitText only) */
 (function () {
   if (typeof gsap === 'undefined' || typeof SplitText === 'undefined') {
@@ -31,7 +66,8 @@
 
       gsap.set(bars, { scaleX: 1 });
 
-      /* Reveal when block enters viewport (no ScrollTrigger, uses IntersectionObserver) */
+      /* Reveal when block enters viewport, with a short delay before animation starts */
+      const revealDelay = 0.3; /* seconds after in-view before reveal starts */
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -42,6 +78,7 @@
               duration: 0.6,
               ease: 'power2.out',
               stagger: 0.06,
+              delay: revealDelay,
             });
           });
         },
