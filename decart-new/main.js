@@ -71,23 +71,22 @@
     el.style.display = 'block';
   });
 
-  function isLink(node) {
-    if (!node || !node.nodeType) return false;
-    if (node.tagName === 'A' || node.getAttribute('href')) return true;
-    var p = node.parentElement;
+  function shouldHideCursor(node) {
+    if (!node) return false;
+    var p = node.nodeType === 1 ? node : node.parentElement;
     while (p) {
-      if (p.tagName === 'A' || p.getAttribute('href')) return true;
+      if (p.classList && (p.classList.contains('nav_menu_link') || p.classList.contains('button') || p.classList.contains('footer_nav-link'))) return true;
       p = p.parentElement;
     }
     return false;
   }
 
   document.addEventListener('mouseover', function (e) {
-    if (isLink(e.target)) el.style.display = 'none';
+    if (shouldHideCursor(e.target)) el.style.display = 'none';
   });
   document.addEventListener('mouseout', function (e) {
-    var fromLink = isLink(e.target);
-    var toLink = e.relatedTarget && isLink(e.relatedTarget);
-    if (fromLink && !toLink) el.style.display = 'block';
+    var from = shouldHideCursor(e.target);
+    var to = e.relatedTarget && shouldHideCursor(e.relatedTarget);
+    if (from && !to) el.style.display = 'block';
   });
 })();
