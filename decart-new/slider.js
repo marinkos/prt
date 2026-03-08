@@ -134,12 +134,24 @@
       }
 
       function updateCarousel() {
-        currentRotation = -(rotateAmount * currentIndex);
-        var targetRotation = currentRotation + 'deg';
+        var targetRotation = -(rotateAmount * currentIndex);
         var el = wrapEl[0];
         var currentValue = el ? getComputedStyle(el).getPropertyValue('--3d-carousel-rotate').trim() : '';
-        var startRotation = currentValue || (currentRotation + 'deg');
-        gsap.fromTo(wrapEl, { '--3d-carousel-rotate': startRotation }, { '--3d-carousel-rotate': targetRotation, duration: 0.5, ease: 'power2.inOut' });
+        var currentDeg = parseFloat(currentValue) || currentRotation;
+        var delta = targetRotation - currentDeg;
+        while (delta > 180) delta -= 360;
+        while (delta < -180) delta += 360;
+        var endDeg = currentDeg + delta;
+        var endRotation = endDeg + 'deg';
+        gsap.fromTo(wrapEl, { '--3d-carousel-rotate': currentValue || (currentDeg + 'deg') }, {
+          '--3d-carousel-rotate': endRotation,
+          duration: 0.5,
+          ease: 'power2.inOut',
+          onComplete: function () {
+            wrapEl.css('--3d-carousel-rotate', targetRotation + 'deg');
+            currentRotation = targetRotation;
+          }
+        });
       }
     });
   }
