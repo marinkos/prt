@@ -71,10 +71,23 @@
     el.style.display = 'block';
   });
 
+  function isLink(node) {
+    if (!node || !node.nodeType) return false;
+    if (node.tagName === 'A' || node.getAttribute('href')) return true;
+    var p = node.parentElement;
+    while (p) {
+      if (p.tagName === 'A' || p.getAttribute('href')) return true;
+      p = p.parentElement;
+    }
+    return false;
+  }
+
   document.addEventListener('mouseover', function (e) {
-    if (e.target.closest('a')) el.style.display = 'none';
+    if (isLink(e.target)) el.style.display = 'none';
   });
   document.addEventListener('mouseout', function (e) {
-    if (e.target.closest('a') && !e.relatedTarget?.closest('a')) el.style.display = 'block';
+    var fromLink = isLink(e.target);
+    var toLink = e.relatedTarget && isLink(e.relatedTarget);
+    if (fromLink && !toLink) el.style.display = 'block';
   });
 })();
