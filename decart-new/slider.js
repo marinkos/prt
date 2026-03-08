@@ -133,11 +133,11 @@
 
       function updateCarousel() {
         currentRotation = -(rotateAmount * currentIndex);
-        gsap.to(wrapEl, {
-          '--3d-carousel-rotate': currentRotation,
-          duration: 0.5,
-          ease: 'power2.inOut'
-        });
+        var targetRotation = currentRotation + 'deg';
+        var el = wrapEl[0];
+        var currentValue = el ? getComputedStyle(el).getPropertyValue('--3d-carousel-rotate').trim() : '';
+        var startRotation = currentValue || (currentRotation + 'deg');
+        gsap.fromTo(wrapEl, { '--3d-carousel-rotate': startRotation }, { '--3d-carousel-rotate': targetRotation, duration: 0.5, ease: 'power2.inOut' });
       }
     });
   }
