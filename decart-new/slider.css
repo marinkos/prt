@@ -1,0 +1,29 @@
+/* 3D Carousel — radius/gap are set by slider.js (closed circle, no gap) */
+[carousel="wrap"] {
+  will-change: contents;
+  --3d-carousel-item-width: 40vw;
+  --3d-carousel-rotate: 0deg;
+  --3d-carousel-rotate-x: 0deg;
+  --3d-carousel-z: 0px;
+}
+
+@media screen and (max-width: 991px) {
+  [carousel="wrap"] {
+    --3d-carousel-item-width: 70vw;
+  }
+}
+
+[carousel="wrap"] > div {
+  transform-style: preserve-3d;
+  transform: translate3d(0px, 0px, var(--3d-carousel-z)) rotateX(var(--3d-carousel-rotate-x)) rotateY(var(--3d-carousel-rotate));
+}
+
+[carousel="wrap"] > div > div {
+  width: var(--3d-carousel-item-width);
+}
+
+/* hide spacer so it doesn’t take a slot (slider only positions .carousel_item) */
+.carousel_ratio {
+  visibility: hidden;
+  pointer-events: none;
+}

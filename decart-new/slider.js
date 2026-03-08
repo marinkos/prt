@@ -6,7 +6,7 @@
     $("[carousel='component']").each(function () {
       var componentEl = $(this);
       var wrapEl = componentEl.find("[carousel='wrap']");
-      var itemEl = wrapEl.children().children();
+      var itemEl = wrapEl.find('.carousel_item');
       var nextEl = componentEl.find("[carousel='next']");
       var prevEl = componentEl.find("[carousel='prev']");
       var numSlides = itemEl.length;
