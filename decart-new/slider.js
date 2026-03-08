@@ -9,10 +9,12 @@
       var itemEl = wrapEl.children().children();
       var nextEl = componentEl.find("[carousel='next']");
       var prevEl = componentEl.find("[carousel='prev']");
-      var rotateAmount = 360 / itemEl.length;
-      var zTranslate = 2 * Math.tan((rotateAmount / 2) * (Math.PI / 180));
-      var negTranslate = 'calc(var(--3d-carousel-item-width) / -' + zTranslate + ' - var(--3d-carousel-gap))';
-      var posTranslate = 'calc(var(--3d-carousel-item-width) / ' + zTranslate + ' + var(--3d-carousel-gap))';
+      var numSlides = itemEl.length;
+      var rotateAmount = 360 / numSlides;
+      /* Radius so chord between adjacent items = item width (circle closes, no gap) */
+      var radiusDivisor = 2 * Math.sin((rotateAmount / 2) * (Math.PI / 180));
+      var negTranslate = 'calc(var(--3d-carousel-item-width) / -' + radiusDivisor + ')';
+      var posTranslate = 'calc(var(--3d-carousel-item-width) / ' + radiusDivisor + ')';
 
       var currentIndex = 0;
       var isDragging = false;
