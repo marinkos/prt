@@ -70,4 +70,11 @@
     el.style.top = e.clientY + 'px';
     el.style.display = 'block';
   });
+
+  document.addEventListener('mouseover', function (e) {
+    if (e.target.closest('a')) el.style.display = 'none';
+  });
+  document.addEventListener('mouseout', function (e) {
+    if (e.target.closest('a') && !e.relatedTarget?.closest('a')) el.style.display = 'block';
+  });
 })();
