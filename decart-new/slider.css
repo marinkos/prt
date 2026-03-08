@@ -4,6 +4,7 @@
   --3d-carousel-item-width: 40vw;
   --3d-carousel-rotate: 0deg;
   --3d-carousel-rotate-x: 0deg;
+  --3d-carousel-mouse-offset: 0deg;
   --3d-carousel-z: 0px;
 }
 
@@ -15,7 +16,7 @@
 
 [carousel="wrap"] > div {
   transform-style: preserve-3d;
-  transform: translate3d(0px, 0px, var(--3d-carousel-z)) rotateX(var(--3d-carousel-rotate-x)) rotateY(var(--3d-carousel-rotate));
+  transform: translate3d(0px, 0px, var(--3d-carousel-z)) rotateX(var(--3d-carousel-rotate-x)) rotateY(calc(var(--3d-carousel-rotate) + var(--3d-carousel-mouse-offset)));
 }
 
 [carousel="wrap"] > div > div {

@@ -34,6 +34,7 @@
         onComplete: function () {
           setupNavigation();
           setupDragging();
+          setupMouseFollow();
         }
       });
       introTl.to(wrapEl, { opacity: 1, duration: 0.3 });
@@ -67,11 +68,34 @@
         });
       }
 
+      var mouseOffset = 0;
+      var targetMouseOffset = 0;
+      var mouseSensitivity = 12;
+
+      function setupMouseFollow() {
+        $(document).on('mousemove.carouselMouse', function (e) {
+          if (isDragging) return;
+          var n = (e.clientX / window.innerWidth - 0.5) * 2;
+          targetMouseOffset = n * mouseSensitivity;
+        });
+        function tick() {
+          if (!isDragging) {
+            mouseOffset += (targetMouseOffset - mouseOffset) * 0.08;
+            wrapEl.css('--3d-carousel-mouse-offset', mouseOffset.toFixed(2) + 'deg');
+          }
+          requestAnimationFrame(tick);
+        }
+        tick();
+      }
+
       function setupDragging() {
         wrapEl.on('mousedown', function (e) {
           isDragging = true;
           startX = e.clientX;
+          targetMouseOffset = 0;
+          mouseOffset = 0;
           wrapEl.css('cursor', 'grabbing');
+          wrapEl.css('--3d-carousel-mouse-offset', '0deg');
           e.preventDefault();
         });
 
