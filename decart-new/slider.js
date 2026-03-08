@@ -73,7 +73,7 @@
       var mouseOffsetX = 0;
       var targetMouseOffsetX = 0;
       var mouseSensitivity = 12;
-      var mouseMaxDeg = 15;
+      var mouseMaxDeg = 7;
 
       function setupMouseFollow() {
         $(document).on('mousemove.carouselMouse', function (e) {
