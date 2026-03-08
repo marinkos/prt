@@ -73,14 +73,15 @@
       var mouseOffsetX = 0;
       var targetMouseOffsetX = 0;
       var mouseSensitivity = 12;
+      var mouseMaxDeg = 15;
 
       function setupMouseFollow() {
         $(document).on('mousemove.carouselMouse', function (e) {
           if (isDragging) return;
           var nX = (e.clientX / window.innerWidth - 0.5) * 2;
           var nY = (e.clientY / window.innerHeight - 0.5) * 2;
-          targetMouseOffset = nX * mouseSensitivity;
-          targetMouseOffsetX = -nY * mouseSensitivity;
+          targetMouseOffset = Math.max(-mouseMaxDeg, Math.min(mouseMaxDeg, nX * mouseSensitivity));
+          targetMouseOffsetX = Math.max(-mouseMaxDeg, Math.min(mouseMaxDeg, -nY * mouseSensitivity));
         });
         function tick() {
           if (!isDragging) {
