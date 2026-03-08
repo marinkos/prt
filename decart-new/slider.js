@@ -70,18 +70,24 @@
 
       var mouseOffset = 0;
       var targetMouseOffset = 0;
+      var mouseOffsetX = 0;
+      var targetMouseOffsetX = 0;
       var mouseSensitivity = 12;
 
       function setupMouseFollow() {
         $(document).on('mousemove.carouselMouse', function (e) {
           if (isDragging) return;
-          var n = (e.clientX / window.innerWidth - 0.5) * 2;
-          targetMouseOffset = n * mouseSensitivity;
+          var nX = (e.clientX / window.innerWidth - 0.5) * 2;
+          var nY = (e.clientY / window.innerHeight - 0.5) * 2;
+          targetMouseOffset = nX * mouseSensitivity;
+          targetMouseOffsetX = -nY * mouseSensitivity;
         });
         function tick() {
           if (!isDragging) {
             mouseOffset += (targetMouseOffset - mouseOffset) * 0.08;
+            mouseOffsetX += (targetMouseOffsetX - mouseOffsetX) * 0.08;
             wrapEl.css('--3d-carousel-mouse-offset', mouseOffset.toFixed(2) + 'deg');
+            wrapEl.css('--3d-carousel-mouse-offset-x', mouseOffsetX.toFixed(2) + 'deg');
           }
           requestAnimationFrame(tick);
         }
@@ -94,8 +100,11 @@
           startX = e.clientX;
           targetMouseOffset = 0;
           mouseOffset = 0;
+          targetMouseOffsetX = 0;
+          mouseOffsetX = 0;
           wrapEl.css('cursor', 'grabbing');
           wrapEl.css('--3d-carousel-mouse-offset', '0deg');
+          wrapEl.css('--3d-carousel-mouse-offset-x', '0deg');
           e.preventDefault();
         });
 
