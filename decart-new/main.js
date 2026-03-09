@@ -59,75 +59,15 @@
   }
 })();
 
-/* Cursor coordinates — real on page; fake drift when pointer is over an iframe */
+/* Cursor coordinates — hide over iframe via Webflow interaction if needed */
 (function () {
   var el = document.getElementById('cursor-coords');
   if (!el) return;
 
-  var lastX = 0;
-  var lastY = 0;
-  var fakeX = 0;
-  var fakeY = 0;
-  var fakeRaf = null;
-
-  function updateCoords(x, y) {
-    el.textContent = '(X ' + x.toFixed(1) + ', Y ' + y.toFixed(1) + ')';
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    el.style.display = 'block';
-  }
-
-  function stopFake() {
-    if (fakeRaf != null) {
-      cancelAnimationFrame(fakeRaf);
-      fakeRaf = null;
-    }
-  }
-
-  function runFake() {
-    fakeX += (Math.random() - 0.5) * 2;
-    fakeY += (Math.random() - 0.5) * 2;
-    updateCoords(fakeX, fakeY);
-    fakeRaf = requestAnimationFrame(runFake);
-  }
-
-  function startFake() {
-    stopFake();
-    fakeX = lastX;
-    fakeY = lastY;
-    runFake();
-  }
-
   document.addEventListener('mousemove', function (e) {
-    stopFake();
-    lastX = e.clientX;
-    lastY = e.clientY;
-    updateCoords(lastX, lastY);
-  });
-
-  /* When cursor leaves and goes to an iframe: relatedTarget can be iframe, or null (cross-origin). */
-  document.addEventListener('mouseout', function (e) {
-    var target = e.relatedTarget;
-    if (target && target.nodeType && (target.tagName === 'IFRAME' || (target.closest && target.closest('iframe')))) {
-      startFake();
-      return;
-    }
-    /* Cross-origin iframe often gives relatedTarget null; check if pointer is now over an iframe */
-    if (!target && (lastX || lastY)) {
-      requestAnimationFrame(function () {
-        var el = document.elementFromPoint(lastX, lastY);
-        if (el && el.tagName === 'IFRAME') startFake();
-      });
-    }
-  });
-
-  document.querySelectorAll('iframe').forEach(function (frame) {
-    frame.addEventListener('mouseenter', startFake);
-    /* When cursor moves from wrapper (or sibling) into iframe, parent gets mouseout with relatedTarget = iframe */
-    if (frame.parentNode) {
-      frame.parentNode.addEventListener('mouseout', function (e) {
-        if (e.relatedTarget === frame) startFake();
-      });
-    }
+    el.textContent = '(X ' + e.clientX.toFixed(1) + ', Y ' + e.clientY.toFixed(1) + ')';
+    el.style.left = e.clientX + 'px';
+    el.style.top = e.clientY + 'px';
+    el.style.display = 'block';
   });
 })();
