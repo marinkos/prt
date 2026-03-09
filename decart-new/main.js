@@ -91,6 +91,13 @@
     fakeRaf = requestAnimationFrame(runFake);
   }
 
+  function startFake() {
+    stopFake();
+    fakeX = lastX;
+    fakeY = lastY;
+    runFake();
+  }
+
   document.addEventListener('mousemove', function (e) {
     stopFake();
     lastX = e.clientX;
@@ -98,12 +105,29 @@
     updateCoords(lastX, lastY);
   });
 
+  /* When cursor leaves and goes to an iframe: relatedTarget can be iframe, or null (cross-origin). */
+  document.addEventListener('mouseout', function (e) {
+    var target = e.relatedTarget;
+    if (target && target.nodeType && (target.tagName === 'IFRAME' || (target.closest && target.closest('iframe')))) {
+      startFake();
+      return;
+    }
+    /* Cross-origin iframe often gives relatedTarget null; check if pointer is now over an iframe */
+    if (!target && (lastX || lastY)) {
+      requestAnimationFrame(function () {
+        var el = document.elementFromPoint(lastX, lastY);
+        if (el && el.tagName === 'IFRAME') startFake();
+      });
+    }
+  });
+
   document.querySelectorAll('iframe').forEach(function (frame) {
-    frame.addEventListener('mouseenter', function (e) {
-      stopFake();
-      fakeX = lastX;
-      fakeY = lastY;
-      runFake();
-    });
+    frame.addEventListener('mouseenter', startFake);
+    /* When cursor moves from wrapper (or sibling) into iframe, parent gets mouseout with relatedTarget = iframe */
+    if (frame.parentNode) {
+      frame.parentNode.addEventListener('mouseout', function (e) {
+        if (e.relatedTarget === frame) startFake();
+      });
+    }
   });
 })();
