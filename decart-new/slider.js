@@ -11,10 +11,10 @@
       var prevEl = componentEl.find("[carousel='prev']");
       var numSlides = itemEl.length;
       var rotateAmount = 360 / numSlides;
-      /* Radius so chord between adjacent items = item width (circle closes, no gap) */
+      /* Radius: base closed circle + optional gap (--3d-carousel-gap in CSS) */
       var radiusDivisor = 2 * Math.sin((rotateAmount / 2) * (Math.PI / 180));
-      var negTranslate = 'calc(var(--3d-carousel-item-width) / -' + radiusDivisor + ')';
-      var posTranslate = 'calc(var(--3d-carousel-item-width) / ' + radiusDivisor + ')';
+      var negTranslate = 'calc(var(--3d-carousel-item-width) / -' + radiusDivisor + ' - var(--3d-carousel-gap, 0px))';
+      var posTranslate = 'calc(var(--3d-carousel-item-width) / ' + radiusDivisor + ' + var(--3d-carousel-gap, 0px))';
 
       var currentIndex = 0;
       var isDragging = false;

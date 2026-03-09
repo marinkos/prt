@@ -2,6 +2,7 @@
 [carousel="wrap"] {
   will-change: contents;
   --3d-carousel-item-width: 40vw;
+  --3d-carousel-gap: 0; /* increase for space between slides (e.g. 2vw, 20px) */
   --3d-carousel-rotate: 0deg;
   --3d-carousel-rotate-x: 0deg;
   --3d-carousel-mouse-offset: 0deg;
@@ -12,6 +13,7 @@
 @media screen and (max-width: 991px) {
   [carousel="wrap"] {
     --3d-carousel-item-width: 70vw;
+    /* --3d-carousel-gap: 1vw; optional for tablet */
   }
 }
 
