@@ -11,10 +11,12 @@
       var prevEl = componentEl.find("[carousel='prev']");
       var numSlides = itemEl.length;
       var rotateAmount = 360 / numSlides;
-      /* Radius: base closed circle + optional gap (--3d-carousel-gap in CSS) */
+      /* Radius: base closed circle + gap (read from --3d-carousel-gap on wrap so Webflow/inline CSS works) */
       var radiusDivisor = 2 * Math.sin((rotateAmount / 2) * (Math.PI / 180));
-      var negTranslate = 'calc(var(--3d-carousel-item-width) / -' + radiusDivisor + ' - var(--3d-carousel-gap, 0px))';
-      var posTranslate = 'calc(var(--3d-carousel-item-width) / ' + radiusDivisor + ' + var(--3d-carousel-gap, 0px))';
+      var wrapDom = wrapEl[0];
+      var gapValue = (wrapDom && getComputedStyle(wrapDom).getPropertyValue('--3d-carousel-gap').trim()) || '0px';
+      var negTranslate = 'calc(var(--3d-carousel-item-width) / -' + radiusDivisor + ' - ' + gapValue + ')';
+      var posTranslate = 'calc(var(--3d-carousel-item-width) / ' + radiusDivisor + ' + ' + gapValue + ')';
 
       var currentIndex = 0;
       var isDragging = false;
