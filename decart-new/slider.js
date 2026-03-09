@@ -40,7 +40,7 @@
         }
       });
       introTl.to(wrapEl, { opacity: 1, duration: 0.3 });
-      introTl.fromTo(wrapEl, { '--3d-carousel-rotate': 100, '--3d-carousel-rotate-x': -90 }, { '--3d-carousel-rotate': 0, '--3d-carousel-rotate-x': -4, duration: 4, ease: 'power2.inOut' }, '<');
+      introTl.fromTo(wrapEl, { '--3d-carousel-rotate': 100, '--3d-carousel-rotate-x': -90 }, { '--3d-carousel-rotate': 0, '--3d-carousel-rotate-x': 0, duration: 4, ease: 'power2.inOut' }, '<');
 
       function setupNavigation() {
         nextEl.on('click', function (e) {
