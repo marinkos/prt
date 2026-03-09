@@ -59,10 +59,16 @@
   }
 })();
 
-/* Cursor coordinates */
+/* Cursor coordinates — real on page; fake drift when pointer is over an iframe */
 (function () {
   var el = document.getElementById('cursor-coords');
   if (!el) return;
+
+  var lastX = 0;
+  var lastY = 0;
+  var fakeX = 0;
+  var fakeY = 0;
+  var fakeRaf = null;
 
   function updateCoords(x, y) {
     el.textContent = '(X ' + x.toFixed(1) + ', Y ' + y.toFixed(1) + ')';
@@ -71,23 +77,33 @@
     el.style.display = 'block';
   }
 
+  function stopFake() {
+    if (fakeRaf != null) {
+      cancelAnimationFrame(fakeRaf);
+      fakeRaf = null;
+    }
+  }
+
+  function runFake() {
+    fakeX += (Math.random() - 0.5) * 2;
+    fakeY += (Math.random() - 0.5) * 2;
+    updateCoords(fakeX, fakeY);
+    fakeRaf = requestAnimationFrame(runFake);
+  }
+
   document.addEventListener('mousemove', function (e) {
-    updateCoords(e.clientX, e.clientY);
+    stopFake();
+    lastX = e.clientX;
+    lastY = e.clientY;
+    updateCoords(lastX, lastY);
   });
 
-  /* When pointer is over an iframe, parent gets no mousemove. If the iframe sends
-     postMessage({ type: 'cursor', x, y }) on mousemove, we can show coords. */
-  window.addEventListener('message', function (e) {
-    if (e.data && e.data.type === 'cursor' && typeof e.data.x === 'number' && typeof e.data.y === 'number') {
-      var frame = Array.prototype.find.call(document.querySelectorAll('iframe'), function (f) {
-        return f.contentWindow === e.source;
-      });
-      if (frame) {
-        var rect = frame.getBoundingClientRect();
-        updateCoords(rect.left + e.data.x, rect.top + e.data.y);
-      } else {
-        updateCoords(e.data.x, e.data.y);
-      }
-    }
+  document.querySelectorAll('iframe').forEach(function (frame) {
+    frame.addEventListener('mouseenter', function (e) {
+      stopFake();
+      fakeX = lastX;
+      fakeY = lastY;
+      runFake();
+    });
   });
 })();
