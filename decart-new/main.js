@@ -64,10 +64,30 @@
   var el = document.getElementById('cursor-coords');
   if (!el) return;
 
-  document.addEventListener('mousemove', function (e) {
-    el.textContent = '(X ' + e.clientX.toFixed(1) + ', Y ' + e.clientY.toFixed(1) + ')';
-    el.style.left = e.clientX + 'px';
-    el.style.top = e.clientY + 'px';
+  function updateCoords(x, y) {
+    el.textContent = '(X ' + x.toFixed(1) + ', Y ' + y.toFixed(1) + ')';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
     el.style.display = 'block';
+  }
+
+  document.addEventListener('mousemove', function (e) {
+    updateCoords(e.clientX, e.clientY);
+  });
+
+  /* When pointer is over an iframe, parent gets no mousemove. If the iframe sends
+     postMessage({ type: 'cursor', x, y }) on mousemove, we can show coords. */
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'cursor' && typeof e.data.x === 'number' && typeof e.data.y === 'number') {
+      var frame = Array.prototype.find.call(document.querySelectorAll('iframe'), function (f) {
+        return f.contentWindow === e.source;
+      });
+      if (frame) {
+        var rect = frame.getBoundingClientRect();
+        updateCoords(rect.left + e.data.x, rect.top + e.data.y);
+      } else {
+        updateCoords(e.data.x, e.data.y);
+      }
+    }
   });
 })();
