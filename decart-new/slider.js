@@ -27,20 +27,33 @@
       wrapEl.css('--3d-carousel-z', negTranslate);
       wrapEl.css('perspective', posTranslate);
       wrapEl.css('cursor', 'grab');
+      wrapEl.css('opacity', '0');
 
       itemEl.each(function (index) {
         $(this).css('transform', 'rotateY(' + rotateAmount * index + 'deg) translateZ(' + posTranslate + ')');
       });
 
-      var introTl = gsap.timeline({
-        onComplete: function () {
-          setupNavigation();
-          setupDragging();
-          setupMouseFollow();
-        }
-      });
-      introTl.to(wrapEl, { opacity: 1, duration: 0.3 });
-      introTl.fromTo(wrapEl, { '--3d-carousel-rotate': 100, '--3d-carousel-rotate-x': -90 }, { '--3d-carousel-rotate': 0, '--3d-carousel-rotate-x': 0, duration: 4, ease: 'power2.inOut' }, '<');
+      var introPlayed = false;
+      var viewObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting || introPlayed) return;
+            introPlayed = true;
+            viewObserver.disconnect();
+            var introTl = gsap.timeline({
+              onComplete: function () {
+                setupNavigation();
+                setupDragging();
+                setupMouseFollow();
+              }
+            });
+            introTl.to(wrapEl, { opacity: 1, duration: 0.3 });
+            introTl.fromTo(wrapEl, { '--3d-carousel-rotate': 100, '--3d-carousel-rotate-x': -90 }, { '--3d-carousel-rotate': 0, '--3d-carousel-rotate-x': 0, duration: 4, ease: 'power2.inOut' }, '<');
+          });
+        },
+        { threshold: 0.1, rootMargin: '0px' }
+      );
+      viewObserver.observe(componentEl[0]);
 
       function setupNavigation() {
         nextEl.on('click', function (e) {
