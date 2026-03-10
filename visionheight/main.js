@@ -15,29 +15,30 @@
     style.textContent = `
       .flip-text-wrapper { display: inline-block; perspective: 1000px; }
       .flip-text-wrapper .flip-char {
-        display: inline-block;
-        position: relative;
+        display: inline-grid;
+        grid-template-areas: "cell";
         transform-style: preserve-3d;
         height: 1.2em;
         line-height: 1.2em;
         vertical-align: middle;
       }
+      .flip-text-wrapper .flip-char .flip-char-spacer {
+        grid-area: cell;
+        visibility: hidden;
+        line-height: inherit;
+      }
       .flip-text-wrapper .flip-char .face {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 100%;
-        height: 100%;
+        grid-area: cell;
         display: flex;
         align-items: center;
         justify-content: center;
         backface-visibility: hidden;
       }
       .flip-text-wrapper .flip-char .face.front {
-        transform: translate(-50%, -50%) translateZ(0.6em);
+        transform: translateZ(0.6em);
       }
       .flip-text-wrapper .flip-char .face.back {
-        transform: translate(-50%, -50%) rotateX(90deg) translateZ(0.6em);
+        transform: rotateX(90deg) translateZ(0.6em);
       }
     `;
     document.head.appendChild(style);
@@ -62,12 +63,16 @@
       const span = document.createElement("span");
       span.className = "flip-char";
       span.dataset.charIndex = i;
+      const spacer = document.createElement("span");
+      spacer.className = "flip-char-spacer";
+      spacer.textContent = ch;
       const front = document.createElement("span");
       front.className = "face front";
       front.textContent = ch;
       const back = document.createElement("span");
       back.className = "face back";
       back.textContent = ch;
+      span.appendChild(spacer);
       span.appendChild(front);
       span.appendChild(back);
       wrapper.appendChild(span);
