@@ -1,80 +1,131 @@
-/* text scramble */
+/* flip text (3D character flip, triggered by data-scramble) */
 (function () {
   "use strict";
 
   const DEFAULTS = {
-    duration : 1.2,
-    chars    : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*",
+    duration : 0.6,
+    stagger  : 0.03,
     repeat   : false,
   };
 
-  const rand     = (min, max) => Math.random() * (max - min) + min;
-  const randChar = (pool)     => pool[Math.floor(Math.random() * pool.length)];
+  function injectFlipStyles() {
+    if (document.getElementById("flip-text-styles")) return;
+    const style = document.createElement("style");
+    style.id = "flip-text-styles";
+    style.textContent = `
+      .flip-text-wrapper { display: inline-block; perspective: 1000px; }
+      .flip-text-wrapper .flip-char {
+        display: inline-block;
+        position: relative;
+        transform-style: preserve-3d;
+        height: 1.2em;
+        line-height: 1.2em;
+        vertical-align: middle;
+      }
+      .flip-text-wrapper .flip-char .face {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backface-visibility: hidden;
+      }
+      .flip-text-wrapper .flip-char .face.front {
+        transform: translate(-50%, -50%) translateZ(0.6em);
+      }
+      .flip-text-wrapper .flip-char .face.back {
+        transform: translate(-50%, -50%) rotateX(90deg) translateZ(0.6em);
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
-  function scrambleText(el, opts) {
-    const original = el.dataset.scrambleOriginal || el.textContent;
+  function buildFlipDOM(el) {
+    if (el.classList.contains("flip-text-built")) return;
+    const original = (el.dataset.scrambleOriginal || el.textContent).trim();
     el.dataset.scrambleOriginal = original;
 
+    const wrapper = document.createElement("span");
+    wrapper.className = "flip-text-wrapper";
+
+    const chars = original.split("");
+    const total = chars.length;
+
+    chars.forEach((ch, i) => {
+      if (ch === " ") {
+        wrapper.appendChild(document.createTextNode("\u00A0"));
+        return;
+      }
+      const span = document.createElement("span");
+      span.className = "flip-char";
+      span.dataset.charIndex = i;
+      const front = document.createElement("span");
+      front.className = "face front";
+      front.textContent = ch;
+      const back = document.createElement("span");
+      back.className = "face back";
+      back.textContent = ch;
+      span.appendChild(front);
+      span.appendChild(back);
+      wrapper.appendChild(span);
+    });
+
+    el.textContent = "";
+    el.appendChild(wrapper);
+    el.classList.add("flip-text-built");
+  }
+
+  function runFlipAnimation(el, opts) {
+    buildFlipDOM(el);
+    const wrapper = el.querySelector(".flip-text-wrapper");
+    const chars = wrapper.querySelectorAll(".flip-char");
+    if (!chars.length) return;
+
     const duration = parseFloat(el.dataset.scrambleDuration) || opts.duration;
-    const pool     = el.dataset.scrambleChars || opts.chars;
-    const chars    = original.split("");
-    const total    = chars.length;
+    const staggerVal = parseFloat(el.dataset.scrambleStagger) || opts.stagger;
+    const repeat = el.dataset.scrambleRepeat === "true" || opts.repeat;
 
-    const lockTimes = chars
-      .map((_, i) => rand(duration * (i / total) * 0.4, duration * 0.9))
-      .sort((a, b) => a - b);
+    gsap.set(chars, { rotateX: 0 });
 
-    const resolved = new Array(total).fill(false);
-    let startTime  = null;
+    const tl = gsap.timeline({
+      repeat: repeat ? -1 : 0,
+      repeatDelay: 0.4,
+    });
 
-    function render(ts) {
-      if (!startTime) startTime = ts;
-      const elapsed = (ts - startTime) / 1000;
-
-      let output = "";
-      for (let i = 0; i < total; i++) {
-        const ch = chars[i];
-        if (ch === " ") { output += " "; continue; }
-        if (resolved[i] || elapsed >= lockTimes[i]) {
-          resolved[i] = true;
-          output += ch;
-        } else {
-          output += randChar(pool);
-        }
-      }
-
-      el.textContent = output;
-
-      if (!resolved.every(Boolean)) {
-        el._scrambleRaf = requestAnimationFrame(render);
-      } else {
-        el.textContent = original;
-      }
-    }
-
-    if (el._scrambleRaf) cancelAnimationFrame(el._scrambleRaf);
-    resolved.fill(false);
-    startTime = null;
-    el._scrambleRaf = requestAnimationFrame(render);
+    tl.to(chars, {
+      rotateX: -90,
+      duration,
+      stagger: { each: staggerVal, from: "start" },
+      ease: "power2.inOut",
+    }).to(chars, {
+      rotateX: 0,
+      duration,
+      stagger: { each: staggerVal, from: "start" },
+      ease: "power2.inOut",
+    });
   }
 
   function init() {
     if (typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") {
-      console.error("[scramble] GSAP and ScrollTrigger must be loaded before this script.");
+      console.error("[flip-text] GSAP and ScrollTrigger must be loaded before this script.");
       return;
     }
 
     gsap.registerPlugin(ScrollTrigger);
+    injectFlipStyles();
 
     document.querySelectorAll("[data-scramble]").forEach((el) => {
       const repeat = el.dataset.scrambleRepeat === "true" || DEFAULTS.repeat;
 
       ScrollTrigger.create({
-        trigger     : el,
-        start       : "top 90%",
-        once        : !repeat,
-        onEnter     : ()  => scrambleText(el, DEFAULTS),
-        onEnterBack : repeat ? () => scrambleText(el, DEFAULTS) : undefined,
+        trigger: el,
+        start: "top 90%",
+        once: !repeat,
+        onEnter: () => runFlipAnimation(el, DEFAULTS),
+        onEnterBack: repeat ? () => runFlipAnimation(el, DEFAULTS) : undefined,
       });
     });
   }
