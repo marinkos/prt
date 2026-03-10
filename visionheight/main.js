@@ -1,135 +1,76 @@
-/* flip text (3D character flip, triggered by data-scramble) */
+/* flip text (3D character flip, triggered by data-scramble — SplitText + timeline scrollTrigger) */
 (function () {
   "use strict";
 
-  const DEFAULTS = {
-    duration : 0.6,
-    stagger  : 0.03,
-    repeat   : false,
-  };
-
   const TRANSFORM_ORIGIN = "50% 50% -50";
-
-  function injectFlipStyles() {
-    if (document.getElementById("flip-text-styles")) return;
-    const style = document.createElement("style");
-    style.id = "flip-text-styles";
-    style.textContent = `
-      [data-scramble] .flip-text-container { position: relative; display: inline-block; }
-      [data-scramble] .flip-text-wrapper {
-        display: inline-block;
-        perspective: 600px;
-        white-space: nowrap;
-      }
-      [data-scramble] .flip-char {
-        display: inline-block;
-        transform-style: preserve-3d;
-        vertical-align: middle;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function buildFlipDOM(el) {
-    if (el.classList.contains("flip-text-built")) return;
-    const original = (el.dataset.scrambleOriginal || el.textContent).trim();
-    el.dataset.scrambleOriginal = original;
-
-    const container = document.createElement("span");
-    container.className = "flip-text-container";
-
-    function createWrapper() {
-      const wrapper = document.createElement("span");
-      wrapper.className = "flip-text-wrapper";
-      original.split("").forEach((ch) => {
-        if (ch === " ") {
-          wrapper.appendChild(document.createTextNode("\u00A0"));
-          return;
-        }
-        const span = document.createElement("span");
-        span.className = "flip-char";
-        span.textContent = ch;
-        wrapper.appendChild(span);
-      });
-      return wrapper;
-    }
-
-    const originalWrapper = createWrapper();
-    const cloneWrapper = createWrapper();
-    container.appendChild(originalWrapper);
-    container.appendChild(cloneWrapper);
-
-    el.textContent = "";
-    el.appendChild(container);
-    el.classList.add("flip-text-built");
-  }
-
-  function runFlipAnimation(el, opts) {
-    buildFlipDOM(el);
-    const container = el.querySelector(".flip-text-container");
-    const originalWrapper = container.querySelector(".flip-text-wrapper:first-child");
-    const cloneWrapper = container.querySelector(".flip-text-wrapper:last-child");
-    const originalChars = originalWrapper.querySelectorAll(".flip-char");
-    const cloneChars = cloneWrapper.querySelectorAll(".flip-char");
-    if (!originalChars.length) return;
-
-    const duration = parseFloat(el.dataset.scrambleDuration) || opts.duration;
-    const staggerVal = parseFloat(el.dataset.scrambleStagger) || opts.stagger;
-    const stagger = { each: staggerVal, ease: "power2", from: "start" };
-
-    gsap.set(cloneWrapper, { yPercent: -100 });
-    gsap.set(cloneChars, {
-      rotationX: -90,
-      opacity: 0,
-      transformOrigin: TRANSFORM_ORIGIN,
-    });
-    gsap.set(originalChars, {
-      rotationX: 0,
-      opacity: 1,
-      transformOrigin: TRANSFORM_ORIGIN,
-    });
-
-    const tl = gsap.timeline();
-    tl.to(originalChars, {
-      duration,
-      rotationX: 90,
-      transformOrigin: TRANSFORM_ORIGIN,
-      stagger,
-    }, 0);
-    tl.to(originalChars, {
-      duration,
-      opacity: 0,
-      stagger,
-      ease: "power4.in",
-    }, 0);
-    tl.to(cloneChars, { duration: 0.05, opacity: 1, stagger }, 0.001);
-    tl.to(cloneChars, {
-      duration,
-      rotationX: 0,
-      stagger,
-    }, 0);
-  }
+  const DURATION = 0.4;
+  const STAGGER = { each: 0.02, ease: "power2", from: "start" };
 
   function init() {
     if (typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") {
       console.error("[flip-text] GSAP and ScrollTrigger must be loaded before this script.");
       return;
     }
+    if (typeof SplitText === "undefined") {
+      console.warn("[flip-text] SplitText not found. Add SplitText for [data-scramble] flip effect.");
+      return;
+    }
 
     gsap.registerPlugin(ScrollTrigger);
-    injectFlipStyles();
 
-    // Any element with [data-scramble] gets the flip effect when it enters the viewport
-    document.querySelectorAll("[data-scramble]").forEach((el) => {
-      const repeat = el.dataset.scrambleRepeat === "true" || DEFAULTS.repeat;
+    document.querySelectorAll("[data-scramble]").forEach((original) => {
+      const header = original.parentElement;
+      const clone = original.cloneNode(true);
+      header.appendChild(clone);
 
-      ScrollTrigger.create({
-        trigger: el,
-        start: "top 90%",
-        once: !repeat,
-        onEnter: () => runFlipAnimation(el, DEFAULTS),
-        onEnterBack: repeat ? () => runFlipAnimation(el, DEFAULTS) : undefined,
+      gsap.set(header, { position: "relative", perspective: 600 });
+      gsap.set(clone, {
+        position: "absolute",
+        left: 0,
+        top: 0,
+        yPercent: -100,
+        pointerEvents: "none",
       });
+
+      const originalSplit = SplitText.create(original, { type: "chars" });
+      const cloneSplit = SplitText.create(clone, { type: "chars" });
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: original,
+          start: "top 85%",
+          toggleActions: "play none none none",
+        },
+      });
+
+      gsap.set(cloneSplit.chars, {
+        rotationX: -90,
+        opacity: 0,
+        transformOrigin: TRANSFORM_ORIGIN,
+      });
+
+      tl.to(originalSplit.chars, {
+        duration: DURATION,
+        rotationX: 90,
+        transformOrigin: TRANSFORM_ORIGIN,
+        stagger: STAGGER,
+      });
+      tl.to(originalSplit.chars, {
+        duration: DURATION,
+        opacity: 0,
+        stagger: STAGGER,
+        ease: "power4.in",
+      }, 0);
+      tl.to(cloneSplit.chars, {
+        duration: 0.05,
+        opacity: 1,
+        stagger: STAGGER,
+      }, 0.001);
+      tl.to(cloneSplit.chars, {
+        duration: DURATION,
+        rotationX: 0,
+        stagger: STAGGER,
+      }, 0);
     });
   }
 
