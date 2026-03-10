@@ -8,37 +8,23 @@
     repeat   : false,
   };
 
+  const TRANSFORM_ORIGIN = "50% 50% -50";
+
   function injectFlipStyles() {
     if (document.getElementById("flip-text-styles")) return;
     const style = document.createElement("style");
     style.id = "flip-text-styles";
     style.textContent = `
-      .flip-text-wrapper { display: inline-block; perspective: 1000px; }
-      .flip-text-wrapper .flip-char {
-        display: inline-grid;
-        grid-template-areas: "cell";
+      [data-scramble] .flip-text-container { position: relative; display: inline-block; }
+      [data-scramble] .flip-text-wrapper {
+        display: inline-block;
+        perspective: 600px;
+        white-space: nowrap;
+      }
+      [data-scramble] .flip-char {
+        display: inline-block;
         transform-style: preserve-3d;
-        height: 1.2em;
-        line-height: 1.2em;
         vertical-align: middle;
-      }
-      .flip-text-wrapper .flip-char .flip-char-spacer {
-        grid-area: cell;
-        visibility: hidden;
-        line-height: inherit;
-      }
-      .flip-text-wrapper .flip-char .face {
-        grid-area: cell;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backface-visibility: hidden;
-      }
-      .flip-text-wrapper .flip-char .face.front {
-        transform: translateZ(0.6em);
-      }
-      .flip-text-wrapper .flip-char .face.back {
-        transform: rotateX(90deg) translateZ(0.6em);
       }
     `;
     document.head.appendChild(style);
@@ -49,68 +35,79 @@
     const original = (el.dataset.scrambleOriginal || el.textContent).trim();
     el.dataset.scrambleOriginal = original;
 
-    const wrapper = document.createElement("span");
-    wrapper.className = "flip-text-wrapper";
+    const container = document.createElement("span");
+    container.className = "flip-text-container";
 
-    const chars = original.split("");
-    const total = chars.length;
+    function createWrapper() {
+      const wrapper = document.createElement("span");
+      wrapper.className = "flip-text-wrapper";
+      original.split("").forEach((ch) => {
+        if (ch === " ") {
+          wrapper.appendChild(document.createTextNode("\u00A0"));
+          return;
+        }
+        const span = document.createElement("span");
+        span.className = "flip-char";
+        span.textContent = ch;
+        wrapper.appendChild(span);
+      });
+      return wrapper;
+    }
 
-    chars.forEach((ch, i) => {
-      if (ch === " ") {
-        wrapper.appendChild(document.createTextNode("\u00A0"));
-        return;
-      }
-      const span = document.createElement("span");
-      span.className = "flip-char";
-      span.dataset.charIndex = i;
-      const spacer = document.createElement("span");
-      spacer.className = "flip-char-spacer";
-      spacer.textContent = ch;
-      const front = document.createElement("span");
-      front.className = "face front";
-      front.textContent = ch;
-      const back = document.createElement("span");
-      back.className = "face back";
-      back.textContent = ch;
-      span.appendChild(spacer);
-      span.appendChild(front);
-      span.appendChild(back);
-      wrapper.appendChild(span);
-    });
+    const originalWrapper = createWrapper();
+    const cloneWrapper = createWrapper();
+    container.appendChild(originalWrapper);
+    container.appendChild(cloneWrapper);
 
     el.textContent = "";
-    el.appendChild(wrapper);
+    el.appendChild(container);
     el.classList.add("flip-text-built");
   }
 
   function runFlipAnimation(el, opts) {
     buildFlipDOM(el);
-    const wrapper = el.querySelector(".flip-text-wrapper");
-    const chars = wrapper.querySelectorAll(".flip-char");
-    if (!chars.length) return;
+    const container = el.querySelector(".flip-text-container");
+    const originalWrapper = container.querySelector(".flip-text-wrapper:first-child");
+    const cloneWrapper = container.querySelector(".flip-text-wrapper:last-child");
+    const originalChars = originalWrapper.querySelectorAll(".flip-char");
+    const cloneChars = cloneWrapper.querySelectorAll(".flip-char");
+    if (!originalChars.length) return;
 
     const duration = parseFloat(el.dataset.scrambleDuration) || opts.duration;
     const staggerVal = parseFloat(el.dataset.scrambleStagger) || opts.stagger;
-    const repeat = el.dataset.scrambleRepeat === "true" || opts.repeat;
+    const stagger = { each: staggerVal, ease: "power2", from: "start" };
 
-    gsap.set(chars, { rotateX: 0 });
-
-    const tl = gsap.timeline({
-      repeat: repeat ? -1 : 0,
-      repeatDelay: 0.4,
+    gsap.set(cloneWrapper, { yPercent: -100 });
+    gsap.set(cloneChars, {
+      rotationX: -90,
+      opacity: 0,
+      transformOrigin: TRANSFORM_ORIGIN,
+    });
+    gsap.set(originalChars, {
+      rotationX: 0,
+      opacity: 1,
+      transformOrigin: TRANSFORM_ORIGIN,
     });
 
-    tl.to(chars, {
-      rotateX: -90,
+    const tl = gsap.timeline();
+    tl.to(originalChars, {
       duration,
-      stagger: { each: staggerVal, from: "start" },
-      ease: "power2.inOut",
-    }).to(chars, {
-      rotateX: 0,
+      rotationX: 90,
+      transformOrigin: TRANSFORM_ORIGIN,
+      stagger,
+    }, 0);
+    tl.to(originalChars, {
       duration,
-      stagger: { each: staggerVal, from: "start" },
-      ease: "power2.inOut",
-    });
+      opacity: 0,
+      stagger,
+      ease: "power4.in",
+    }, 0);
+    tl.to(cloneChars, { duration: 0.05, opacity: 1, stagger }, 0.001);
+    tl.to(cloneChars, {
+      duration,
+      rotationX: 0,
+      stagger,
+    }, 0);
   }
 
   function init() {
@@ -122,6 +119,7 @@
     gsap.registerPlugin(ScrollTrigger);
     injectFlipStyles();
 
+    // Any element with [data-scramble] gets the flip effect when it enters the viewport
     document.querySelectorAll("[data-scramble]").forEach((el) => {
       const repeat = el.dataset.scrambleRepeat === "true" || DEFAULTS.repeat;
 
