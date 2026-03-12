@@ -1,5 +1,7 @@
-/* text flip */
+/* text flip — desktop only */
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.innerWidth < 992) return;
+
   document.querySelectorAll('[data-flip-text]').forEach(el => {
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;
