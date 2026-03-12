@@ -99,6 +99,27 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+/* nav container open state */
+document.addEventListener("DOMContentLoaded", function () {
+  const navContainer = document.querySelector(".nav_container");
+  const navButton = document.querySelector(".w-nav-button");
+
+  if (!navContainer || !navButton) return;
+
+  const observer = new MutationObserver(() => {
+    if (navButton.classList.contains("w--open")) {
+      navContainer.classList.add("is-open");
+    } else {
+      navContainer.classList.remove("is-open");
+    }
+  });
+
+  observer.observe(navButton, {
+    attributes: true,
+    attributeFilter: ["class"]
+  });
+});
+
 /* nav dropdown dot */
 (function () {
   function run() {
