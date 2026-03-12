@@ -125,12 +125,12 @@
         {
           y: 40,
           opacity: 0.7,
-          lineHeight: 1.8,
+          lineHeight: 1.4,
         },
         {
           y: 0,
           opacity: 1,
-          lineHeight: 1.1,
+          lineHeight: 1.05,
           duration: 1,
           ease: 'power2.out',
           scrollTrigger: {
