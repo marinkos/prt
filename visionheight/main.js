@@ -106,11 +106,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (!navContainer || !navButton) return;
 
+  let closeTimeout = null;
+
   const observer = new MutationObserver(() => {
     if (navButton.classList.contains("w--open")) {
+      if (closeTimeout) clearTimeout(closeTimeout);
+      closeTimeout = null;
       navContainer.classList.add("is-open");
     } else {
-      navContainer.classList.remove("is-open");
+      closeTimeout = setTimeout(() => {
+        navContainer.classList.remove("is-open");
+        closeTimeout = null;
+      }, 1000);
     }
   });
 
