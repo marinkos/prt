@@ -117,7 +117,7 @@ document.addEventListener("DOMContentLoaded", function () {
       closeTimeout = setTimeout(() => {
         navContainer.classList.remove("is-open");
         closeTimeout = null;
-      }, 1000);
+      }, 400);
     }
   });
 
