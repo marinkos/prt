@@ -34,69 +34,121 @@
 })();
 
 /* Scroll Marker Reveal — [data-reveal] (GSAP + SplitText only) */
+// COMMENTED OUT: bar reveal effect
+// (function () {
+//   if (typeof gsap === 'undefined' || typeof SplitText === 'undefined') {
+//     console.warn('GSAP or SplitText not found. Marker reveal requires these libraries.');
+//     return;
+//   }
+//
+//   function initMarkerReveal() {
+//     const elements = document.querySelectorAll('[data-reveal]');
+//     if (elements.length === 0) return;
+//
+//     elements.forEach((el) => {
+//       const split = new SplitText(el, { type: 'lines', linesClass: 'reveal-line' });
+//       const lines = split.lines;
+//
+//       if (!lines || lines.length === 0) return;
+//
+//       const bars = [];
+//
+//       lines.forEach((line) => {
+//         const wrapper = document.createElement('div');
+//         wrapper.className = 'reveal-line-wrapper';
+//         line.parentNode.insertBefore(wrapper, line);
+//         wrapper.appendChild(line);
+//
+//         const bar = document.createElement('div');
+//         bar.className = 'reveal-bar';
+//         wrapper.appendChild(bar);
+//         bars.push(bar);
+//       });
+//
+//       gsap.set(bars, { scaleX: 1 });
+//
+//       const revealDelay = 0.3;
+//       const observer = new IntersectionObserver(
+//         (entries) => {
+//           entries.forEach((entry) => {
+//             if (entry.isIntersecting) {
+//               gsap.set(bars, { scaleX: 1 });
+//               gsap.to(bars, {
+//                 scaleX: 0,
+//                 duration: 0.6,
+//                 ease: 'power2.out',
+//                 stagger: 0.06,
+//                 delay: revealDelay,
+//               });
+//             } else {
+//               gsap.set(bars, { scaleX: 1 });
+//             }
+//           });
+//         },
+//         { threshold: 0.1, rootMargin: '0px 0px 0px 0px' }
+//       );
+//
+//       observer.observe(el);
+//     });
+//   }
+//
+//   function runAfterFonts() {
+//     if (document.fonts && document.fonts.ready) {
+//       document.fonts.ready.then(initMarkerReveal);
+//     } else {
+//       initMarkerReveal();
+//     }
+//   }
+//
+//   if (document.readyState === 'loading') {
+//     document.addEventListener('DOMContentLoaded', runAfterFonts);
+//   } else {
+//     runAfterFonts();
+//   }
+// })();
+
+/* Palantir-style scroll reveal — [data-reveal] (GSAP + ScrollTrigger) */
 (function () {
-  if (typeof gsap === 'undefined' || typeof SplitText === 'undefined') {
-    console.warn('GSAP or SplitText not found. Marker reveal requires these libraries.');
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+    console.warn('GSAP or ScrollTrigger not found. Scroll reveal requires these libraries.');
     return;
   }
+  gsap.registerPlugin(ScrollTrigger);
 
-  function initMarkerReveal() {
+  function initScrollReveal() {
     const elements = document.querySelectorAll('[data-reveal]');
     if (elements.length === 0) return;
 
     elements.forEach((el) => {
-      const split = new SplitText(el, { type: 'lines', linesClass: 'reveal-line' });
-      const lines = split.lines;
-
-      if (!lines || lines.length === 0) return;
-
-      const bars = [];
-
-      lines.forEach((line) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'reveal-line-wrapper';
-        line.parentNode.insertBefore(wrapper, line);
-        wrapper.appendChild(line);
-
-        const bar = document.createElement('div');
-        bar.className = 'reveal-bar';
-        wrapper.appendChild(bar);
-        bars.push(bar);
-      });
-
-      gsap.set(bars, { scaleX: 1 });
-
-      /* Reveal each time block enters viewport; reset when leaving so it can reveal again */
-      const revealDelay = 0.3;
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              gsap.set(bars, { scaleX: 1 });
-              gsap.to(bars, {
-                scaleX: 0,
-                duration: 0.6,
-                ease: 'power2.out',
-                stagger: 0.06,
-                delay: revealDelay,
-              });
-            } else {
-              gsap.set(bars, { scaleX: 1 });
-            }
-          });
+      gsap.fromTo(
+        el,
+        {
+          y: 40,
+          opacity: 0.7,
+          lineHeight: 1.8,
         },
-        { threshold: 0.1, rootMargin: '0px 0px 0px 0px' }
+        {
+          y: 0,
+          opacity: 1,
+          lineHeight: 1.1,
+          duration: 1,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 85%',
+            end: 'top 25%',
+            scrub: true,
+          },
+        }
       );
-
-      observer.observe(el);
     });
   }
 
   function runAfterFonts() {
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(initMarkerReveal);
+      document.fonts.ready.then(initScrollReveal);
     } else {
-      initMarkerReveal();
+      initScrollReveal();
     }
   }
 
