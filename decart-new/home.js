@@ -253,6 +253,21 @@
         if (soundOff) soundOff.style.display = isMuted ? 'block' : 'none';
       });
     }
+
+    /* Mute when video collection is out of view */
+    const viewObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const inView = entry.isIntersecting;
+          const activeVideo = newsSwiper.slides[newsSwiper.activeIndex]?.querySelector('video');
+          if (activeVideo) {
+            activeVideo.muted = inView ? isMuted : true;
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px' }
+    );
+    viewObserver.observe(container);
   }
 
   if (document.readyState === 'loading') {
