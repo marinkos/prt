@@ -298,12 +298,12 @@
   }
 })();
 
-/* Marquee — [data-marquee] (GSAP, swipe/drag, pause then resume) */
+/* Marquee — [data-marquee] or [data="marquee"] (GSAP, swipe/drag, pause then resume) */
 (function () {
   if (typeof gsap === 'undefined') return;
 
   function initMarquee() {
-    const marquee = document.querySelector('[data-marquee]');
+    const marquee = document.querySelector('[data-marquee]') || document.querySelector('[data="marquee"]');
     if (!marquee) return;
 
     const duration = parseInt(marquee.getAttribute('data-marquee-duration') || marquee.getAttribute('duration') || '5', 10) || 5;
@@ -311,15 +311,7 @@
     const marqueeContent = marquee.firstElementChild;
     if (!marqueeContent) return;
 
-    const marqueeContentClone = marqueeContent.cloneNode(true);
-    marquee.appendChild(marqueeContentClone);
-
-    let tween;
-    let resumeTimer;
-    let dragStartX;
-    let dragStartProgress;
-    let didDrag;
-    let distanceToTranslate;
+    if (marquee.dataset.marqueeInited === '1') return;
 
     function getDistance() {
       const width = parseInt(getComputedStyle(marqueeContent).getPropertyValue('width') || '0', 10);
@@ -331,6 +323,26 @@
       );
       return width + gap;
     }
+
+    let distanceToTranslate = getDistance();
+    if (distanceToTranslate <= 0) {
+      /* Layout not ready — retry after load */
+      window.addEventListener('load', initMarquee);
+      return;
+    }
+
+    marquee.dataset.marqueeInited = '1';
+    if (getComputedStyle(marquee).overflow === 'visible') {
+      marquee.style.overflow = 'hidden';
+    }
+    const marqueeContentClone = marqueeContent.cloneNode(true);
+    marquee.appendChild(marqueeContentClone);
+
+    let tween;
+    let resumeTimer;
+    let dragStartX;
+    let dragStartProgress;
+    let didDrag;
 
     function playMarquee(fromX) {
       if (tween) tween.kill();
@@ -426,15 +438,20 @@
 
     window.addEventListener('resize', debounce(function () {
       if (resumeTimer) return;
-      const p = tween ? tween.progress() : 0;
+      const currentX = parseFloat(gsap.getProperty(marquee.children[0], 'x')) || 0;
       distanceToTranslate = getDistance();
-      playMarquee(p);
+      playMarquee(currentX);
     }));
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMarquee);
-  } else {
-    initMarquee();
+  function run() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initMarquee);
+    } else {
+      initMarquee();
+    }
+    /* Fallback: retry on load if element wasn't ready (e.g. dynamic content) */
+    window.addEventListener('load', initMarquee);
   }
+  run();
 })();
