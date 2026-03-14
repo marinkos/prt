@@ -393,27 +393,51 @@
 
     function setupDrag() {
       let pointerId;
+      let pointerDownX;
+      let pointerDownY;
+      let captured = false;
+      const dragThreshold = 5;
 
       marquee.addEventListener('pointerdown', function (e) {
-        e.preventDefault();
         pointerId = e.pointerId;
-        onDragStart(e.clientX);
-        marquee.setPointerCapture && marquee.setPointerCapture(e.pointerId);
+        pointerDownX = e.clientX;
+        pointerDownY = e.clientY;
+        captured = false;
       });
 
       marquee.addEventListener('pointermove', function (e) {
         if (e.pointerId !== pointerId) return;
+        if (!captured) {
+          const dx = Math.abs(e.clientX - pointerDownX);
+          const dy = Math.abs(e.clientY - pointerDownY);
+          if (dx > dragThreshold || dy > dragThreshold) {
+            captured = true;
+            e.preventDefault();
+            marquee.setPointerCapture && marquee.setPointerCapture(e.pointerId);
+            onDragStart(pointerDownX);
+            didDrag = true;
+            if (tween) tween.pause();
+          } else {
+            return;
+          }
+        }
         onDragMove(e.clientX);
       });
 
       marquee.addEventListener('pointerup', function (e) {
         if (e.pointerId !== pointerId) return;
-        marquee.releasePointerCapture && marquee.releasePointerCapture(e.pointerId);
-        onDragEnd();
+        if (captured) {
+          marquee.releasePointerCapture && marquee.releasePointerCapture(e.pointerId);
+          onDragEnd();
+        }
+        pointerId = null;
+        captured = false;
       });
 
       marquee.addEventListener('pointercancel', function (e) {
-        if (e.pointerId === pointerId) onDragEnd();
+        if (e.pointerId === pointerId && captured) onDragEnd();
+        pointerId = null;
+        captured = false;
       });
     }
 
