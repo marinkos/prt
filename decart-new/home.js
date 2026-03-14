@@ -163,9 +163,25 @@
 
 /* Video collection Swiper — .video_collection (requires Swiper) */
 (function () {
+  let loadRetried = false;
+
   function initVideoCollection() {
     const container = document.querySelector('.video_collection');
-    if (!container || typeof Swiper === 'undefined') return;
+    if (!container) return;
+
+    const Swiper = (typeof window !== 'undefined' && window.Swiper) || (typeof Swiper !== 'undefined' ? Swiper : undefined);
+    if (!Swiper) {
+      /* Swiper not loaded yet — retry after load or short delay (handles external script load order) */
+      if (!loadRetried) {
+        loadRetried = true;
+        if (document.readyState === 'complete') {
+          setTimeout(initVideoCollection, 150);
+        } else {
+          window.addEventListener('load', initVideoCollection);
+        }
+      }
+      return;
+    }
 
     const soundOn = document.querySelector('[data-sound="on"]');
     const soundOff = document.querySelector('[data-sound="off"]');
