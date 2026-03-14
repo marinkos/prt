@@ -298,7 +298,7 @@
   }
 })();
 
-/* Marquee — [data-marquee] (GSAP, swipe/drag, pause then resume) */
+/* Marquee — [data="marquee"] (GSAP, swipe/drag, pause then resume) */
 (function () {
   if (typeof gsap === 'undefined') {
     console.warn('[marquee] GSAP not found');
@@ -306,14 +306,15 @@
   }
 
   function initMarquee() {
-    const marquee = document.querySelector('[data-marquee]');
+    const marquee = document.querySelector('[data="marquee"]');
     if (!marquee) {
-      console.warn('[marquee] No [data-marquee] element found');
+      console.warn('[marquee] No [data="marquee"] element found');
       return;
     }
     console.log('[marquee] init', marquee);
 
-    const duration = parseInt(marquee.getAttribute('data-marquee-duration') || marquee.getAttribute('duration') || '5', 10) || 5;
+    const durationVal = marquee.getAttribute('data-marquee-duration') || marquee.getAttribute('duration') || '5';
+    const duration = parseInt(durationVal, 10) || 5;
     const resumeDelay = parseInt(marquee.getAttribute('data-marquee-resume') || '5', 10) * 1000;
     const marqueeContent = marquee.firstElementChild;
     if (!marqueeContent) {
@@ -457,11 +458,27 @@
     }));
   }
 
+  function tryInit() {
+    const marquee = document.querySelector('[data="marquee"]');
+    if (marquee) {
+      initMarquee();
+      return true;
+    }
+    return false;
+  }
+
   if (document.readyState === 'loading') {
-    console.log('[marquee] waiting for DOMContentLoaded');
-    document.addEventListener('DOMContentLoaded', initMarquee);
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!tryInit()) {
+        /* Webflow/dynamic content may load later — retry on load */
+        window.addEventListener('load', function () {
+          tryInit();
+        });
+      }
+    });
   } else {
-    console.log('[marquee] DOM ready, init now');
-    initMarquee();
+    if (!tryInit()) {
+      window.addEventListener('load', tryInit);
+    }
   }
 })();
