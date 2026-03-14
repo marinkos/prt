@@ -189,6 +189,14 @@
     if (soundOff) soundOff.style.display = 'block';
 
     let isMuted = true;
+    let userHasInteracted = false; /* Safari requires user gesture before video.play() */
+
+    function playActiveVideo(activeVideo) {
+      if (!activeVideo) return;
+      activeVideo.muted = isMuted;
+      const p = activeVideo.play();
+      if (p && typeof p.catch === 'function') p.catch(function () {});
+    }
 
     const newsSwiper = new Swiper('.video_collection', {
       slidesPerView: 1,
@@ -230,13 +238,26 @@
       });
 
       const activeVideo = activeSlide.querySelector('video');
-      if (activeVideo) {
-        activeVideo.muted = isMuted;
-        setTimeout(() => {
-          activeVideo.play().catch(() => {});
+      if (activeVideo && userHasInteracted) {
+        setTimeout(function () {
+          playActiveVideo(activeVideo);
         }, 50);
       }
     }
+
+    function markInteracted() {
+      if (userHasInteracted) return;
+      userHasInteracted = true;
+      const activeVideo = newsSwiper.slides[newsSwiper.activeIndex]?.querySelector('video');
+      playActiveVideo(activeVideo);
+    }
+
+    ['#videoSound', '#videoNext', '#videoPrev'].forEach(function (sel) {
+      const el = document.querySelector(sel);
+      if (el) el.addEventListener('click', markInteracted);
+    });
+    container.addEventListener('click', markInteracted);
+    container.addEventListener('touchstart', markInteracted, { passive: true });
 
     const soundBtn = document.querySelector('#videoSound');
     if (soundBtn) {
