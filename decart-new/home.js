@@ -297,3 +297,144 @@
     initVideoCollection();
   }
 })();
+
+/* Marquee — [data-marquee] (GSAP, swipe/drag, pause then resume) */
+(function () {
+  if (typeof gsap === 'undefined') return;
+
+  function initMarquee() {
+    const marquee = document.querySelector('[data-marquee]');
+    if (!marquee) return;
+
+    const duration = parseInt(marquee.getAttribute('data-marquee-duration') || marquee.getAttribute('duration') || '5', 10) || 5;
+    const resumeDelay = parseInt(marquee.getAttribute('data-marquee-resume') || '5', 10) * 1000;
+    const marqueeContent = marquee.firstElementChild;
+    if (!marqueeContent) return;
+
+    const marqueeContentClone = marqueeContent.cloneNode(true);
+    marquee.appendChild(marqueeContentClone);
+
+    let tween;
+    let resumeTimer;
+    let dragStartX;
+    let dragStartProgress;
+    let didDrag;
+    let distanceToTranslate;
+
+    function getDistance() {
+      const width = parseInt(getComputedStyle(marqueeContent).getPropertyValue('width') || '0', 10);
+      const gap = parseInt(
+        getComputedStyle(marquee).getPropertyValue('column-gap') ||
+        getComputedStyle(marquee).getPropertyValue('gap') ||
+        getComputedStyle(marqueeContent).getPropertyValue('column-gap') || '0',
+        10
+      );
+      return width + gap;
+    }
+
+    function playMarquee(fromX) {
+      if (tween) tween.kill();
+      distanceToTranslate = getDistance();
+      const startX = typeof fromX === 'number' ? fromX : 0;
+
+      tween = gsap.fromTo(
+        marquee.children,
+        { x: startX },
+        { x: startX - distanceToTranslate, duration, ease: 'none', repeat: -1 }
+      );
+    }
+
+    function pauseAndResumeLater() {
+      if (tween) tween.pause();
+      if (resumeTimer) clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(function () {
+        resumeTimer = null;
+        const currentX = parseFloat(gsap.getProperty(marquee.children[0], 'x')) || 0;
+        playMarquee(currentX);
+      }, resumeDelay);
+    }
+
+    function onDragStart(clientX) {
+      if (resumeTimer) {
+        clearTimeout(resumeTimer);
+        resumeTimer = null;
+      }
+      dragStartX = clientX;
+      dragStartProgress = tween ? tween.progress() : 0;
+      didDrag = false;
+      distanceToTranslate = distanceToTranslate || getDistance();
+    }
+
+    function onDragMove(clientX) {
+      if (dragStartX == null) return;
+      if (!didDrag) {
+        didDrag = true;
+        if (tween) tween.pause();
+      }
+      const delta = clientX - dragStartX;
+      const baseX = -dragStartProgress * distanceToTranslate;
+      const newX = Math.max(-distanceToTranslate * 2, Math.min(0, baseX + delta));
+      gsap.set(marquee.children, { x: newX });
+    }
+
+    function onDragEnd() {
+      if (dragStartX == null) return;
+      const wasDragging = didDrag;
+      dragStartX = null;
+      if (!wasDragging) return;
+      const currentX = parseFloat(gsap.getProperty(marquee.children[0], 'x')) || 0;
+      playMarquee(currentX);
+      pauseAndResumeLater();
+    }
+
+    function setupDrag() {
+      let pointerId;
+
+      marquee.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        pointerId = e.pointerId;
+        onDragStart(e.clientX);
+        marquee.setPointerCapture && marquee.setPointerCapture(e.pointerId);
+      });
+
+      marquee.addEventListener('pointermove', function (e) {
+        if (e.pointerId !== pointerId) return;
+        onDragMove(e.clientX);
+      });
+
+      marquee.addEventListener('pointerup', function (e) {
+        if (e.pointerId !== pointerId) return;
+        marquee.releasePointerCapture && marquee.releasePointerCapture(e.pointerId);
+        onDragEnd();
+      });
+
+      marquee.addEventListener('pointercancel', function (e) {
+        if (e.pointerId === pointerId) onDragEnd();
+      });
+    }
+
+    playMarquee();
+    setupDrag();
+
+    function debounce(fn) {
+      var t;
+      return function () {
+        if (t) clearTimeout(t);
+        t = setTimeout(fn, 500);
+      };
+    }
+
+    window.addEventListener('resize', debounce(function () {
+      if (resumeTimer) return;
+      const p = tween ? tween.progress() : 0;
+      distanceToTranslate = getDistance();
+      playMarquee(p);
+    }));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMarquee);
+  } else {
+    initMarquee();
+  }
+})();
