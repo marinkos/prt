@@ -160,3 +160,83 @@
     initVideoHover();
   }
 })();
+
+/* Video collection Swiper — .video_collection (requires Swiper) */
+(function () {
+  function initVideoCollection() {
+    const container = document.querySelector('.video_collection');
+    if (!container || typeof Swiper === 'undefined') return;
+
+    const soundOn = document.querySelector('[data-sound="on"]');
+    const soundOff = document.querySelector('[data-sound="off"]');
+    if (soundOn) soundOn.style.display = 'none';
+    if (soundOff) soundOff.style.display = 'block';
+
+    let isMuted = true;
+
+    const newsSwiper = new Swiper('.video_collection', {
+      slidesPerView: 1,
+      spaceBetween: 0,
+      loop: true,
+      autoplay: {
+        delay: 4000,
+        disableOnInteraction: true,
+      },
+      effect: 'fade',
+      fadeEffect: { crossFade: true },
+      keyboard: true,
+      navigation: {
+        nextEl: '#videoNext',
+        prevEl: '#videoPrev',
+      },
+      on: {
+        init(sw) {
+          syncSlide(sw);
+        },
+        slideChange(sw) {
+          syncSlide(sw);
+        },
+      },
+    });
+
+    function syncSlide(sw) {
+      const activeSlide = sw.slides[sw.activeIndex];
+      if (!activeSlide) return;
+
+      const nameEl = document.querySelector('.video_controls-button.is-name [data-name]');
+      if (nameEl) nameEl.textContent = activeSlide.dataset.name || '';
+
+      document.querySelectorAll('.video_collection .swiper-slide video').forEach((v) => {
+        v.pause();
+        v.currentTime = 0;
+      });
+
+      const activeVideo = activeSlide.querySelector('video');
+      if (activeVideo) {
+        activeVideo.muted = isMuted;
+        setTimeout(() => {
+          activeVideo.play().catch(() => {});
+        }, 50);
+      }
+    }
+
+    const soundBtn = document.querySelector('#videoSound');
+    if (soundBtn) {
+      soundBtn.addEventListener('click', () => {
+        isMuted = !isMuted;
+
+        const activeVideo = newsSwiper.slides[newsSwiper.activeIndex]?.querySelector('video');
+        if (activeVideo) activeVideo.muted = isMuted;
+
+        if (soundOn) soundOn.style.display = isMuted ? 'none' : 'block';
+        if (soundOff) soundOff.style.display = isMuted ? 'block' : 'none';
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initVideoCollection);
+  } else {
+    initVideoCollection();
+  }
+})();
