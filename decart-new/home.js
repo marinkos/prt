@@ -300,18 +300,11 @@
 
 /* Marquee — [data="marquee"] (GSAP, swipe/drag, pause then resume) */
 (function () {
-  if (typeof gsap === 'undefined') {
-    console.warn('[marquee] GSAP not found');
-    return;
-  }
+  if (typeof gsap === 'undefined') return;
 
   function initMarquee() {
     const marquee = document.querySelector('[data="marquee"]');
-    if (!marquee) {
-      console.warn('[marquee] No [data="marquee"] element found');
-      return;
-    }
-    console.log('[marquee] init', marquee);
+    if (!marquee) return;
 
     const durationVal = marquee.getAttribute('data-marquee-duration') || marquee.getAttribute('duration') || '5';
     const duration = parseInt(durationVal, 10) || 5;
@@ -324,7 +317,6 @@
 
     const marqueeContentClone = marqueeContent.cloneNode(true);
     marquee.appendChild(marqueeContentClone);
-    console.log('[marquee] children count:', marquee.children.length);
 
     let tween;
     let resumeTimer;
@@ -341,10 +333,7 @@
         getComputedStyle(marqueeContent).getPropertyValue('column-gap') || '0',
         10
       );
-      const total = width + gap;
-      console.log('[marquee] getDistance:', { width, gap, total });
-      if (total <= 0) console.warn('[marquee] distance is 0 — check marquee content width and layout');
-      return total;
+      return width + gap;
     }
 
     function playMarquee(fromX) {
@@ -352,15 +341,11 @@
       distanceToTranslate = getDistance();
       const startX = typeof fromX === 'number' ? fromX : 0;
 
-      const targets = marquee.children;
-      console.log('[marquee] playMarquee:', { startX, distanceToTranslate, duration, targetX: startX - distanceToTranslate, targetsCount: targets.length, target0: targets[0]?.tagName });
-
       tween = gsap.fromTo(
-        targets,
+        marquee.children,
         { x: startX },
         { x: startX - distanceToTranslate, duration, ease: 'none', repeat: -1 }
       );
-      console.log('[marquee] tween created, isActive:', tween.isActive());
     }
 
     function pauseAndResumeLater() {
@@ -434,13 +419,6 @@
 
     playMarquee();
     setupDrag();
-
-    /* Debug: log state after 1s to check if tween is running */
-    setTimeout(function () {
-      const x0 = gsap.getProperty(marquee.children[0], 'x');
-      const x1 = marquee.children[1] ? gsap.getProperty(marquee.children[1], 'x') : null;
-      console.log('[marquee] after 1s:', { tweenActive: tween && tween.isActive(), progress: tween ? tween.progress() : null, child0_x: x0, child1_x: x1 });
-    }, 1000);
 
     function debounce(fn) {
       var t;
