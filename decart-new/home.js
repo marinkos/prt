@@ -222,9 +222,11 @@
       const nameEl = document.querySelector('.video_controls-button.is-name [data-name]');
       if (nameEl) nameEl.textContent = activeSlide.dataset.name || '';
 
-      document.querySelectorAll('.video_collection .swiper-slide video').forEach((v) => {
+      const allVideos = document.querySelectorAll('.video_collection .swiper-slide video');
+      allVideos.forEach((v) => {
         v.pause();
         v.currentTime = 0;
+        v.muted = true; /* mute all first to avoid two videos with sound */
       });
 
       const activeVideo = activeSlide.querySelector('video');
@@ -241,6 +243,9 @@
       soundBtn.addEventListener('click', () => {
         isMuted = !isMuted;
 
+        document.querySelectorAll('.video_collection .swiper-slide video').forEach((v) => {
+          v.muted = true;
+        });
         const activeVideo = newsSwiper.slides[newsSwiper.activeIndex]?.querySelector('video');
         if (activeVideo) activeVideo.muted = isMuted;
 
