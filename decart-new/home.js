@@ -298,20 +298,39 @@
   }
 })();
 
-/* Marquee — [data-marquee] or [data="marquee"] (GSAP, swipe/drag, pause then resume) */
+/* Marquee — [data-marquee] (GSAP, swipe/drag, pause then resume) */
 (function () {
-  if (typeof gsap === 'undefined') return;
+  if (typeof gsap === 'undefined') {
+    console.warn('[marquee] GSAP not found');
+    return;
+  }
 
   function initMarquee() {
-    const marquee = document.querySelector('[data-marquee]') || document.querySelector('[data="marquee"]');
-    if (!marquee) return;
+    const marquee = document.querySelector('[data-marquee]');
+    if (!marquee) {
+      console.warn('[marquee] No [data-marquee] element found');
+      return;
+    }
+    console.log('[marquee] init', marquee);
 
     const duration = parseInt(marquee.getAttribute('data-marquee-duration') || marquee.getAttribute('duration') || '5', 10) || 5;
     const resumeDelay = parseInt(marquee.getAttribute('data-marquee-resume') || '5', 10) * 1000;
     const marqueeContent = marquee.firstElementChild;
-    if (!marqueeContent) return;
+    if (!marqueeContent) {
+      console.warn('[marquee] No firstElementChild in marquee');
+      return;
+    }
 
-    if (marquee.dataset.marqueeInited === '1') return;
+    const marqueeContentClone = marqueeContent.cloneNode(true);
+    marquee.appendChild(marqueeContentClone);
+    console.log('[marquee] children count:', marquee.children.length);
+
+    let tween;
+    let resumeTimer;
+    let dragStartX;
+    let dragStartProgress;
+    let didDrag;
+    let distanceToTranslate;
 
     function getDistance() {
       const width = parseInt(getComputedStyle(marqueeContent).getPropertyValue('width') || '0', 10);
@@ -321,39 +340,26 @@
         getComputedStyle(marqueeContent).getPropertyValue('column-gap') || '0',
         10
       );
-      return width + gap;
+      const total = width + gap;
+      console.log('[marquee] getDistance:', { width, gap, total });
+      if (total <= 0) console.warn('[marquee] distance is 0 — check marquee content width and layout');
+      return total;
     }
-
-    let distanceToTranslate = getDistance();
-    if (distanceToTranslate <= 0) {
-      /* Layout not ready — retry after load */
-      window.addEventListener('load', initMarquee);
-      return;
-    }
-
-    marquee.dataset.marqueeInited = '1';
-    if (getComputedStyle(marquee).overflow === 'visible') {
-      marquee.style.overflow = 'hidden';
-    }
-    const marqueeContentClone = marqueeContent.cloneNode(true);
-    marquee.appendChild(marqueeContentClone);
-
-    let tween;
-    let resumeTimer;
-    let dragStartX;
-    let dragStartProgress;
-    let didDrag;
 
     function playMarquee(fromX) {
       if (tween) tween.kill();
       distanceToTranslate = getDistance();
       const startX = typeof fromX === 'number' ? fromX : 0;
 
+      const targets = marquee.children;
+      console.log('[marquee] playMarquee:', { startX, distanceToTranslate, duration, targetX: startX - distanceToTranslate, targetsCount: targets.length, target0: targets[0]?.tagName });
+
       tween = gsap.fromTo(
-        marquee.children,
+        targets,
         { x: startX },
         { x: startX - distanceToTranslate, duration, ease: 'none', repeat: -1 }
       );
+      console.log('[marquee] tween created, isActive:', tween.isActive());
     }
 
     function pauseAndResumeLater() {
@@ -428,6 +434,13 @@
     playMarquee();
     setupDrag();
 
+    /* Debug: log state after 1s to check if tween is running */
+    setTimeout(function () {
+      const x0 = gsap.getProperty(marquee.children[0], 'x');
+      const x1 = marquee.children[1] ? gsap.getProperty(marquee.children[1], 'x') : null;
+      console.log('[marquee] after 1s:', { tweenActive: tween && tween.isActive(), progress: tween ? tween.progress() : null, child0_x: x0, child1_x: x1 });
+    }, 1000);
+
     function debounce(fn) {
       var t;
       return function () {
@@ -438,20 +451,17 @@
 
     window.addEventListener('resize', debounce(function () {
       if (resumeTimer) return;
-      const currentX = parseFloat(gsap.getProperty(marquee.children[0], 'x')) || 0;
+      const p = tween ? tween.progress() : 0;
       distanceToTranslate = getDistance();
-      playMarquee(currentX);
+      playMarquee(p);
     }));
   }
 
-  function run() {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initMarquee);
-    } else {
-      initMarquee();
-    }
-    /* Fallback: retry on load if element wasn't ready (e.g. dynamic content) */
-    window.addEventListener('load', initMarquee);
+  if (document.readyState === 'loading') {
+    console.log('[marquee] waiting for DOMContentLoaded');
+    document.addEventListener('DOMContentLoaded', initMarquee);
+  } else {
+    console.log('[marquee] DOM ready, init now');
+    initMarquee();
   }
-  run();
 })();
