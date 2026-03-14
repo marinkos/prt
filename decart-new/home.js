@@ -85,53 +85,6 @@
   }
 })();
 
-/* Pin sections — [data-pin] (GSAP ScrollTrigger) */
-(function () {
-  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-  gsap.registerPlugin(ScrollTrigger);
-
-  function initPinSections() {
-    const pinnedSections = document.querySelectorAll('[data-pin]');
-    const mainWrapper = document.querySelector('.main-wrapper');
-    if (!pinnedSections.length || !mainWrapper) return;
-
-    pinnedSections.forEach((pinnedSection) => {
-      const desktopOnly = pinnedSection.dataset.pin === 'desktop';
-      if (desktopOnly && window.matchMedia('(max-width: 767px)').matches) return;
-
-      pinnedSection.style.zIndex = 0;
-      pinnedSection.style.position = 'relative';
-
-      const allChildren = [...mainWrapper.children];
-      const currentIndex = allChildren.indexOf(pinnedSection);
-      const siblingsAfter = allChildren.slice(currentIndex + 1);
-
-      siblingsAfter.forEach((section) => {
-        section.style.position = 'relative';
-        section.style.zIndex = 1;
-      });
-
-      const pinDuration = siblingsAfter.reduce((acc, el) => acc + el.offsetHeight, 0);
-
-      ScrollTrigger.create({
-        trigger: pinnedSection,
-        start: 'top top',
-        end: `+=${pinDuration}`,
-        pin: true,
-        pinType: 'transform',
-        pinSpacing: false,
-        anticipatePin: 1,
-      });
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPinSections);
-  } else {
-    initPinSections();
-  }
-})();
-
 /* Video on hover — [data-video] */
 (function () {
   function initVideoHover() {
