@@ -106,8 +106,10 @@
   }
 })();
 
-/* Cursor coordinates — hide over iframe via Webflow interaction if needed */
+/* Cursor coordinates — desktop only, hide over iframe via Webflow interaction if needed */
 (function () {
+  if (window.innerWidth < 992) return;
+
   var el = document.getElementById('cursor-coords');
   if (!el) return;
 
