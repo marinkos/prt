@@ -1,95 +1,127 @@
-/* Infinite vertical background scroll — .background-layer (page scroll driven)
+/* Infinite vertical scroll — .infinite-content / .infinite-item (works with smooth scroll)
  *
- * Layout:
- *   main-wrapper
- *     |_ background-layer (relative, 100% x 100%, min-height 150vh)
- *     |_ scene
+ * Layout (inside smooth-wrapper > smooth-content):
+ *   scene.infinite-content
+ *     |_ background-layer.infinite-item
+ *     |_ background-layer.infinite-item.duplicate (cloned)
  *
- * - background-layer is fixed to viewport, content inside translates with page scroll
- * - Content is duplicated for seamless loop
- * - Uses page scroll position to drive y translation (loops infinitely)
+ * - Scene is a scroll container (100vh, overflow-y: auto)
+ * - Scroll is captured when scene is in view so infinite loop works
+ * - Duplicates .infinite-item for seamless loop
  */
 (function () {
-  function initInfiniteBg() {
-    const mainWrapper = document.querySelector('.main-wrapper');
-    if (!mainWrapper) return;
-
-    const bgLayer = mainWrapper.querySelector('.background-layer');
-    if (!bgLayer) return;
-
-    const children = Array.from(bgLayer.children);
-    if (!children.length) return;
-
-    /* Create track wrapper for content + clones */
-    const track = document.createElement('div');
-    track.className = 'bg-infinite-track';
-    track.style.cssText = 'position:absolute;top:0;left:0;width:100%;will-change:transform;';
-
-    /* Move existing children into track */
-    children.forEach((child) => track.appendChild(child));
-
-    /* Duplicate content for seamless loop */
-    const trackChildren = Array.from(track.children);
-    trackChildren.forEach((child) => {
-      const clone = child.cloneNode(true);
-      clone.setAttribute('aria-hidden', 'true');
-      clone.classList.add('bg-duplicate');
-      track.appendChild(clone);
-    });
-
-    bgLayer.appendChild(track);
-
-    /* Preserve layout: add spacer before making bg fixed (keeps main-wrapper height) */
-    const spacer = document.createElement('div');
-    spacer.className = 'bg-infinite-spacer';
-    spacer.style.cssText = 'min-height:150vh;';
-    const bgRect = bgLayer.getBoundingClientRect();
-    if (bgRect.height > 0) spacer.style.minHeight = bgRect.height + 'px';
-    bgLayer.parentNode.insertBefore(spacer, bgLayer);
-
-    /* Style background-layer: fixed, full viewport, behind content */
-    bgLayer.style.cssText +=
-      'position:fixed !important;top:0;left:0;width:100%;height:100%;min-height:100vh;z-index:-1;overflow:hidden;pointer-events:none;';
-
-    function getContentHeight() {
-      const firstClone = track.querySelector('.bg-duplicate');
-      const h = firstClone ? firstClone.offsetTop : track.scrollHeight / 2;
-      return h > 0 ? h : window.innerHeight;
+  function initInfiniteScroll() {
+    const wrapper = document.querySelector('.infinite-content');
+    if (!wrapper) {
+      console.log('[studios] init: .infinite-content not found');
+      return;
     }
 
-    let contentHeight = getContentHeight();
-
-    function updateY() {
-      if (contentHeight <= 0) return;
-      const y = -(window.scrollY % contentHeight);
-      track.style.transform = `translate3d(0,${y}px,0)`;
+    let items = wrapper.querySelectorAll('.infinite-item:not(.duplicate)');
+    if (!items.length) {
+      console.log('[studios] init: no .infinite-item found');
+      return;
     }
+    console.log('[studios] init: found', items.length, 'infinite-item(s)');
 
-    let ticking = false;
-    function onScroll() {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          updateY();
-          ticking = false;
-        });
-        ticking = true;
+    /* Ensure scrollable container — required for wrapper.scrollTop to work */
+    wrapper.style.overflowY = 'auto';
+    wrapper.style.overflowX = 'hidden';
+    wrapper.style.height = '100vh';
+    wrapper.style.webkitOverflowScrolling = 'touch';
+
+    let disableScroll = false;
+    let clonesHeight = 0;
+    let duplicate = [];
+
+    function getScrollPos() {
+      return wrapper.scrollTop;
+    }
+    function setScrollPos(val) {
+      wrapper.scrollTop = val;
+    }
+    function getClonesHeight() {
+      clonesHeight = 0;
+      duplicate.forEach((el) => {
+        clonesHeight += el.offsetHeight;
+      });
+      return clonesHeight;
+    }
+    function calc() {
+      getClonesHeight();
+      const pos = getScrollPos();
+      if (pos <= 0) setScrollPos(1);
+      console.log('[studios] calc: clonesHeight=', clonesHeight, 'scrollHeight=', wrapper.scrollHeight);
+    }
+    function scrollUpdate() {
+      if (disableScroll) return;
+      const scrollPos = getScrollPos();
+      const scrollHeight = wrapper.scrollHeight;
+
+      if (scrollPos <= 0) {
+        console.log('[studios] scrollUpdate: jump to bottom (was at top)');
+        setScrollPos(scrollHeight - clonesHeight);
+        disableScroll = true;
+      } else if (clonesHeight + scrollPos >= scrollHeight) {
+        console.log('[studios] scrollUpdate: jump to top (was at bottom)');
+        setScrollPos(1);
+        disableScroll = true;
+      }
+
+      if (disableScroll) {
+        setTimeout(() => { disableScroll = false; }, 40);
       }
     }
 
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', () => {
-      contentHeight = getContentHeight();
-      updateY();
-    });
+    /* Duplicate only if not already duplicated */
+    if (!wrapper.querySelector('.infinite-item.duplicate')) {
+      items.forEach((item) => {
+        const clone = item.cloneNode(true);
+        clone.setAttribute('aria-hidden', 'true');
+        clone.classList.add('duplicate');
+        wrapper.appendChild(clone);
+      });
+      console.log('[studios] duplicated', items.length, 'item(s)');
+    } else {
+      console.log('[studios] skip duplicate (already has .duplicate)');
+    }
 
-    updateY();
+    duplicate = Array.from(wrapper.querySelectorAll('.infinite-item.duplicate'));
+    calc();
+
+    wrapper.addEventListener('scroll', () => {
+      requestAnimationFrame(scrollUpdate);
+    }, { passive: true });
+
+    /* Capture wheel when over scene — scroll scene instead of page (required for smooth scroll) */
+    wrapper.addEventListener('wheel', (e) => {
+      const { scrollTop, scrollHeight, clientHeight } = wrapper;
+      const canScrollUp = scrollTop > 0;
+      const canScrollDown = scrollTop + clientHeight < scrollHeight;
+
+      if ((e.deltaY > 0 && canScrollDown) || (e.deltaY < 0 && canScrollUp)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const newPos = scrollTop + e.deltaY;
+        setScrollPos(newPos);
+        if (!wrapper._wheelLogCount) wrapper._wheelLogCount = 0;
+        if (++wrapper._wheelLogCount % 20 === 1) {
+          console.log('[studios] wheel: scrollTop', scrollTop, '->', newPos);
+        }
+      }
+    }, { passive: false });
+
+    window.addEventListener('resize', () => {
+      requestAnimationFrame(calc);
+    });
   }
 
   function tryInit() {
-    const mainWrapper = document.querySelector('.main-wrapper');
-    const bgLayer = mainWrapper?.querySelector('.background-layer');
-    if (mainWrapper && bgLayer && bgLayer.children.length) {
-      initInfiniteBg();
+    const wrapper = document.querySelector('.infinite-content');
+    const items = wrapper?.querySelectorAll('.infinite-item');
+    console.log('[studios] tryInit: wrapper=', !!wrapper, 'items=', items?.length ?? 0);
+    if (wrapper && items?.length) {
+      initInfiniteScroll();
       return true;
     }
     return false;
