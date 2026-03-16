@@ -1,5 +1,7 @@
-/* Silicone video: play only when in view */
+/* Silicone video: desktop = hover, mobile = play when in view */
 (function () {
+  const isDesktop = () => window.matchMedia('(min-width: 768px)').matches;
+
   function initSiliconeVideo() {
     const container = document.getElementById('siliconeVideo') || document.querySelector('.silicone_video');
     if (!container) return;
@@ -7,23 +9,26 @@
     const video = container.querySelector('video');
     if (!video) return;
 
-    /* Start paused; IntersectionObserver will play when in view */
     video.pause();
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            video.play().catch(() => {});
-          } else {
-            video.pause();
-          }
-        });
-      },
-      { threshold: 0.25, rootMargin: '0px' }
-    );
-
-    observer.observe(container);
+    if (isDesktop()) {
+      container.addEventListener('mouseenter', () => video.play().catch(() => {}));
+      container.addEventListener('mouseleave', () => video.pause());
+    } else {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              video.play().catch(() => {});
+            } else {
+              video.pause();
+            }
+          });
+        },
+        { threshold: 0.25, rootMargin: '0px' }
+      );
+      observer.observe(container);
+    }
   }
 
   if (document.readyState === 'loading') {
