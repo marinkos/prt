@@ -1,76 +1,87 @@
-/* Infinite vertical scroll — .scene / .background-layer (GSAP + ScrollTrigger)
+/* Infinite vertical scroll — .scene / .background-layer (native scroll, no GSAP)
  *
- * Uses existing Webflow structure:
- *   .scene > .background-layer > .bg-item (x6) + .rect
+ * Uses scrollable container approach from infinite-webflow pattern:
+ *   .scene (viewport) > .background-layer (scroll wrapper) > .bg-item + .rect
  *
- * - Section gets pinned; vertical scroll drives vertical movement (content moves up)
- * - .bg-item elements are duplicated for seamless loop
- * - data-scroll-distance on .scene: pixels to scroll for one full cycle (default 2000)
+ * - .background-layer scrolls within .scene
+ * - .bg-item elements duplicated for seamless loop
+ * - Scroll jumps at top/bottom create infinite effect
  */
 (function () {
-  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-    console.warn('GSAP or ScrollTrigger not found. Infinite scroll requires these libraries.');
-    return;
-  }
-  gsap.registerPlugin(ScrollTrigger);
-
   function initInfiniteScroll() {
-    const section = document.querySelector('.scene');
-    if (!section) return;
+    const scene = document.querySelector('.scene');
+    if (!scene) return;
 
-    const track = section.querySelector('.background-layer');
-    if (!track) return;
+    const wrapper = scene.querySelector('.background-layer');
+    if (!wrapper) return;
 
-    const items = gsap.utils.toArray(track.querySelectorAll('.bg-item'));
+    const items = wrapper.querySelectorAll('.bg-item');
     if (!items.length) return;
 
-    /* Duplicate .bg-item elements for seamless loop */
+    /* Ensure scrollable container */
+    scene.style.overflow = 'hidden';
+    scene.style.height = scene.dataset.height || '100vh';
+    wrapper.style.overflowY = 'auto';
+    wrapper.style.overflowX = 'hidden';
+    wrapper.style.height = '100%';
+
+    let disableScroll = false;
+    let clonesHeight = 0;
+    const duplicate = [];
+
+    function getScrollPos() {
+      return wrapper.scrollTop;
+    }
+    function setScrollPos(val) {
+      wrapper.scrollTop = val;
+    }
+    function getClonesHeight() {
+      clonesHeight = 0;
+      duplicate.forEach((el) => {
+        clonesHeight += el.offsetHeight;
+      });
+      return clonesHeight;
+    }
+    function calc() {
+      getClonesHeight();
+      if (getScrollPos() <= 0) setScrollPos(1);
+    }
+    function scrollUpdate() {
+      if (disableScroll) return;
+      const scrollPos = getScrollPos();
+      const scrollHeight = wrapper.scrollHeight;
+
+      if (scrollPos <= 0) {
+        setScrollPos(scrollHeight - clonesHeight);
+        disableScroll = true;
+      } else if (clonesHeight + scrollPos >= scrollHeight) {
+        setScrollPos(1);
+        disableScroll = true;
+      }
+
+      if (disableScroll) {
+        setTimeout(() => { disableScroll = false; }, 40);
+      }
+    }
+
+    /* Duplicate .bg-item elements */
     items.forEach((item) => {
       const clone = item.cloneNode(true);
       clone.setAttribute('aria-hidden', 'true');
-      track.appendChild(clone);
+      clone.classList.add('duplicate');
+      wrapper.appendChild(clone);
     });
 
-    /* Height of one full set — first clone's offsetTop */
-    const firstClone = track.querySelectorAll('.bg-item')[items.length];
-    const firstSetHeight = firstClone ? firstClone.offsetTop : track.scrollHeight / 2;
+    duplicate.push(...wrapper.querySelectorAll('.duplicate'));
+    calc();
 
-    const scrollDistance = parseInt(section.dataset.scrollDistance || '2000', 10);
-    let wrapTicking = false;
+    wrapper.addEventListener('scroll', () => {
+      requestAnimationFrame(scrollUpdate);
+    }, { passive: true });
 
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top top',
-        end: () => `+=${scrollDistance}`,
-        pin: true,
-        scrub: 1,
-        anticipatePin: 1,
-        onUpdate: (self) => {
-          if (wrapTicking) return;
-          const scroll = self.scroll();
-          const dir = self.direction;
-
-          if (dir > 0 && scroll >= self.end - 2) {
-            wrapTicking = true;
-            self.scroll(self.start + 2);
-            requestAnimationFrame(() => {
-              ScrollTrigger.update();
-              wrapTicking = false;
-            });
-          } else if (dir < 0 && scroll <= self.start + 2) {
-            wrapTicking = true;
-            self.scroll(self.end - 2);
-            requestAnimationFrame(() => {
-              ScrollTrigger.update();
-              wrapTicking = false;
-            });
-          }
-        },
-      },
+    window.addEventListener('resize', () => {
+      requestAnimationFrame(calc);
     });
-
-    tl.to(track, { y: -firstSetHeight, ease: 'none' });
   }
 
   if (document.readyState === 'loading') {
