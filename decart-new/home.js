@@ -85,8 +85,10 @@
   }
 })();
 
-/* Video on hover — [data-video] */
+/* Video on hover — [data-video] (desktop only; mobile: play when in view) */
 (function () {
+  const isDesktop = () => window.matchMedia('(min-width: 768px)').matches;
+
   function initVideoHover() {
     document.querySelectorAll('[data-video]').forEach((trigger) => {
       const videoId = trigger.dataset.video;
@@ -95,15 +97,33 @@
 
       if (!video) return;
 
-      trigger.addEventListener('mouseenter', () => {
-        video.currentTime = 0;
-        video.play();
-      });
+      if (isDesktop()) {
+        trigger.addEventListener('mouseenter', () => {
+          video.currentTime = 0;
+          video.play();
+        });
 
-      trigger.addEventListener('mouseleave', () => {
-        video.pause();
-        video.currentTime = 0;
-      });
+        trigger.addEventListener('mouseleave', () => {
+          video.pause();
+          video.currentTime = 0;
+        });
+      } else {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                video.currentTime = 0;
+                video.play().catch(() => {});
+              } else {
+                video.pause();
+                video.currentTime = 0;
+              }
+            });
+          },
+          { threshold: 0.25 }
+        );
+        observer.observe(trigger);
+      }
     });
   }
 
