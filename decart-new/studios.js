@@ -1,95 +1,95 @@
-/* Infinite vertical scroll — .scene / .background-layer (native scroll, no GSAP)
+/* Infinite vertical background scroll — .background-layer (page scroll driven)
  *
- * Uses scrollable container approach from infinite-webflow pattern:
- *   .scene (viewport) > .background-layer (scroll wrapper) > .bg-item + .rect
+ * Layout:
+ *   main-wrapper
+ *     |_ background-layer (relative, 100% x 100%, min-height 150vh)
+ *     |_ scene
  *
- * - .background-layer scrolls within .scene
- * - All direct children duplicated for seamless loop
- * - Scroll jumps at top/bottom create infinite effect
+ * - background-layer is fixed to viewport, content inside translates with page scroll
+ * - Content is duplicated for seamless loop
+ * - Uses page scroll position to drive y translation (loops infinitely)
  */
 (function () {
-  function initInfiniteScroll() {
-    const scene = document.querySelector('.scene');
-    if (!scene) return;
+  function initInfiniteBg() {
+    const mainWrapper = document.querySelector('.main-wrapper');
+    if (!mainWrapper) return;
 
-    const wrapper = scene.querySelector('.background-layer');
-    if (!wrapper) return;
+    const bgLayer = mainWrapper.querySelector('.background-layer');
+    if (!bgLayer) return;
 
-    /* Duplicate all direct children (bg-item + rect) for seamless loop */
-    const children = Array.from(wrapper.children);
+    const children = Array.from(bgLayer.children);
     if (!children.length) return;
 
-    /* Ensure scrollable container */
-    scene.style.overflow = 'hidden';
-    scene.style.height = scene.dataset.height || '100vh';
-    wrapper.style.overflowY = 'auto';
-    wrapper.style.overflowX = 'hidden';
-    wrapper.style.height = '100%';
+    /* Create track wrapper for content + clones */
+    const track = document.createElement('div');
+    track.className = 'bg-infinite-track';
+    track.style.cssText = 'position:absolute;top:0;left:0;width:100%;will-change:transform;';
 
-    let disableScroll = false;
-    let clonesHeight = 0;
-    const duplicate = [];
+    /* Move existing children into track */
+    children.forEach((child) => track.appendChild(child));
 
-    function getScrollPos() {
-      return wrapper.scrollTop;
-    }
-    function setScrollPos(val) {
-      wrapper.scrollTop = val;
-    }
-    function getClonesHeight() {
-      clonesHeight = 0;
-      duplicate.forEach((el) => {
-        clonesHeight += el.offsetHeight;
-      });
-      return clonesHeight;
-    }
-    function calc() {
-      getClonesHeight();
-      if (getScrollPos() <= 0) setScrollPos(1);
-    }
-    function scrollUpdate() {
-      if (disableScroll) return;
-      const scrollPos = getScrollPos();
-      const scrollHeight = wrapper.scrollHeight;
-
-      if (scrollPos <= 0) {
-        setScrollPos(scrollHeight - clonesHeight);
-        disableScroll = true;
-      } else if (clonesHeight + scrollPos >= scrollHeight) {
-        setScrollPos(1);
-        disableScroll = true;
-      }
-
-      if (disableScroll) {
-        setTimeout(() => { disableScroll = false; }, 40);
-      }
-    }
-
-    /* Duplicate all children */
-    children.forEach((child) => {
+    /* Duplicate content for seamless loop */
+    const trackChildren = Array.from(track.children);
+    trackChildren.forEach((child) => {
       const clone = child.cloneNode(true);
       clone.setAttribute('aria-hidden', 'true');
-      clone.classList.add('duplicate');
-      wrapper.appendChild(clone);
+      clone.classList.add('bg-duplicate');
+      track.appendChild(clone);
     });
 
-    duplicate.push(...wrapper.querySelectorAll('.duplicate'));
-    calc();
+    bgLayer.appendChild(track);
 
-    wrapper.addEventListener('scroll', () => {
-      requestAnimationFrame(scrollUpdate);
-    }, { passive: true });
+    /* Preserve layout: add spacer before making bg fixed (keeps main-wrapper height) */
+    const spacer = document.createElement('div');
+    spacer.className = 'bg-infinite-spacer';
+    spacer.style.cssText = 'min-height:150vh;';
+    const bgRect = bgLayer.getBoundingClientRect();
+    if (bgRect.height > 0) spacer.style.minHeight = bgRect.height + 'px';
+    bgLayer.parentNode.insertBefore(spacer, bgLayer);
 
+    /* Style background-layer: fixed, full viewport, behind content */
+    bgLayer.style.cssText +=
+      'position:fixed !important;top:0;left:0;width:100%;height:100%;min-height:100vh;z-index:-1;overflow:hidden;pointer-events:none;';
+
+    function getContentHeight() {
+      const firstClone = track.querySelector('.bg-duplicate');
+      const h = firstClone ? firstClone.offsetTop : track.scrollHeight / 2;
+      return h > 0 ? h : window.innerHeight;
+    }
+
+    let contentHeight = getContentHeight();
+
+    function updateY() {
+      if (contentHeight <= 0) return;
+      const y = -(window.scrollY % contentHeight);
+      track.style.transform = `translate3d(0,${y}px,0)`;
+    }
+
+    let ticking = false;
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          updateY();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', () => {
-      requestAnimationFrame(calc);
+      contentHeight = getContentHeight();
+      updateY();
     });
+
+    updateY();
   }
 
   function tryInit() {
-    const scene = document.querySelector('.scene');
-    const wrapper = scene?.querySelector('.background-layer');
-    if (scene && wrapper && wrapper.children.length) {
-      initInfiniteScroll();
+    const mainWrapper = document.querySelector('.main-wrapper');
+    const bgLayer = mainWrapper?.querySelector('.background-layer');
+    if (mainWrapper && bgLayer && bgLayer.children.length) {
+      initInfiniteBg();
       return true;
     }
     return false;
