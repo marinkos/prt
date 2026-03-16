@@ -124,3 +124,41 @@
 
   window.addEventListener('mousemove', updateCoords);
 })();
+
+/** Text reveal **/
+gsap.registerPlugin(ScrollTrigger, SplitText);
+const splitTypes = document.querySelectorAll("data-text-reveal");
+
+splitTypes.forEach((char) => {
+  const text = new SplitText(char, { type: "chars, words, lines" });
+
+  // Create timeline for better control
+  const tl = gsap.timeline({
+    scrollTrigger: {
+      trigger: char,
+      start: "top 80%",
+      end: "top 20%",
+      scrub: true,
+      markers: false,
+      onRefresh: (self) => {
+        // Check if element is already in view when ScrollTrigger refreshes
+        if (self.progress === 1) {
+          gsap.set(text.chars, { color: "white" });
+        } else if (self.progress === 0) {
+          gsap.set(text.chars, { color: "#475462" });
+        }
+      },
+    },
+  });
+
+  // Set initial color
+  gsap.set(text.chars, {
+    color: "#8A8A8E",
+  });
+
+  // Animate to white
+  tl.to(text.chars, {
+    color: "#21222C",
+    stagger: 0.2,
+  });
+});
