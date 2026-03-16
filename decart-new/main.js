@@ -114,7 +114,7 @@
   if (!el) return;
 
   document.addEventListener('mousemove', function (e) {
-    el.textContent = '(X ' + e.clientX.toFixed(1) + ', Y ' + e.clientY.toFixed(1) + ')';
+    el.textContent = '(X' + e.clientX.toFixed(1) + ', Y' + e.clientY.toFixed(1) + ')';
     el.style.left = '20px';
     el.style.top = e.clientY + 'px';
     el.style.display = 'block';
