@@ -4,7 +4,7 @@
  *   .scene (viewport) > .background-layer (scroll wrapper) > .bg-item + .rect
  *
  * - .background-layer scrolls within .scene
- * - .bg-item elements duplicated for seamless loop
+ * - All direct children duplicated for seamless loop
  * - Scroll jumps at top/bottom create infinite effect
  */
 (function () {
@@ -15,8 +15,9 @@
     const wrapper = scene.querySelector('.background-layer');
     if (!wrapper) return;
 
-    const items = wrapper.querySelectorAll('.bg-item');
-    if (!items.length) return;
+    /* Duplicate all direct children (bg-item + rect) for seamless loop */
+    const children = Array.from(wrapper.children);
+    if (!children.length) return;
 
     /* Ensure scrollable container */
     scene.style.overflow = 'hidden';
@@ -64,9 +65,9 @@
       }
     }
 
-    /* Duplicate .bg-item elements */
-    items.forEach((item) => {
-      const clone = item.cloneNode(true);
+    /* Duplicate all children */
+    children.forEach((child) => {
+      const clone = child.cloneNode(true);
       clone.setAttribute('aria-hidden', 'true');
       clone.classList.add('duplicate');
       wrapper.appendChild(clone);
@@ -84,9 +85,21 @@
     });
   }
 
+  function tryInit() {
+    const scene = document.querySelector('.scene');
+    const wrapper = scene?.querySelector('.background-layer');
+    if (scene && wrapper && wrapper.children.length) {
+      initInfiniteScroll();
+      return true;
+    }
+    return false;
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initInfiniteScroll);
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!tryInit()) window.addEventListener('load', tryInit);
+    });
   } else {
-    initInfiniteScroll();
+    if (!tryInit()) window.addEventListener('load', tryInit);
   }
 })();
