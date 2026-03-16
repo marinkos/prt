@@ -1,11 +1,11 @@
-/* Infinite horizontal scroll — .scene / .background-layer (GSAP + ScrollTrigger)
+/* Infinite vertical scroll — .scene / .background-layer (GSAP + ScrollTrigger)
  *
  * Uses existing Webflow structure:
  *   .scene > .background-layer > .bg-item (x6) + .rect
  *
- * - Section gets pinned; vertical scroll drives horizontal movement
+ * - Section gets pinned; vertical scroll drives vertical movement (content moves up)
  * - .bg-item elements are duplicated for seamless loop
- * - data-scroll-distance on .scene: pixels for one full cycle (default 2000)
+ * - data-scroll-distance on .scene: pixels to scroll for one full cycle (default 2000)
  */
 (function () {
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
@@ -31,9 +31,9 @@
       track.appendChild(clone);
     });
 
-    /* Width of one full set — first clone's offsetLeft */
+    /* Height of one full set — first clone's offsetTop */
     const firstClone = track.querySelectorAll('.bg-item')[items.length];
-    const firstSetWidth = firstClone ? firstClone.offsetLeft : track.scrollWidth / 2;
+    const firstSetHeight = firstClone ? firstClone.offsetTop : track.scrollHeight / 2;
 
     const scrollDistance = parseInt(section.dataset.scrollDistance || '2000', 10);
     let wrapTicking = false;
@@ -70,7 +70,7 @@
       },
     });
 
-    tl.to(track, { x: -firstSetWidth, ease: 'none' });
+    tl.to(track, { y: -firstSetHeight, ease: 'none' });
   }
 
   if (document.readyState === 'loading') {
