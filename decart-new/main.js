@@ -113,10 +113,14 @@
   var el = document.getElementById('cursor-coords');
   if (!el) return;
 
-  document.addEventListener('mousemove', function (e) {
+  el.style.pointerEvents = 'none';
+
+  function updateCoords(e) {
     el.textContent = '(X ' + e.clientX.toFixed(1) + ',Y ' + e.clientY.toFixed(1) + ')';
     el.style.left = (e.clientX + 12) + 'px';
     el.style.top = e.clientY + 'px';
     el.style.display = 'block';
-  });
+  }
+
+  window.addEventListener('mousemove', updateCoords);
 })();
