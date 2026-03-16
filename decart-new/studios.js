@@ -8,6 +8,7 @@
  * - Scene is a scroll container (100vh, overflow-y: auto)
  * - Scroll is captured when scene is in view so infinite loop works
  * - Duplicates .infinite-item for seamless loop
+ * - Intro: .bg-item and .rect start centered, animate to final positions on load
  */
 (function () {
   function initInfiniteScroll() {
@@ -89,6 +90,9 @@
     duplicate = Array.from(wrapper.querySelectorAll('.infinite-item.duplicate'));
     calc();
 
+    /* Intro: bg-items and rects start centered, animate to final positions */
+    requestAnimationFrame(() => runIntro(wrapper));
+
     wrapper.addEventListener('scroll', () => {
       requestAnimationFrame(scrollUpdate);
     }, { passive: true });
@@ -113,6 +117,37 @@
 
     window.addEventListener('resize', () => {
       requestAnimationFrame(calc);
+    });
+  }
+
+  function runIntro(wrapper) {
+    if (typeof gsap === 'undefined') return;
+
+    const firstItem = wrapper.querySelector('.infinite-item:not(.duplicate)');
+    if (!firstItem) return;
+
+    const elements = firstItem.querySelectorAll('.bg-item, .rect');
+    if (!elements.length) return;
+
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const centerX = wrapperRect.left + wrapperRect.width / 2;
+    const centerY = wrapperRect.top + wrapperRect.height / 2;
+
+    const tl = gsap.timeline();
+    elements.forEach((el, i) => {
+      const rect = el.getBoundingClientRect();
+      const elCenterX = rect.left + rect.width / 2;
+      const elCenterY = rect.top + rect.height / 2;
+      const fromX = centerX - elCenterX;
+      const fromY = centerY - elCenterY;
+
+      tl.fromTo(el, { x: fromX, y: fromY }, {
+        x: 0,
+        y: 0,
+        duration: 1.2,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      }, i * 0.05);
     });
   }
 
