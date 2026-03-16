@@ -106,33 +106,40 @@
   }
 })();
 
-/* Cursor coordinates — desktop only, hide over iframe via Webflow interaction if needed */
+/* Cursor coordinates — desktop only (≥992px), hide over iframe via Webflow interaction if needed */
 (function () {
-  if (window.innerWidth < 992) return;
+  const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
 
-  var el = document.getElementById('cursor-coords');
-  if (!el) return;
+  function initCursorCoords() {
+    var el = document.getElementById('cursor-coords');
+    if (!el) return;
 
-  el.style.pointerEvents = 'none';
+    el.style.pointerEvents = 'none';
 
-  function updateCoords(e) {
-    el.textContent = '(X ' + (e.clientX / 10).toFixed(1) + ',Y ' + (e.clientY / 10).toFixed(1) + ')';
-    el.style.left = (e.clientX + 12) + 'px';
-    el.style.top = e.clientY + 'px';
-    el.style.display = 'block';
+    function updateCoords(e) {
+      el.textContent = '(X ' + (e.clientX / 10).toFixed(1) + ',Y ' + (e.clientY / 10).toFixed(1) + ')';
+      el.style.left = (e.clientX + 12) + 'px';
+      el.style.top = e.clientY + 'px';
+      el.style.display = 'block';
+    }
+
+    if (isDesktop()) {
+      window.addEventListener('mousemove', updateCoords);
+    } else {
+      el.style.display = 'none';
+    }
   }
 
-  window.addEventListener('mousemove', updateCoords);
+  initCursorCoords();
 })();
 
-/** Text reveal **/
+/* Text reveal — commented out
 gsap.registerPlugin(ScrollTrigger, SplitText);
 const splitTypes = document.querySelectorAll("data-text-reveal");
 
 splitTypes.forEach((char) => {
   const text = new SplitText(char, { type: "chars, words, lines" });
 
-  // Create timeline for better control
   const tl = gsap.timeline({
     scrollTrigger: {
       trigger: char,
@@ -141,7 +148,6 @@ splitTypes.forEach((char) => {
       scrub: true,
       markers: false,
       onRefresh: (self) => {
-        // Check if element is already in view when ScrollTrigger refreshes
         if (self.progress === 1) {
           gsap.set(text.chars, { color: "white" });
         } else if (self.progress === 0) {
@@ -151,14 +157,13 @@ splitTypes.forEach((char) => {
     },
   });
 
-  // Set initial color
   gsap.set(text.chars, {
     color: "#8A8A8E",
   });
 
-  // Animate to white
   tl.to(text.chars, {
     color: "#21222C",
     stagger: 0.2,
   });
 });
+*/
