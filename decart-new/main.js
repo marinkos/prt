@@ -163,6 +163,8 @@
 (function () {
   if (typeof gsap === 'undefined') return;
 
+  const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
   function initMarquee() {
     const marquee = document.querySelector('[data="marquee"]');
     if (!marquee) return;
@@ -170,14 +172,16 @@
     const marqueeContent = marquee.firstElementChild;
     if (!marqueeContent) return;
 
-    /* Prevent horizontal scroll from stealing touch; allow vertical page scroll */
-    marquee.style.touchAction = 'pan-y';
+    /* Capture horizontal drag on mobile; pan-y can block touchmove on some devices */
+    marquee.style.touchAction = isTouchDevice() ? 'none' : 'pan-y';
 
     const durationVal = marquee.getAttribute('data-marquee-duration') || marquee.getAttribute('duration') || '5';
     const duration = parseInt(durationVal, 10) || 5;
     const resumeDelay = parseInt(marquee.getAttribute('data-marquee-resume') || '5', 10) * 1000;
-    const marqueeContentClone = marqueeContent.cloneNode(true);
-    marquee.appendChild(marqueeContentClone);
+
+    /* Duplicate all direct children for seamless loop (handles multi-item marquees) */
+    const originalChildren = Array.from(marquee.children);
+    originalChildren.forEach((child) => marquee.appendChild(child.cloneNode(true)));
 
     let tween;
     let resumeTimer;
@@ -187,14 +191,17 @@
     let distanceToTranslate;
 
     function getDistance() {
-      const width = parseInt(getComputedStyle(marqueeContent).getPropertyValue('width') || '0', 10);
+      const childCount = marquee.children.length / 2;
+      let total = 0;
       const gap = parseInt(
         getComputedStyle(marquee).getPropertyValue('column-gap') ||
-        getComputedStyle(marquee).getPropertyValue('gap') ||
-        getComputedStyle(marqueeContent).getPropertyValue('column-gap') || '0',
+        getComputedStyle(marquee).getPropertyValue('gap') || '0',
         10
       );
-      return width + gap;
+      for (let i = 0; i < childCount; i++) {
+        total += marquee.children[i].offsetWidth + (i < childCount - 1 ? gap : 0);
+      }
+      return total || marqueeContent.offsetWidth + gap;
     }
 
     function playMarquee(fromX) {
@@ -238,7 +245,8 @@
       }
       const delta = clientX - dragStartX;
       const baseX = -dragStartProgress * distanceToTranslate;
-      const newX = Math.max(-distanceToTranslate * 2, Math.min(0, baseX + delta));
+      const maxScroll = -distanceToTranslate * 2;
+      const newX = Math.max(maxScroll, Math.min(0, baseX + delta));
       gsap.set(marquee.children, { x: newX });
     }
 
@@ -256,6 +264,7 @@
       let pointerId;
       let pointerDownX;
       let pointerDownY;
+      let touchId = null;
       let captured = false;
       const dragThreshold = 5;
 
@@ -269,36 +278,86 @@
         captured = false;
       }
 
-      marquee.addEventListener('pointerdown', function (e) {
-        pointerId = e.pointerId;
-        pointerDownX = e.clientX;
-        pointerDownY = e.clientY;
-        captured = false;
-      });
-
-      marquee.addEventListener('pointermove', function (e) {
-        if (e.pointerId !== pointerId) return;
-        if (!captured) {
-          const dx = Math.abs(e.clientX - pointerDownX);
-          const dy = Math.abs(e.clientY - pointerDownY);
-          if (dx > dragThreshold || dy > dragThreshold) {
-            captured = true;
-            e.preventDefault();
-            marquee.setPointerCapture && marquee.setPointerCapture(e.pointerId);
-            onDragStart(pointerDownX);
-            didDrag = true;
-            if (tween) tween.pause();
-          } else {
-            return;
+      function handleTouchEnd(e) {
+        if (touchId == null) return;
+        if (e.changedTouches) {
+          for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === touchId) {
+              touchId = null;
+              if (captured) onDragEnd();
+              captured = false;
+              return;
+            }
           }
         }
-        e.preventDefault();
-        onDragMove(e.clientX);
-      }, { passive: false });
+      }
 
-      /* Document-level listeners so we always catch release, even when finger lifts outside marquee (fixes mobile stuck) */
-      document.addEventListener('pointerup', handlePointerEnd, true);
-      document.addEventListener('pointercancel', handlePointerEnd, true);
+      if (isTouchDevice()) {
+        /* Touch events for mobile — more reliable than pointer events on iOS/Android */
+        marquee.addEventListener('touchstart', function (e) {
+          if (touchId != null) return;
+          touchId = e.changedTouches[0].identifier;
+          pointerDownX = e.changedTouches[0].clientX;
+          pointerDownY = e.changedTouches[0].clientY;
+          captured = false;
+        }, { passive: true });
+
+        marquee.addEventListener('touchmove', function (e) {
+          if (touchId == null) return;
+          const t = Array.from(e.touches).find((x) => x.identifier === touchId);
+          if (!t) return;
+          if (!captured) {
+            const dx = Math.abs(t.clientX - pointerDownX);
+            const dy = Math.abs(t.clientY - pointerDownY);
+            if (dx > dragThreshold || dy > dragThreshold) {
+              captured = true;
+              onDragStart(pointerDownX);
+              didDrag = true;
+              if (tween) tween.pause();
+            } else {
+              return;
+            }
+          }
+          e.preventDefault();
+          onDragMove(t.clientX);
+        }, { passive: false });
+
+        marquee.addEventListener('touchend', handleTouchEnd, { passive: true });
+        marquee.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+        document.addEventListener('touchend', handleTouchEnd, true);
+        document.addEventListener('touchcancel', handleTouchEnd, true);
+      } else {
+        /* Pointer events for desktop */
+        marquee.addEventListener('pointerdown', function (e) {
+          pointerId = e.pointerId;
+          pointerDownX = e.clientX;
+          pointerDownY = e.clientY;
+          captured = false;
+        });
+
+        marquee.addEventListener('pointermove', function (e) {
+          if (e.pointerId !== pointerId) return;
+          if (!captured) {
+            const dx = Math.abs(e.clientX - pointerDownX);
+            const dy = Math.abs(e.clientY - pointerDownY);
+            if (dx > dragThreshold || dy > dragThreshold) {
+              captured = true;
+              e.preventDefault();
+              marquee.setPointerCapture && marquee.setPointerCapture(e.pointerId);
+              onDragStart(pointerDownX);
+              didDrag = true;
+              if (tween) tween.pause();
+            } else {
+              return;
+            }
+          }
+          e.preventDefault();
+          onDragMove(e.clientX);
+        }, { passive: false });
+
+        document.addEventListener('pointerup', handlePointerEnd, true);
+        document.addEventListener('pointercancel', handlePointerEnd, true);
+      }
     }
 
     playMarquee();
