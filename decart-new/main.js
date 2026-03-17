@@ -142,7 +142,7 @@
       });
 
       gsap.set(text.chars, {
-        color: "#8A8A8E",
+        color: "#ADADAD",
       });
 
       tl.to(text.chars, {
