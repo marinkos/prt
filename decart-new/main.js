@@ -135,14 +135,14 @@
             if (self.progress === 1) {
               gsap.set(text.chars, { color: "white" });
             } else if (self.progress === 0) {
-              gsap.set(text.chars, { color: "#475462" });
+              gsap.set(text.chars, { color: "#8A8A8E" });
             }
           },
         },
       });
 
       gsap.set(text.chars, {
-        color: "#ADADAD",
+        color: "#8A8A8E",
       });
 
       tl.to(text.chars, {
