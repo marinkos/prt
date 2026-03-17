@@ -170,6 +170,9 @@
     const marqueeContent = marquee.firstElementChild;
     if (!marqueeContent) return;
 
+    /* Prevent horizontal scroll from stealing touch; allow vertical page scroll */
+    marquee.style.touchAction = 'pan-y';
+
     const durationVal = marquee.getAttribute('data-marquee-duration') || marquee.getAttribute('duration') || '5';
     const duration = parseInt(durationVal, 10) || 5;
     const resumeDelay = parseInt(marquee.getAttribute('data-marquee-resume') || '5', 10) * 1000;
@@ -256,6 +259,16 @@
       let captured = false;
       const dragThreshold = 5;
 
+      function handlePointerEnd(e) {
+        if (e.pointerId !== pointerId) return;
+        if (captured) {
+          marquee.releasePointerCapture && marquee.releasePointerCapture(e.pointerId);
+          onDragEnd();
+        }
+        pointerId = null;
+        captured = false;
+      }
+
       marquee.addEventListener('pointerdown', function (e) {
         pointerId = e.pointerId;
         pointerDownX = e.clientX;
@@ -279,24 +292,13 @@
             return;
           }
         }
+        e.preventDefault();
         onDragMove(e.clientX);
-      });
+      }, { passive: false });
 
-      marquee.addEventListener('pointerup', function (e) {
-        if (e.pointerId !== pointerId) return;
-        if (captured) {
-          marquee.releasePointerCapture && marquee.releasePointerCapture(e.pointerId);
-          onDragEnd();
-        }
-        pointerId = null;
-        captured = false;
-      });
-
-      marquee.addEventListener('pointercancel', function (e) {
-        if (e.pointerId === pointerId && captured) onDragEnd();
-        pointerId = null;
-        captured = false;
-      });
+      /* Document-level listeners so we always catch release, even when finger lifts outside marquee (fixes mobile stuck) */
+      document.addEventListener('pointerup', handlePointerEnd, true);
+      document.addEventListener('pointercancel', handlePointerEnd, true);
     }
 
     playMarquee();
