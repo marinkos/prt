@@ -168,6 +168,7 @@
 
     let isMuted = true;
     let userHasInteracted = false; /* Safari requires user gesture before video.play() */
+    let isInView = false;
 
     function playActiveVideo(activeVideo) {
       if (!activeVideo) return;
@@ -180,10 +181,6 @@
       slidesPerView: 1,
       spaceBetween: 0,
       loop: true,
-      autoplay: {
-        delay: 4000,
-        disableOnInteraction: true,
-      },
       effect: 'fade',
       fadeEffect: { crossFade: true },
       keyboard: true,
@@ -216,7 +213,7 @@
       });
 
       const activeVideo = activeSlide.querySelector('video');
-      if (activeVideo && userHasInteracted) {
+      if (activeVideo && userHasInteracted && isInView) {
         setTimeout(function () {
           playActiveVideo(activeVideo);
         }, 50);
@@ -227,8 +224,20 @@
       if (userHasInteracted) return;
       userHasInteracted = true;
       const activeVideo = newsSwiper.slides[newsSwiper.activeIndex]?.querySelector('video');
-      playActiveVideo(activeVideo);
+      if (activeVideo && isInView) {
+        playActiveVideo(activeVideo);
+      }
     }
+
+    /* Play video only when in view; advance when video ends */
+    function setupVideoListeners() {
+      document.querySelectorAll('.video_collection .swiper-slide video').forEach((video) => {
+        video.addEventListener('ended', () => {
+          newsSwiper.slideNext();
+        });
+      });
+    }
+    setupVideoListeners();
 
     ['#videoSound', '#videoNext', '#videoPrev'].forEach(function (sel) {
       const el = document.querySelector(sel);
@@ -253,14 +262,19 @@
       });
     }
 
-    /* Mute when video collection is out of view */
+    /* Play when in view, pause when out of view; mute when out of view */
     const viewObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          const inView = entry.isIntersecting;
+          isInView = entry.isIntersecting;
           const activeVideo = newsSwiper.slides[newsSwiper.activeIndex]?.querySelector('video');
           if (activeVideo) {
-            activeVideo.muted = inView ? isMuted : true;
+            activeVideo.muted = isInView ? isMuted : true;
+            if (isInView && userHasInteracted) {
+              playActiveVideo(activeVideo);
+            } else if (!isInView) {
+              activeVideo.pause();
+            }
           }
         });
       },
