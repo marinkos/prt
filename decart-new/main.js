@@ -1,3 +1,31 @@
+/* Lenis + ScrollTrigger sync — run before any ScrollTrigger animations */
+(function () {
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined' || typeof Lenis === 'undefined') return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  function initLenisScrollTrigger() {
+    const lenis = window.lenis;
+    if (!lenis) return;
+
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((time) => lenis.raf(time * 1000));
+    gsap.ticker.lagSmoothing(0);
+    ScrollTrigger.refresh();
+  }
+
+  if (window.lenis) {
+    initLenisScrollTrigger();
+  } else {
+    const check = setInterval(() => {
+      if (window.lenis) {
+        clearInterval(check);
+        initLenisScrollTrigger();
+      }
+    }, 50);
+    setTimeout(() => clearInterval(check), 5000);
+  }
+})();
+
 /* Buttons */
 (function () {
   if (typeof gsap === 'undefined' || typeof SplitText === 'undefined') {
