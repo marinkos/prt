@@ -59,7 +59,79 @@
   }
 })();
 
-/* Pin sections — [data-pin] (GSAP ScrollTrigger) */
+/* Cursor coordinates — desktop only (≥992px), hide over iframe via Webflow interaction if needed */
+(function () {
+  const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
+
+  function initCursorCoords() {
+    var el = document.getElementById('cursor-coords');
+    if (!el) return;
+
+    el.style.pointerEvents = 'none';
+
+    function updateCoords(e) {
+      el.textContent = '(X ' + (e.clientX / 10).toFixed(1) + ',Y ' + (e.clientY / 10).toFixed(1) + ')';
+      el.style.left = (e.clientX + 12) + 'px';
+      el.style.top = e.clientY + 'px';
+      el.style.display = 'block';
+    }
+
+    if (isDesktop()) {
+      window.addEventListener('mousemove', updateCoords);
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  initCursorCoords();
+})();
+
+/* Text reveal */
+(function () {
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined' || typeof SplitText === 'undefined') return;
+  gsap.registerPlugin(ScrollTrigger, SplitText);
+
+  function initTextReveal() {
+    const splitTypes = document.querySelectorAll("[data-text-reveal]");
+    splitTypes.forEach((char) => {
+      const text = new SplitText(char, { type: "chars, words, lines" });
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: char,
+          start: "top 80%",
+          end: "top 20%",
+          scrub: true,
+          markers: false,
+          onRefresh: (self) => {
+            if (self.progress === 1) {
+              gsap.set(text.chars, { color: "white" });
+            } else if (self.progress === 0) {
+              gsap.set(text.chars, { color: "#475462" });
+            }
+          },
+        },
+      });
+
+      gsap.set(text.chars, {
+        color: "#8A8A8E",
+      });
+
+      tl.to(text.chars, {
+        color: "#21222C",
+        stagger: 0.2,
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTextReveal);
+  } else {
+    initTextReveal();
+  }
+})();
+
+/* Pin sections — [data-pin] (GSAP ScrollTrigger) — commented out
 (function () {
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
   gsap.registerPlugin(ScrollTrigger);
@@ -105,65 +177,4 @@
     initPinSections();
   }
 })();
-
-/* Cursor coordinates — desktop only (≥992px), hide over iframe via Webflow interaction if needed */
-(function () {
-  const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
-
-  function initCursorCoords() {
-    var el = document.getElementById('cursor-coords');
-    if (!el) return;
-
-    el.style.pointerEvents = 'none';
-
-    function updateCoords(e) {
-      el.textContent = '(X ' + (e.clientX / 10).toFixed(1) + ',Y ' + (e.clientY / 10).toFixed(1) + ')';
-      el.style.left = (e.clientX + 12) + 'px';
-      el.style.top = e.clientY + 'px';
-      el.style.display = 'block';
-    }
-
-    if (isDesktop()) {
-      window.addEventListener('mousemove', updateCoords);
-    } else {
-      el.style.display = 'none';
-    }
-  }
-
-  initCursorCoords();
-})();
-
-/* Text reveal — commented out
-gsap.registerPlugin(ScrollTrigger, SplitText);
-const splitTypes = document.querySelectorAll("data-text-reveal");
-
-splitTypes.forEach((char) => {
-  const text = new SplitText(char, { type: "chars, words, lines" });
-
-  const tl = gsap.timeline({
-    scrollTrigger: {
-      trigger: char,
-      start: "top 80%",
-      end: "top 20%",
-      scrub: true,
-      markers: false,
-      onRefresh: (self) => {
-        if (self.progress === 1) {
-          gsap.set(text.chars, { color: "white" });
-        } else if (self.progress === 0) {
-          gsap.set(text.chars, { color: "#475462" });
-        }
-      },
-    },
-  });
-
-  gsap.set(text.chars, {
-    color: "#8A8A8E",
-  });
-
-  tl.to(text.chars, {
-    color: "#21222C",
-    stagger: 0.2,
-  });
-});
 */
