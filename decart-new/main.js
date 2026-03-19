@@ -159,7 +159,7 @@
   }
 })();
 
-/* Marquee — [data="marquee"] (GSAP, swipe/drag, pause then resume). Runs only if marquee exists. */
+/* Marquee — [data="marquee"] (GSAP, swipe/drag, pause then resume). Runs only if marquee exists. — commented out
 (function () {
   if (typeof gsap === 'undefined') return;
 
@@ -391,6 +391,7 @@
     tryInit();
   }
 })();
+*/
 
 /* Pin sections — [data-pin] (GSAP ScrollTrigger) — commented out
 (function () {
