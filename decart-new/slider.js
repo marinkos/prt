@@ -7,19 +7,6 @@
       var componentEl = $(this);
       var wrapEl = componentEl.find("[carousel='wrap']");
       var itemEl = wrapEl.find('.carousel_item');
-      /* Optional: duplicate the slide set so a small count still fills the ring (e.g. min-slides="6" with 3 items → 6 panels). Set on [carousel='component']. */
-      var minSlides = parseInt(componentEl.attr('data-carousel-min-slides'), 10);
-      if (minSlides > 0 && itemEl.length > 0) {
-        var baseNodes = itemEl.toArray();
-        var nBase = baseNodes.length;
-        var repeats = Math.ceil(minSlides / nBase);
-        for (var r = 1; r < repeats; r++) {
-          for (var i = 0; i < nBase; i++) {
-            wrapEl[0].appendChild(baseNodes[i].cloneNode(true));
-          }
-        }
-        itemEl = wrapEl.find('.carousel_item');
-      }
       var nextEl = componentEl.find("[carousel='next']");
       var prevEl = componentEl.find("[carousel='prev']");
       var numSlides = itemEl.length;
