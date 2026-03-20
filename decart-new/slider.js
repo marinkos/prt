@@ -7,17 +7,13 @@
       var componentEl = $(this);
       var wrapEl = componentEl.find("[carousel='wrap']");
       var itemEl = wrapEl.find('.carousel_item');
-      if (itemEl.length === 0) return;
       var nextEl = componentEl.find("[carousel='next']");
       var prevEl = componentEl.find("[carousel='prev']");
       var numSlides = itemEl.length;
-      var wrapDom = wrapEl[0];
-      /* Optional: --3d-carousel-angle-step (e.g. 51.429deg). Use 360/7 for six slides but spacing like seven. Omit → 360/numSlides. */
-      var stepRaw = wrapDom && getComputedStyle(wrapDom).getPropertyValue('--3d-carousel-angle-step').trim();
-      var stepDeg = parseFloat(stepRaw);
-      var rotateAmount = stepRaw && !isNaN(stepDeg) && stepDeg > 0 ? stepDeg : 360 / numSlides;
+      var rotateAmount = 360 / numSlides;
       /* Radius: base closed circle + gap (read from --3d-carousel-gap on wrap so Webflow/inline CSS works) */
       var radiusDivisor = 2 * Math.sin((rotateAmount / 2) * (Math.PI / 180));
+      var wrapDom = wrapEl[0];
       var gapValue = (wrapDom && getComputedStyle(wrapDom).getPropertyValue('--3d-carousel-gap').trim()) || '0px';
       var negTranslate = 'calc(var(--3d-carousel-item-width) / -' + radiusDivisor + ' - ' + gapValue + ')';
       var posTranslate = 'calc(var(--3d-carousel-item-width) / ' + radiusDivisor + ' + ' + gapValue + ')';
@@ -25,13 +21,8 @@
       var currentIndex = 0;
       var isDragging = false;
       var startX = 0;
+      var currentRotation = 0;
       var dragThreshold = 50;
-
-      function targetRotationFor(idx) {
-        return -((idx - (numSlides - 1) / 2) * rotateAmount);
-      }
-
-      var currentRotation = targetRotationFor(currentIndex);
 
       wrapEl.css('--3d-carousel-z', negTranslate);
       wrapEl.css('perspective', posTranslate);
@@ -39,8 +30,7 @@
       wrapEl.css('opacity', '0');
 
       itemEl.each(function (index) {
-        var yDeg = (index - (numSlides - 1) / 2) * rotateAmount;
-        $(this).css('transform', 'rotateY(' + yDeg + 'deg) translateZ(' + posTranslate + ')');
+        $(this).css('transform', 'rotateY(' + rotateAmount * index + 'deg) translateZ(' + posTranslate + ')');
       });
 
       var introPlayed = false;
@@ -50,21 +40,14 @@
             if (!entry.isIntersecting || introPlayed) return;
             introPlayed = true;
             viewObserver.disconnect();
-            var settleRotate = targetRotationFor(currentIndex);
             var introTl = gsap.timeline({
               onComplete: function () {
-                currentRotation = targetRotationFor(currentIndex);
                 setupNavigation();
                 setupDragging();
               }
             });
             introTl.to(wrapEl, { opacity: 1, duration: 0.3 });
-            introTl.fromTo(
-              wrapEl,
-              { '--3d-carousel-rotate': 100, '--3d-carousel-rotate-x': -90 },
-              { '--3d-carousel-rotate': settleRotate, '--3d-carousel-rotate-x': 0, duration: 4, ease: 'power2.inOut' },
-              '<'
-            );
+            introTl.fromTo(wrapEl, { '--3d-carousel-rotate': 100, '--3d-carousel-rotate-x': -90 }, { '--3d-carousel-rotate': 0, '--3d-carousel-rotate-x': 0, duration: 4, ease: 'power2.inOut' }, '<');
           });
         },
         { threshold: 0.1, rootMargin: '0px' }
@@ -166,7 +149,7 @@
       }
 
       function updateCarousel() {
-        var targetRotation = targetRotationFor(currentIndex);
+        var targetRotation = -(rotateAmount * currentIndex);
         var el = wrapEl[0];
         var currentValue = el ? getComputedStyle(el).getPropertyValue('--3d-carousel-rotate').trim() : '';
         var currentDeg = parseFloat(currentValue) || currentRotation;
