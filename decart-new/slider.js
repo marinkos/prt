@@ -7,6 +7,19 @@
       var componentEl = $(this);
       var wrapEl = componentEl.find("[carousel='wrap']");
       var itemEl = wrapEl.find('.carousel_item');
+      /* Optional: duplicate the slide set so a small count still fills the ring (e.g. min-slides="6" with 3 items → 6 panels). Set on [carousel='component']. */
+      var minSlides = parseInt(componentEl.attr('data-carousel-min-slides'), 10);
+      if (minSlides > 0 && itemEl.length > 0) {
+        var baseNodes = itemEl.toArray();
+        var nBase = baseNodes.length;
+        var repeats = Math.ceil(minSlides / nBase);
+        for (var r = 1; r < repeats; r++) {
+          for (var i = 0; i < nBase; i++) {
+            wrapEl[0].appendChild(baseNodes[i].cloneNode(true));
+          }
+        }
+        itemEl = wrapEl.find('.carousel_item');
+      }
       var nextEl = componentEl.find("[carousel='next']");
       var prevEl = componentEl.find("[carousel='prev']");
       var numSlides = itemEl.length;
@@ -44,7 +57,6 @@
               onComplete: function () {
                 setupNavigation();
                 setupDragging();
-                setupMouseFollow();
               }
             });
             introTl.to(wrapEl, { opacity: 1, duration: 0.3 });
@@ -83,44 +95,11 @@
         });
       }
 
-      var mouseOffset = 0;
-      var targetMouseOffset = 0;
-      var mouseOffsetX = 0;
-      var targetMouseOffsetX = 0;
-      var mouseSensitivity = 12;
-      var mouseMaxDeg = 5;
-
-      function setupMouseFollow() {
-        $(document).on('mousemove.carouselMouse', function (e) {
-          if (isDragging) return;
-          var nX = (e.clientX / window.innerWidth - 0.5) * 2;
-          var nY = (e.clientY / window.innerHeight - 0.5) * 2;
-          targetMouseOffset = Math.max(-mouseMaxDeg, Math.min(mouseMaxDeg, nX * mouseSensitivity));
-          targetMouseOffsetX = Math.max(-mouseMaxDeg, Math.min(mouseMaxDeg, -nY * mouseSensitivity));
-        });
-        function tick() {
-          if (!isDragging) {
-            mouseOffset += (targetMouseOffset - mouseOffset) * 0.08;
-            mouseOffsetX += (targetMouseOffsetX - mouseOffsetX) * 0.08;
-            wrapEl.css('--3d-carousel-mouse-offset', mouseOffset.toFixed(2) + 'deg');
-            wrapEl.css('--3d-carousel-mouse-offset-x', mouseOffsetX.toFixed(2) + 'deg');
-          }
-          requestAnimationFrame(tick);
-        }
-        tick();
-      }
-
       function setupDragging() {
         wrapEl.on('mousedown', function (e) {
           isDragging = true;
           startX = e.clientX;
-          targetMouseOffset = 0;
-          mouseOffset = 0;
-          targetMouseOffsetX = 0;
-          mouseOffsetX = 0;
           wrapEl.css('cursor', 'grabbing');
-          wrapEl.css('--3d-carousel-mouse-offset', '0deg');
-          wrapEl.css('--3d-carousel-mouse-offset-x', '0deg');
           e.preventDefault();
         });
 

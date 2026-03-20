@@ -172,14 +172,14 @@
     const marqueeContent = marquee.firstElementChild;
     if (!marqueeContent) return;
 
-    /* Capture horizontal drag on mobile; pan-y can block touchmove on some devices */
+    // Capture horizontal drag on mobile; pan-y can block touchmove on some devices
     marquee.style.touchAction = isTouchDevice() ? 'none' : 'pan-y';
 
     const durationVal = marquee.getAttribute('data-marquee-duration') || marquee.getAttribute('duration') || '5';
     const duration = parseInt(durationVal, 10) || 5;
     const resumeDelay = parseInt(marquee.getAttribute('data-marquee-resume') || '5', 10) * 1000;
 
-    /* Duplicate all direct children for seamless loop (handles multi-item marquees) */
+    // Duplicate all direct children for seamless loop (handles multi-item marquees)
     const originalChildren = Array.from(marquee.children);
     originalChildren.forEach((child) => marquee.appendChild(child.cloneNode(true)));
 
@@ -293,7 +293,7 @@
       }
 
       if (isTouchDevice()) {
-        /* Touch events for mobile — more reliable than pointer events on iOS/Android */
+        // Touch events for mobile — more reliable than pointer events on iOS/Android
         marquee.addEventListener('touchstart', function (e) {
           if (touchId != null) return;
           touchId = e.changedTouches[0].identifier;
@@ -327,7 +327,7 @@
         document.addEventListener('touchend', handleTouchEnd, true);
         document.addEventListener('touchcancel', handleTouchEnd, true);
       } else {
-        /* Pointer events for desktop */
+        // Pointer events for desktop
         marquee.addEventListener('pointerdown', function (e) {
           pointerId = e.pointerId;
           pointerDownX = e.clientX;
