@@ -1,7 +1,7 @@
 /* 3D Carousel — requires jQuery and GSAP */
 (function () {
   /**
-   * Marks the slide closest to the front with .is-active (style in Webflow/CSS).
+   * Sets .is-active (front), .is-prev (left / negative eff), .is-next (right / positive eff).
    * @param {HTMLElement|JQuery} wrapEl - [carousel="wrap"] for one carousel instance
    */
   function updateActiveSlide(wrapEl) {
@@ -9,35 +9,64 @@
     if (!wrap) return;
 
     var items = wrap.querySelectorAll('.carousel_item');
-    if (!items.length) return;
+    var n = items.length;
+    if (!n) return;
 
     var raw = getComputedStyle(wrap).getPropertyValue('--3d-carousel-rotate').trim();
     var carouselAngle = parseFloat(raw) || 0;
     var total = 360;
 
-    var closest = null;
-    var minDiff = Infinity;
-
-    for (var i = 0; i < items.length; i++) {
+    var withAngles = [];
+    for (var i = 0; i < n; i++) {
       var item = items[i];
       var tf = item.style.transform || '';
       var match = tf.match(/rotateY\(\s*([-\d.]+)deg\)/);
-      if (!match) continue;
+      var itemAngle = match ? parseFloat(match[1]) : 0;
 
-      var itemAngle = parseFloat(match[1]);
-      var diff = ((itemAngle + carouselAngle) % total + total) % total;
-      if (diff > 180) diff = total - diff;
+      var eff = ((itemAngle + carouselAngle) % total + total) % total;
+      if (eff > 180) eff -= total;
 
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = item;
+      withAngles.push({ item: item, eff: eff });
+    }
+
+    var active = withAngles[0];
+    for (var a = 1; a < withAngles.length; a++) {
+      if (Math.abs(withAngles[a].eff) < Math.abs(active.eff)) {
+        active = withAngles[a];
       }
     }
 
-    for (var j = 0; j < items.length; j++) {
-      items[j].classList.remove('is-active');
+    var lefts = [];
+    var rights = [];
+    for (var k = 0; k < withAngles.length; k++) {
+      var x = withAngles[k];
+      if (x === active) continue;
+      if (x.eff < 0) lefts.push(x);
+      if (x.eff > 0) rights.push(x);
     }
-    if (closest) closest.classList.add('is-active');
+
+    var prev = null;
+    if (lefts.length) {
+      prev = lefts[0];
+      for (var p = 1; p < lefts.length; p++) {
+        if (Math.abs(lefts[p].eff) < Math.abs(prev.eff)) prev = lefts[p];
+      }
+    }
+
+    var next = null;
+    if (rights.length) {
+      next = rights[0];
+      for (var q = 1; q < rights.length; q++) {
+        if (Math.abs(rights[q].eff) < Math.abs(next.eff)) next = rights[q];
+      }
+    }
+
+    for (var j = 0; j < n; j++) {
+      items[j].classList.remove('is-active', 'is-prev', 'is-next');
+    }
+    active.item.classList.add('is-active');
+    if (prev) prev.item.classList.add('is-prev');
+    if (next) next.item.classList.add('is-next');
   }
 
   function init() {
