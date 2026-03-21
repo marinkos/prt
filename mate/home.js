@@ -1,5 +1,45 @@
 /* 3D Carousel — requires jQuery and GSAP */
 (function () {
+  /**
+   * Marks the slide closest to the front with .is-active (style in Webflow/CSS).
+   * @param {HTMLElement|JQuery} wrapEl - [carousel="wrap"] for one carousel instance
+   */
+  function updateActiveSlide(wrapEl) {
+    var wrap = wrapEl && wrapEl.nodeType ? wrapEl : wrapEl && wrapEl[0];
+    if (!wrap) return;
+
+    var items = wrap.querySelectorAll('.carousel_item');
+    if (!items.length) return;
+
+    var raw = getComputedStyle(wrap).getPropertyValue('--3d-carousel-rotate').trim();
+    var carouselAngle = parseFloat(raw) || 0;
+    var total = 360;
+
+    var closest = null;
+    var minDiff = Infinity;
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var tf = item.style.transform || '';
+      var match = tf.match(/rotateY\(\s*([-\d.]+)deg\)/);
+      if (!match) continue;
+
+      var itemAngle = parseFloat(match[1]);
+      var diff = ((itemAngle + carouselAngle) % total + total) % total;
+      if (diff > 180) diff = total - diff;
+
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = item;
+      }
+    }
+
+    for (var j = 0; j < items.length; j++) {
+      items[j].classList.remove('is-active');
+    }
+    if (closest) closest.classList.add('is-active');
+  }
+
   function init() {
     if (typeof $ === 'undefined' || typeof gsap === 'undefined') return;
 
@@ -31,6 +71,8 @@
       itemEl.each(function (index) {
         $(this).css('transform', 'rotateY(' + rotateAmount * index + 'deg) translateZ(' + posTranslate + ')');
       });
+
+      updateActiveSlide(wrapEl);
 
       setupNavigation();
       setupDragging();
@@ -76,6 +118,7 @@
             var deltaX = e.clientX - startX;
             var tempRotation = currentRotation + (deltaX * 0.5);
             wrapEl.css('--3d-carousel-rotate', tempRotation + 'deg');
+            updateActiveSlide(wrapEl);
           }
         });
 
@@ -108,6 +151,7 @@
             var deltaX = e.originalEvent.touches[0].clientX - startX;
             var tempRotation = currentRotation + (deltaX * 0.5);
             wrapEl.css('--3d-carousel-rotate', tempRotation + 'deg');
+            updateActiveSlide(wrapEl);
           }
         });
 
@@ -143,9 +187,13 @@
           '--3d-carousel-rotate': endRotation,
           duration: 0.5,
           ease: 'power2.inOut',
+          onUpdate: function () {
+            updateActiveSlide(wrapEl);
+          },
           onComplete: function () {
             wrapEl.css('--3d-carousel-rotate', targetRotation + 'deg');
             currentRotation = targetRotation;
+            updateActiveSlide(wrapEl);
           }
         });
       }
