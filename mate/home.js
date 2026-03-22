@@ -244,8 +244,8 @@
         var endRotation = endDeg + 'deg';
         gsap.fromTo(wrapEl, { '--3d-carousel-rotate': currentValue || (currentDeg + 'deg') }, {
           '--3d-carousel-rotate': endRotation,
-          duration: 0.5,
-          ease: 'power2.inOut',
+          duration: 0.95,
+          ease: 'power3.inOut',
           onUpdate: function () {
             updateActiveSlide(wrapEl, componentEl);
           },
