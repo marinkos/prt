@@ -1,10 +1,38 @@
 /* 3D Carousel — requires jQuery and GSAP */
 (function () {
   /**
-   * Sets .is-active (front), .is-prev (left / negative eff), .is-next (right / positive eff).
-   * @param {HTMLElement|JQuery} wrapEl - [carousel="wrap"] for one carousel instance
+   * Shows matching [data-slide] panels (not .carousel_item) via .is-active; hides others.
+   * @param {JQuery} $component - [carousel="component"] instance
+   * @param {HTMLElement|null} activeSlideEl - front .carousel_item
    */
-  function updateActiveSlide(wrapEl) {
+  function syncDataSlidePanels($component, activeSlideEl) {
+    if (!$component || !$component.length) return;
+
+    var $panels = $component.find('[data-slide]').not('.carousel_item');
+    if (!$panels.length) return;
+
+    var key =
+      activeSlideEl && activeSlideEl.getAttribute
+        ? activeSlideEl.getAttribute('data-slide')
+        : null;
+    if (key === null || key === '') {
+      $panels.removeClass('is-active');
+      return;
+    }
+    var keyStr = String(key);
+    $panels.each(function () {
+      var v = $(this).attr('data-slide');
+      $(this).toggleClass('is-active', v !== undefined && String(v) === keyStr);
+    });
+  }
+
+  /**
+   * Sets .is-active (front), .is-prev (left / negative eff), .is-next (right / positive eff).
+   * Syncs [data-slide] panels inside the component (see syncDataSlidePanels).
+   * @param {HTMLElement|JQuery} wrapEl - [carousel="wrap"] for one carousel instance
+   * @param {JQuery} componentEl - [carousel="component"] for this carousel (panel scope)
+   */
+  function updateActiveSlide(wrapEl, componentEl) {
     var wrap = wrapEl && wrapEl.nodeType ? wrapEl : wrapEl && wrapEl[0];
     if (!wrap) return;
 
@@ -67,6 +95,8 @@
     active.item.classList.add('is-active');
     if (prev) prev.item.classList.add('is-prev');
     if (next) next.item.classList.add('is-next');
+
+    syncDataSlidePanels(componentEl, active.item);
   }
 
   function init() {
@@ -101,7 +131,7 @@
         $(this).css('transform', 'rotateY(' + rotateAmount * index + 'deg) translateZ(' + posTranslate + ')');
       });
 
-      updateActiveSlide(wrapEl);
+      updateActiveSlide(wrapEl, componentEl);
 
       setupNavigation();
       setupDragging();
@@ -147,7 +177,7 @@
             var deltaX = e.clientX - startX;
             var tempRotation = currentRotation + (deltaX * 0.5);
             wrapEl.css('--3d-carousel-rotate', tempRotation + 'deg');
-            updateActiveSlide(wrapEl);
+            updateActiveSlide(wrapEl, componentEl);
           }
         });
 
@@ -180,7 +210,7 @@
             var deltaX = e.originalEvent.touches[0].clientX - startX;
             var tempRotation = currentRotation + (deltaX * 0.5);
             wrapEl.css('--3d-carousel-rotate', tempRotation + 'deg');
-            updateActiveSlide(wrapEl);
+            updateActiveSlide(wrapEl, componentEl);
           }
         });
 
@@ -217,12 +247,12 @@
           duration: 0.5,
           ease: 'power2.inOut',
           onUpdate: function () {
-            updateActiveSlide(wrapEl);
+            updateActiveSlide(wrapEl, componentEl);
           },
           onComplete: function () {
             wrapEl.css('--3d-carousel-rotate', targetRotation + 'deg');
             currentRotation = targetRotation;
-            updateActiveSlide(wrapEl);
+            updateActiveSlide(wrapEl, componentEl);
           }
         });
       }
