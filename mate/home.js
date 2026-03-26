@@ -158,6 +158,8 @@
     $("[carousel='component']").each(function () {
       var componentEl = $(this);
       var wrapEl = componentEl.find("[carousel='wrap']");
+      /** Slides often live in .carousel_list; strip must be the flex row, wrap the clipped viewport. */
+      var trackEl = wrapEl.find('.carousel_list').length ? wrapEl.find('.carousel_list').first() : wrapEl;
       var itemEl = wrapEl.find('.carousel_item');
       var nextEl = componentEl.find("[carousel='next']");
       var prevEl = componentEl.find("[carousel='prev']");
@@ -187,16 +189,23 @@
        */
       function getSlideWidth() {
         var w = 0;
-        if (wrapEl[0] && wrapEl[0].parentElement) {
+        if (wrapEl[0]) {
+          w = wrapEl[0].clientWidth;
+        }
+        if (w < 2 && wrapEl[0] && wrapEl[0].parentElement) {
           w = wrapEl[0].parentElement.clientWidth;
         }
         if (w < 2 && componentEl[0]) {
           w = componentEl[0].clientWidth;
         }
-        if (w < 2 && wrapEl[0]) {
-          w = wrapEl[0].clientWidth;
-        }
         return w;
+      }
+
+      function killMobileMotion() {
+        gsap.killTweensOf(wrapEl);
+        gsap.killTweensOf(trackEl);
+        gsap.set(wrapEl, { clearProps: 'x' });
+        gsap.set(trackEl, { clearProps: 'x' });
       }
 
       /** Percent flex-basis breaks when the track width is content-sized; use px like Swiper. */
@@ -208,14 +217,14 @@
           $(this).css('width', sw + 'px');
           $(this).css('max-width', sw + 'px');
         });
-        wrapEl.css('width', numSlides * sw + 'px');
+        trackEl.css('width', numSlides * sw + 'px');
       }
 
       function refreshMobilePosition() {
         var sw = getSlideWidth();
         if (sw < 2) return;
         applyMobileSlideWidths(sw);
-        gsap.set(wrapEl, { x: -currentIndex * sw });
+        gsap.set(trackEl, { x: -currentIndex * sw });
         updateActiveSlide(wrapEl, componentEl, currentIndex);
       }
 
@@ -223,8 +232,7 @@
         layoutIsMobile = false;
         componentEl.removeClass('carousel--mobile');
         clearPaginationDots(componentEl);
-        gsap.killTweensOf(wrapEl);
-        gsap.set(wrapEl, { clearProps: 'x' });
+        killMobileMotion();
 
         wrapEl.css('--3d-carousel-z', negTranslate);
         wrapEl.css('perspective', posTranslate);
@@ -235,6 +243,13 @@
         wrapEl.css('transform-style', '');
         wrapEl.css('transform', '');
         wrapEl.css('width', '');
+        wrapEl.css('max-width', '');
+        wrapEl.css('overflow', '');
+        trackEl.css('display', '');
+        trackEl.css('flex-direction', '');
+        trackEl.css('flex-wrap', '');
+        trackEl.css('align-items', '');
+        trackEl.css('width', '');
 
         itemEl.each(function (index) {
           $(this).css('transform', 'rotateY(' + rotateAmount * index + 'deg) translateZ(' + posTranslate + ')');
@@ -254,27 +269,31 @@
         componentEl.addClass('carousel--mobile');
         buildPaginationDots(componentEl, numSlides);
 
-        gsap.killTweensOf(wrapEl);
+        killMobileMotion();
         currentRotation = 0;
         wrapEl.css('--3d-carousel-rotate', '0deg');
         wrapEl.css('--3d-carousel-z', '');
         wrapEl.css('perspective', 'none');
         wrapEl.css('cursor', 'default');
         wrapEl.css('transform-style', 'flat');
-        wrapEl.css('display', 'flex');
-        wrapEl.css('flex-direction', 'row');
-        wrapEl.css('flex-wrap', 'nowrap');
+        wrapEl.css('display', 'block');
+        wrapEl.css('width', '100%');
+        wrapEl.css('max-width', '100%');
+        wrapEl.css('overflow', 'hidden');
+
+        trackEl.css('display', 'flex');
+        trackEl.css('flex-direction', 'row');
+        trackEl.css('flex-wrap', 'nowrap');
+        trackEl.css('align-items', 'stretch');
 
         itemEl.each(function () {
           $(this).css('transform', 'none');
           $(this).css('box-sizing', 'border-box');
         });
 
-        wrapEl.css('align-items', 'stretch');
-
         var sw = getSlideWidth();
         applyMobileSlideWidths(sw);
-        gsap.set(wrapEl, { x: -currentIndex * sw });
+        gsap.set(trackEl, { x: -currentIndex * sw });
         updateActiveSlide(wrapEl, componentEl, currentIndex);
 
         if (sw < 2) {
@@ -304,7 +323,7 @@
         if (sw < 2) sw = 300;
         applyMobileSlideWidths(sw);
         var targetX = -currentIndex * sw;
-        gsap.to(wrapEl, {
+        gsap.to(trackEl, {
           x: targetX,
           duration: 0.95,
           ease: 'power3.inOut',
@@ -312,7 +331,7 @@
             updateActiveSlide(wrapEl, componentEl, currentIndex);
           },
           onComplete: function () {
-            gsap.set(wrapEl, { x: targetX });
+            gsap.set(trackEl, { x: targetX });
             updateActiveSlide(wrapEl, componentEl, currentIndex);
           }
         });
@@ -452,7 +471,7 @@
           if (componentEl.hasClass('carousel--mobile')) {
             mobileTouchActive = true;
             mobileTouchStartX = e.originalEvent.touches[0].clientX;
-            mobileBaseX = gsap.getProperty(wrapEl[0], 'x') || 0;
+            mobileBaseX = gsap.getProperty(trackEl[0], 'x') || 0;
             e.preventDefault();
             return;
           }
@@ -471,7 +490,7 @@
             var minX = -(numSlides - 1) * slideWidth;
             var maxX = 0;
             nextX = Math.max(minX, Math.min(maxX, nextX));
-            gsap.set(wrapEl, { x: nextX });
+            gsap.set(trackEl, { x: nextX });
             e.preventDefault();
             return;
           }
@@ -495,7 +514,7 @@
             mobileTouchActive = false;
             var slideWidth = getSlideWidth();
             if (slideWidth < 2) slideWidth = 300;
-            var currentX = gsap.getProperty(wrapEl[0], 'x') || 0;
+            var currentX = gsap.getProperty(trackEl[0], 'x') || 0;
             var snapIndex = Math.round(-currentX / slideWidth);
             snapIndex = Math.max(0, Math.min(numSlides - 1, snapIndex));
             currentIndex = snapIndex;
