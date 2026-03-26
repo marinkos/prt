@@ -1,7 +1,7 @@
 /* 3D Carousel — requires jQuery and GSAP */
 (function () {
   /** Match this in your CSS for mobile layout + dots visibility */
-  var MOBILE_MEDIA_QUERY = '(max-width: 767px)';
+  var MOBILE_MEDIA_QUERY = '(max-width: 479px)';
 
   function isMobileView() {
     return typeof window.matchMedia === 'function' && window.matchMedia(MOBILE_MEDIA_QUERY).matches;
@@ -182,12 +182,41 @@
       var mobileBaseX = 0;
       var layoutIsMobile = false;
 
+      /**
+       * Viewport width for one slide (parent of the track is usually the clipped area in Webflow).
+       */
       function getSlideWidth() {
-        var w = componentEl[0] ? componentEl[0].clientWidth : 0;
-        if (w < 2 && wrapEl[0] && wrapEl[0].parentElement) {
+        var w = 0;
+        if (wrapEl[0] && wrapEl[0].parentElement) {
           w = wrapEl[0].parentElement.clientWidth;
         }
+        if (w < 2 && componentEl[0]) {
+          w = componentEl[0].clientWidth;
+        }
+        if (w < 2 && wrapEl[0]) {
+          w = wrapEl[0].clientWidth;
+        }
         return w;
+      }
+
+      /** Percent flex-basis breaks when the track width is content-sized; use px like Swiper. */
+      function applyMobileSlideWidths(sw) {
+        if (!sw || sw < 2) return;
+        itemEl.each(function () {
+          $(this).css('flex', '0 0 ' + sw + 'px');
+          $(this).css('min-width', sw + 'px');
+          $(this).css('width', sw + 'px');
+          $(this).css('max-width', sw + 'px');
+        });
+        wrapEl.css('width', numSlides * sw + 'px');
+      }
+
+      function refreshMobilePosition() {
+        var sw = getSlideWidth();
+        if (sw < 2) return;
+        applyMobileSlideWidths(sw);
+        gsap.set(wrapEl, { x: -currentIndex * sw });
+        updateActiveSlide(wrapEl, componentEl, currentIndex);
       }
 
       function applyDesktopLayout() {
@@ -205,6 +234,7 @@
         wrapEl.css('flex-wrap', '');
         wrapEl.css('transform-style', '');
         wrapEl.css('transform', '');
+        wrapEl.css('width', '');
 
         itemEl.each(function (index) {
           $(this).css('transform', 'rotateY(' + rotateAmount * index + 'deg) translateZ(' + posTranslate + ')');
@@ -237,16 +267,21 @@
 
         itemEl.each(function () {
           $(this).css('transform', 'none');
-          $(this).css('flex', '0 0 100%');
-          $(this).css('min-width', '0');
-          $(this).css('width', '100%');
-          $(this).css('max-width', '100%');
           $(this).css('box-sizing', 'border-box');
         });
 
+        wrapEl.css('align-items', 'stretch');
+
         var sw = getSlideWidth();
+        applyMobileSlideWidths(sw);
         gsap.set(wrapEl, { x: -currentIndex * sw });
         updateActiveSlide(wrapEl, componentEl, currentIndex);
+
+        if (sw < 2) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(refreshMobilePosition);
+          });
+        }
       }
 
       function setLayoutForViewport() {
@@ -260,17 +295,14 @@
           return;
         }
         if (wantMobile && layoutIsMobile) {
-          var sw = getSlideWidth();
-          if (sw > 1) {
-            gsap.set(wrapEl, { x: -currentIndex * sw });
-          }
-          updateActiveSlide(wrapEl, componentEl, currentIndex);
+          refreshMobilePosition();
         }
       }
 
       function updateCarouselMobile() {
         var sw = getSlideWidth();
         if (sw < 2) sw = 300;
+        applyMobileSlideWidths(sw);
         var targetX = -currentIndex * sw;
         gsap.to(wrapEl, {
           x: targetX,
