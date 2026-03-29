@@ -121,7 +121,8 @@
       var isDragging = false;
       var startX = 0;
       var currentRotation = 0;
-      var dragThreshold = 50;
+      var dragThreshold = 60;
+      var dragRotationScale = 0.3;
 
       wrapEl.css('--3d-carousel-z', negTranslate);
       wrapEl.css('perspective', posTranslate);
@@ -175,7 +176,7 @@
         $(document).on('mousemove', function (e) {
           if (isDragging) {
             var deltaX = e.clientX - startX;
-            var tempRotation = currentRotation + (deltaX * 0.5);
+            var tempRotation = currentRotation + deltaX * dragRotationScale;
             wrapEl.css('--3d-carousel-rotate', tempRotation + 'deg');
             updateActiveSlide(wrapEl, componentEl);
           }
@@ -208,7 +209,7 @@
         $(document).on('touchmove', function (e) {
           if (isDragging) {
             var deltaX = e.originalEvent.touches[0].clientX - startX;
-            var tempRotation = currentRotation + (deltaX * 0.5);
+            var tempRotation = currentRotation + deltaX * dragRotationScale;
             wrapEl.css('--3d-carousel-rotate', tempRotation + 'deg');
             updateActiveSlide(wrapEl, componentEl);
           }
@@ -244,7 +245,7 @@
         var endRotation = endDeg + 'deg';
         gsap.fromTo(wrapEl, { '--3d-carousel-rotate': currentValue || (currentDeg + 'deg') }, {
           '--3d-carousel-rotate': endRotation,
-          duration: 0.95,
+          duration: 1.1,
           ease: 'power3.inOut',
           onUpdate: function () {
             updateActiveSlide(wrapEl, componentEl);
