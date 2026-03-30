@@ -1,5 +1,6 @@
 // Social share: Web Share API when available; otherwise opens network URLs or copies link.
-// Markup: data-social-share="native|twitter|linkedin|facebook|copy|email"
+// Markup: data-social-share="native|twitter|linkedin|facebook|whatsapp|copy|email"
+//   (alias: data-share="…" if data-social-share is omitted)
 // Optional (innermost wins on the control or an ancestor):
 //   data-share-url — page URL (hash stripped before applying anchor)
 //   data-share-anchor — fragment id for a section (e.g. pricing or #pricing)
@@ -184,19 +185,30 @@ function shareEmail(ctx) {
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
 }
 
+function shareWhatsapp(ctx) {
+  const line = [ctx.text, ctx.url].filter(Boolean).join('\n\n').trim() || ctx.url;
+  const href = `https://wa.me/?text=${encodeURIComponent(line)}`;
+  openUrl(href, ctx, false);
+}
+
 const handlers = {
   native: (ctx) => shareNative(ctx),
   twitter: (ctx) => shareTwitter(ctx),
   linkedin: (ctx) => shareLinkedIn(ctx),
   facebook: (ctx) => shareFacebook(ctx),
+  whatsapp: (ctx) => shareWhatsapp(ctx),
   copy: (ctx) => copyLink(ctx.url),
   email: (ctx) => shareEmail(ctx),
 };
 
 function onClick(e) {
-  const target = e.target.closest('[data-social-share]');
+  const target = e.target.closest('[data-social-share], [data-share]');
   if (!target) return;
-  const kind = (target.dataset.socialShare || '').toLowerCase();
+  const kind = (
+    target.dataset.socialShare ||
+    target.dataset.share ||
+    ''
+  ).toLowerCase();
   const fn = handlers[kind];
   if (!fn) return;
   e.preventDefault();
