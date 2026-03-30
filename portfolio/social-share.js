@@ -1,5 +1,7 @@
 // Social share: Web Share API when available; otherwise opens network URLs or copies link.
-// Markup: data-social-share="native|twitter|linkedin|facebook|whatsapp|copy|email"
+// Markup: data-social-share="native|x|twitter|linkedin|facebook|reddit|telegram|whatsapp|copy|email"
+//   • x — same as twitter (X intent)
+//   • copy — copy resolved share URL to clipboard (same as data-share="copy")
 //   (alias: data-share="…" if data-social-share is omitted)
 // Optional (innermost wins on the control or an ancestor):
 //   data-share-url — page URL (hash stripped before applying anchor)
@@ -191,11 +193,36 @@ function shareWhatsapp(ctx) {
   openUrl(href, ctx, false);
 }
 
+function shareReddit(ctx) {
+  const params = {
+    url: ctx.url,
+    title: ctx.title || ctx.text || '',
+  };
+  openUrl(
+    `https://www.reddit.com/submit?${encodeParams(params)}`,
+    ctx,
+    false
+  );
+}
+
+function shareTelegram(ctx) {
+  const params = { url: ctx.url };
+  if (ctx.text) params.text = ctx.text;
+  openUrl(
+    `https://t.me/share/url?${encodeParams(params)}`,
+    ctx,
+    false
+  );
+}
+
 const handlers = {
   native: (ctx) => shareNative(ctx),
+  x: (ctx) => shareTwitter(ctx),
   twitter: (ctx) => shareTwitter(ctx),
   linkedin: (ctx) => shareLinkedIn(ctx),
   facebook: (ctx) => shareFacebook(ctx),
+  reddit: (ctx) => shareReddit(ctx),
+  telegram: (ctx) => shareTelegram(ctx),
   whatsapp: (ctx) => shareWhatsapp(ctx),
   copy: (ctx) => copyLink(ctx.url),
   email: (ctx) => shareEmail(ctx),
