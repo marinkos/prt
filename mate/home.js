@@ -99,24 +99,8 @@
     syncDataSlidePanels(componentEl, active.item);
   }
 
-  /** Default dot styles: visible only at max-width 767px; override in your CSS. */
-  function injectCarouselDotStyles() {
-    if (document.getElementById('carousel-dots-styles')) return;
-    var style = document.createElement('style');
-    style.id = 'carousel-dots-styles';
-    style.textContent =
-      '[carousel="component"] .carousel_arrow_wrap .carousel_dots{display:none;align-items:center;justify-content:center;gap:0.5rem;flex-wrap:wrap;margin:0;padding:0;border:0;list-style:none;box-sizing:border-box}' +
-      '@media (max-width:767px){[carousel="component"] .carousel_arrow_wrap .carousel_dots{display:flex}}' +
-      '[carousel="component"] .carousel_arrow_wrap .carousel_dot{width:0.5rem;height:0.5rem;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.25);cursor:pointer;-webkit-appearance:none;appearance:none;flex-shrink:0}' +
-      '[carousel="component"] .carousel_arrow_wrap .carousel_dot.is-active{background:rgba(0,0,0,.85);transform:scale(1.15)}' +
-      '[carousel="component"] .carousel_arrow_wrap .carousel_dot:focus-visible{outline:2px solid currentColor;outline-offset:2px}';
-    document.head.appendChild(style);
-  }
-
   function init() {
     if (typeof $ === 'undefined' || typeof gsap === 'undefined') return;
-
-    injectCarouselDotStyles();
 
     $("[carousel='component']").each(function () {
       var componentEl = $(this);
