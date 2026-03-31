@@ -99,8 +99,24 @@
     syncDataSlidePanels(componentEl, active.item);
   }
 
+  /** Default dot styles: visible only at max-width 767px; override in your CSS. */
+  function injectCarouselDotStyles() {
+    if (document.getElementById('carousel-dots-styles')) return;
+    var style = document.createElement('style');
+    style.id = 'carousel-dots-styles';
+    style.textContent =
+      '[carousel="component"] .carousel_arrow_wrap .carousel_dots{display:none;align-items:center;justify-content:center;gap:0.5rem;flex-wrap:wrap;margin:0;padding:0;border:0;list-style:none;box-sizing:border-box}' +
+      '@media (max-width:767px){[carousel="component"] .carousel_arrow_wrap .carousel_dots{display:flex}}' +
+      '[carousel="component"] .carousel_arrow_wrap .carousel_dot{width:0.5rem;height:0.5rem;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.25);cursor:pointer;-webkit-appearance:none;appearance:none;flex-shrink:0}' +
+      '[carousel="component"] .carousel_arrow_wrap .carousel_dot.is-active{background:rgba(0,0,0,.85);transform:scale(1.15)}' +
+      '[carousel="component"] .carousel_arrow_wrap .carousel_dot:focus-visible{outline:2px solid currentColor;outline-offset:2px}';
+    document.head.appendChild(style);
+  }
+
   function init() {
     if (typeof $ === 'undefined' || typeof gsap === 'undefined') return;
+
+    injectCarouselDotStyles();
 
     $("[carousel='component']").each(function () {
       var componentEl = $(this);
@@ -124,6 +140,43 @@
       var dragThreshold = 60;
       var dragRotationScale = 0.3;
 
+      var arrowWrap = componentEl.find('.carousel_arrow_wrap');
+
+      function syncDots() {
+        if (!arrowWrap.length) return;
+        arrowWrap.find('.carousel_dot').each(function (i) {
+          var active = i === currentIndex;
+          $(this).toggleClass('is-active', active);
+          $(this).attr('aria-current', active ? 'true' : 'false');
+        });
+      }
+
+      if (arrowWrap.length && numSlides > 0) {
+        var dotsWrap = arrowWrap.find('.carousel_dots');
+        if (!dotsWrap.length) {
+          dotsWrap = $(
+            '<div class="carousel_dots" role="tablist" aria-label="Carousel slides"></div>'
+          );
+          arrowWrap.append(dotsWrap);
+        }
+        dotsWrap.empty();
+        for (var di = 0; di < numSlides; di++) {
+          dotsWrap.append(
+            $('<button type="button" class="carousel_dot"></button>')
+              .attr('data-slide-index', di)
+              .attr('aria-label', 'Go to slide ' + (di + 1))
+          );
+        }
+        dotsWrap.off('click.carouselDots').on('click.carouselDots', '.carousel_dot', function (e) {
+          e.preventDefault();
+          var idx = parseInt($(this).attr('data-slide-index'), 10);
+          if (!isNaN(idx) && idx !== currentIndex && !isDragging) {
+            currentIndex = idx;
+            updateCarousel();
+          }
+        });
+      }
+
       wrapEl.css('--3d-carousel-z', negTranslate);
       wrapEl.css('perspective', posTranslate);
       wrapEl.css('cursor', 'grab');
@@ -132,6 +185,7 @@
         $(this).css('transform', 'rotateY(' + rotateAmount * index + 'deg) translateZ(' + posTranslate + ')');
       });
 
+      syncDots();
       updateActiveSlide(wrapEl, componentEl);
 
       setupNavigation();
@@ -234,6 +288,7 @@
       }
 
       function updateCarousel() {
+        syncDots();
         var targetRotation = -(rotateAmount * currentIndex);
         var el = wrapEl[0];
         var currentValue = el ? getComputedStyle(el).getPropertyValue('--3d-carousel-rotate').trim() : '';
