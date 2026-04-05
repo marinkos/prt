@@ -90,10 +90,26 @@ function resolveContext(el) {
   let n = el;
   while (n && n !== document.documentElement) {
     const d = n.dataset;
-    if (url === undefined && d.shareUrl !== undefined) url = d.shareUrl;
-    if (title === undefined && d.shareTitle !== undefined) title = d.shareTitle;
-    if (text === undefined && d.shareText !== undefined) text = d.shareText;
-    if (anchor === undefined && d.shareAnchor !== undefined) anchor = d.shareAnchor;
+    if (url === undefined && d.shareUrl !== undefined && String(d.shareUrl).trim() !== '') {
+      url = d.shareUrl;
+    }
+    if (
+      title === undefined &&
+      d.shareTitle !== undefined &&
+      String(d.shareTitle).trim() !== ''
+    ) {
+      title = d.shareTitle;
+    }
+    if (text === undefined && d.shareText !== undefined && String(d.shareText).trim() !== '') {
+      text = d.shareText;
+    }
+    if (
+      anchor === undefined &&
+      d.shareAnchor !== undefined &&
+      String(d.shareAnchor).trim() !== ''
+    ) {
+      anchor = d.shareAnchor;
+    }
     n = n.parentElement;
   }
   if (text === undefined) {
@@ -202,7 +218,8 @@ function showCopyFeedback(el) {
 
 function shareTwitter(ctx) {
   const params = { url: ctx.url };
-  if (ctx.text) params.text = ctx.text;
+  const tweetText = [ctx.title, ctx.text].filter(Boolean).join('\n\n').trim();
+  if (tweetText) params.text = tweetText;
   openUrl(`https://twitter.com/intent/tweet?${encodeParams(params)}`, ctx, false);
 }
 
@@ -233,7 +250,8 @@ function shareEmail(ctx) {
 }
 
 function shareWhatsapp(ctx) {
-  const line = [ctx.text, ctx.url].filter(Boolean).join('\n\n').trim() || ctx.url;
+  const line =
+    [ctx.title, ctx.text, ctx.url].filter(Boolean).join('\n\n').trim() || ctx.url;
   const href = `https://wa.me/?text=${encodeURIComponent(line)}`;
   openUrl(href, ctx, false);
 }
@@ -251,8 +269,9 @@ function shareReddit(ctx) {
 }
 
 function shareTelegram(ctx) {
+  const msg = [ctx.title, ctx.text].filter(Boolean).join('\n\n').trim();
   const params = { url: ctx.url };
-  if (ctx.text) params.text = ctx.text;
+  if (msg) params.text = msg;
   openUrl(
     `https://t.me/share/url?${encodeParams(params)}`,
     ctx,
