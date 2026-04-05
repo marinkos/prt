@@ -1,0 +1,77 @@
+// Syncs share metadata from the active .card-wrapper into #cardPopup before social-share runs.
+// Expects .card-icon with data-share-anchor, data-share-title, data-share-text (set in Webflow).
+
+const POPUP_ID = 'cardPopup';
+
+function buildPageUrlWithAnchor(anchorRaw) {
+  const base = window.location.href.replace(/#.*$/, '');
+  if (anchorRaw == null || String(anchorRaw).trim() === '') {
+    try {
+      return new URL(base, window.location.href).href;
+    } catch {
+      return base;
+    }
+  }
+  const id = String(anchorRaw).trim().replace(/^#/, '');
+  if (!id) {
+    try {
+      return new URL(base, window.location.href).href;
+    } catch {
+      return base;
+    }
+  }
+  try {
+    const u = new URL(base, window.location.href);
+    u.hash = id;
+    return u.href;
+  } catch {
+    return `${base}#${id}`;
+  }
+}
+
+function clearShareAttrsOn(el) {
+  el.removeAttribute('data-share-url');
+  el.removeAttribute('data-share-anchor');
+  el.removeAttribute('data-share-title');
+  el.removeAttribute('data-share-text');
+}
+
+function syncCardShareToPopup(cardWrapper) {
+  const popup = document.getElementById(POPUP_ID);
+  const icon = cardWrapper.querySelector('.card-icon');
+  if (!popup || !icon) return;
+
+  const anchor = icon.dataset.shareAnchor;
+  const title = icon.dataset.shareTitle;
+  const text = icon.dataset.shareText;
+
+  clearShareAttrsOn(popup);
+  if (anchor && String(anchor).trim() !== '') {
+    popup.setAttribute('data-share-anchor', anchor);
+  }
+  if (title != null && String(title).trim() !== '') {
+    popup.setAttribute('data-share-title', title);
+  }
+  if (text != null && String(text).trim() !== '') {
+    popup.setAttribute('data-share-text', text);
+  }
+
+  popup.querySelectorAll('[data-social-share], [data-share]').forEach((node) => {
+    clearShareAttrsOn(node);
+  });
+
+  const fullUrl = buildPageUrlWithAnchor(anchor);
+  const linkText = popup.querySelector('.link-text');
+  if (linkText) linkText.textContent = fullUrl;
+}
+
+function onCardOpenClick(e) {
+  const fromIcon = e.target.closest('.card-icon');
+  const fromReadMore = e.target.closest('.card-wrapper .button.is-card');
+  if (!fromIcon && !fromReadMore) return;
+  const card = e.target.closest('.card-wrapper');
+  if (!card) return;
+  syncCardShareToPopup(card);
+}
+
+document.addEventListener('click', onCardOpenClick);
