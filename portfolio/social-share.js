@@ -1,7 +1,7 @@
 // Social share: Web Share API when available; otherwise opens network URLs or copies link.
 // Markup: data-social-share="native|x|twitter|linkedin|facebook|reddit|telegram|whatsapp|copy|email"
 //   • x — same as twitter (X intent)
-//   • copy — copy resolved share URL to clipboard (same as data-share="copy")
+//   • copy — copy resolved share URL to clipboard; optional data-share-copied-label (default “Copied!”)
 //   (alias: data-share="…" if data-social-share is omitted)
 // Optional (innermost wins on the control or an ancestor):
 //   data-share-url — page URL (hash stripped before applying anchor)
@@ -20,6 +20,26 @@
 //     <body>, so another card’s block is not picked).
 //   • Several blocks in one card: point the button with data-share-content="#id" (or .class) at
 //     the exact element to quote.
+//
+// LinkedIn “Cannot display preview”: the shared URL must be public and return Open Graph tags
+// (og:title, og:image, og:url). Password-protected, draft, or blocked pages won’t preview.
+// Refresh LinkedIn’s cache: https://www.linkedin.com/post-inspector/
+
+function normalizeAbsoluteShareUrl(href) {
+  const trimmed = String(href).trim();
+  if (!trimmed) {
+    try {
+      return new URL(window.location.href).href;
+    } catch {
+      return window.location.href;
+    }
+  }
+  try {
+    return new URL(trimmed, window.location.href).href;
+  } catch {
+    return trimmed;
+  }
+}
 
 function applyShareAnchor(baseHref, anchorRaw) {
   if (anchorRaw == null) return baseHref;
@@ -84,7 +104,7 @@ function resolveContext(el) {
       ? String(url)
       : window.location.href.replace(/#.*$/, '');
   return {
-    url: applyShareAnchor(baseHref, anchor),
+    url: normalizeAbsoluteShareUrl(applyShareAnchor(baseHref, anchor)),
     title: title !== undefined ? title : document.title,
     text: text !== undefined ? text : '',
     width: parseShareDimension(el.dataset.shareWidth),
@@ -135,6 +155,8 @@ async function shareNative(ctx) {
   }
 }
 
+const COPY_FEEDBACK_MS = 2000;
+
 async function copyLink(url) {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -150,9 +172,32 @@ async function copyLink(url) {
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
+    return true;
   } catch (e) {
     console.warn('copy failed', e);
+    return false;
   }
+}
+
+function showCopyFeedback(el) {
+  if (!el) return;
+  const label =
+    (el.dataset.shareCopiedLabel && String(el.dataset.shareCopiedLabel).trim()) ||
+    'Copied!';
+  const origKey = '__shareCopyOriginalHtml';
+  if (el[origKey] === undefined) {
+    el[origKey] = el.innerHTML;
+  }
+  if (el.__shareCopyRestoreTimer) {
+    clearTimeout(el.__shareCopyRestoreTimer);
+  }
+  el.textContent = label;
+  el.__shareCopyRestoreTimer = setTimeout(() => {
+    el.__shareCopyRestoreTimer = null;
+    if (el[origKey] !== undefined) {
+      el.innerHTML = el[origKey];
+    }
+  }, COPY_FEEDBACK_MS);
 }
 
 function shareTwitter(ctx) {
@@ -162,9 +207,9 @@ function shareTwitter(ctx) {
 }
 
 function shareLinkedIn(ctx) {
-  const q = encodeParams({ url: ctx.url });
+  const encoded = encodeURIComponent(ctx.url);
   openUrl(
-    `https://www.linkedin.com/sharing/share-offsite/?${q}`,
+    `https://www.linkedin.com/sharing/share-offsite/?mini=true&url=${encoded}`,
     ctx,
     true
   );
@@ -224,11 +269,10 @@ const handlers = {
   reddit: (ctx) => shareReddit(ctx),
   telegram: (ctx) => shareTelegram(ctx),
   whatsapp: (ctx) => shareWhatsapp(ctx),
-  copy: (ctx) => copyLink(ctx.url),
   email: (ctx) => shareEmail(ctx),
 };
 
-function onClick(e) {
+async function onClick(e) {
   const target = e.target.closest('[data-social-share], [data-share]');
   if (!target) return;
   const kind = (
@@ -236,6 +280,13 @@ function onClick(e) {
     target.dataset.share ||
     ''
   ).toLowerCase();
+  if (kind === 'copy') {
+    e.preventDefault();
+    const ctx = resolveContext(target);
+    const ok = await copyLink(ctx.url);
+    if (ok) showCopyFeedback(target);
+    return;
+  }
   const fn = handlers[kind];
   if (!fn) return;
   e.preventDefault();
