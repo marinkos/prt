@@ -36,10 +36,23 @@
 
     blocks.forEach(updateCountLabel);
 
-    const applyFilters = () => {
-      const resetCheckbox = checkboxes.find(
+    const getResetCheckbox = () =>
+      checkboxes.find(
         (checkbox) => normalizeValue(checkbox.dataset.value) === RESET_VALUE
       );
+
+    const enforceResetState = () => {
+      const resetCheckbox = getResetCheckbox();
+      if (!resetCheckbox || !resetCheckbox.checked) return;
+
+      checkboxes.forEach((checkbox) => {
+        if (checkbox !== resetCheckbox) checkbox.checked = false;
+      });
+    };
+
+    const applyFilters = () => {
+      enforceResetState();
+      const resetCheckbox = getResetCheckbox();
 
       const selectedValues = new Set(
         checkboxes
@@ -64,9 +77,7 @@
       if (!target.matches(FILTER_INPUT_SELECTOR)) return;
 
       const changedValue = normalizeValue(target.dataset.value);
-      const resetCheckbox = checkboxes.find(
-        (checkbox) => normalizeValue(checkbox.dataset.value) === RESET_VALUE
-      );
+      const resetCheckbox = getResetCheckbox();
 
       if (changedValue === RESET_VALUE && target.checked) {
         checkboxes.forEach((checkbox) => {
