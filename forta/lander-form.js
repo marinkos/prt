@@ -14,8 +14,16 @@ function normalizeZip(zipValue) {
 }
 
 function isZipQualified(zipValue) {
-    const normalizedZip = normalizeZip(zipValue);
-    return normalizedZip.length === 5 && qualifyingZipSet.has(normalizedZip);
+    const raw = normalizeZip(zipValue);
+    if (raw.length === 5 && qualifyingZipSet.has(raw)) {
+        return true;
+    }
+    // `type="number"` can drop leading zeroes (e.g. 02134 -> 2134)
+    if (raw.length === 4) {
+        const padded = raw.padStart(5, '0');
+        return qualifyingZipSet.has(padded);
+    }
+    return false;
 }
 
 function loadQualifyingZipData() {
@@ -34,6 +42,7 @@ function loadQualifyingZipData() {
         });
         qualifyingZipSet = nextSet;
         isZipDataLoaded = true;
+        window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
     };
 
     const parseFromCsv = function (csvText) {
@@ -60,6 +69,7 @@ function loadQualifyingZipData() {
         }
         qualifyingZipSet = nextSet;
         isZipDataLoaded = true;
+        window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
     };
 
     return fetch(ZIP_GVIZ_URL)
@@ -83,6 +93,7 @@ function loadQualifyingZipData() {
                     console.error('Error fetching zip qualification data from csv:', csvError);
                     qualifyingZipSet = new Set();
                     isZipDataLoaded = true;
+                    window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
                 });
         });
 }
@@ -192,12 +203,15 @@ type2.addEventListener("change", function () {
 // -------------------
 // Script for Zip Code
 // -------------------
-const zipInput = document.getElementById('zip');
-zipInput.addEventListener('input', function () {
-    if (this.value.length > this.maxLength) {
-        this.value = this.value.slice(0, this.maxLength);
-    }
-});
+const formWrapperEl = document.getElementById('form_wrapper');
+const zipInput = formWrapperEl ? formWrapperEl.querySelector('input#zip[name="zip"]') : null;
+if (zipInput) {
+    zipInput.addEventListener('input', function () {
+        if (this.value.length > this.maxLength) {
+            this.value = this.value.slice(0, this.maxLength);
+        }
+    });
+}
 
 // --------------
 // Script for Age
@@ -365,6 +379,7 @@ function initializeScript() {
     const stateSecondary = document.getElementById('stateSecondary');
     const asd = document.getElementById('asd');
     const ageInput = document.getElementById('00N8b00000EQM2a');
+    const formZipInput = formSales ? formSales.querySelector('input#zip[name="zip"]') : null;
     const requestedServiceSelect = document.getElementById('00NRc00000qudCY');
     const inHomeZipStatusInput = document.getElementById('00NRc00000r0X4m');
     const languageSelect = document.getElementById('00NRc00000kKz0K');
@@ -451,8 +466,8 @@ function initializeScript() {
     }
 
     function updateInHomeFieldVisibilityFromZip() {
-        if (!zipInput) return;
-        const isQualified = isZipDataLoaded && isZipQualified(zipInput.value);
+        if (!formZipInput) return;
+        const isQualified = isZipDataLoaded && isZipQualified(formZipInput.value);
 
         if (requestedServiceFieldContainer) {
             if (isQualified) {
@@ -549,14 +564,15 @@ function initializeScript() {
         });
     }
 
-    if (zipInput) {
+    if (formZipInput) {
         updateInHomeFieldVisibilityFromZip();
-        zipInput.addEventListener('input', updateInHomeFieldVisibilityFromZip);
-        zipInput.addEventListener('change', updateInHomeFieldVisibilityFromZip);
+        formZipInput.addEventListener('input', updateInHomeFieldVisibilityFromZip);
+        formZipInput.addEventListener('change', updateInHomeFieldVisibilityFromZip);
+        formZipInput.addEventListener('keyup', updateInHomeFieldVisibilityFromZip);
     }
 
-    // Re-check once zip list is loaded so an already-entered zip can reveal the field.
-    setTimeout(updateInHomeFieldVisibilityFromZip, 0);
+    // Re-check as soon as async zip data is available.
+    window.addEventListener('qualifyingZipDataLoaded', updateInHomeFieldVisibilityFromZip);
 
     // Prev Button 02 (From Step 3 back to Step 2)
     const prevBtn02 = document.getElementById('prevBtn02');
@@ -879,7 +895,7 @@ function initializeScript() {
         const hasInsurance = insuranceSelect.value;
         const childAge = parseInt(ageInput.value, 10);
         const state = select.value; // User's residential state
-        const zip = zipInput ? zipInput.value : '';
+        const zip = formZipInput ? formZipInput.value : '';
         const isQualifyingZip = isZipQualified(zip);
         const insuranceProvider = insurance.value;
         const mqlStatusField = document.getElementById('00NRc00000Nxa1C'); // Hidden MQL Status field
@@ -892,7 +908,7 @@ function initializeScript() {
         const tofuStatus = insuranceData ? insuranceData.tofu_status : null;
         const payorType = insuranceData ? insuranceData.payor_type : null;
         const selectedLanguage = languageSelect ? languageSelect.value : '';
-        const isSpanishLanguage = selectedLanguage.toLowerCase() === 'spanish';
+        const isSpanishLanguage = selectedLanguage.toLowerCase().includes('spanish');
         const hasPositiveDiagnosis = asdDiagnosis.toLowerCase() === 'yes';
         const isInHomePassing = isQualifyingZip && tofuStatus === 'Passing' && hasPositiveDiagnosis;
 
