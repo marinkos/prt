@@ -1,3 +1,100 @@
+// Zip qualification (Google Sheet — same source as lander-form.js)
+let qualifyingZipSet = new Set();
+let isZipDataLoaded = false;
+
+const ZIP_SHEET_ID = '1U-lD3WUsL1OlR3aeVLVKfuXg4uK0DqCPJVMbCk4_6Dg';
+const ZIP_SHEET_GID = '1108160793';
+const ZIP_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/' + ZIP_SHEET_ID + '/gviz/tq?tqx=out:json&gid=' + ZIP_SHEET_GID;
+const ZIP_CSV_URL = 'https://docs.google.com/spreadsheets/d/' + ZIP_SHEET_ID + '/export?format=csv&gid=' + ZIP_SHEET_GID;
+
+function normalizeZip(zipValue) {
+    return String(zipValue || '').trim().replace(/\D/g, '').slice(0, 5);
+}
+
+function isZipQualified(zipValue) {
+    const raw = normalizeZip(zipValue);
+    if (raw.length === 5 && qualifyingZipSet.has(raw)) {
+        return true;
+    }
+    if (raw.length === 4) {
+        const padded = raw.padStart(5, '0');
+        return qualifyingZipSet.has(padded);
+    }
+    return false;
+}
+
+function loadQualifyingZipData() {
+    const setZipDataFromRows = function (rows) {
+        const nextSet = new Set();
+        rows.forEach(row => {
+            const cells = row && row.c ? row.c : [];
+            const zip = cells[1] && cells[1].v != null ? normalizeZip(cells[1].v) : '';
+            const statusFromExpectedColumn = cells[7] && cells[7].v != null ? String(cells[7].v).trim() : '';
+            const statusFallbackColumn = cells[6] && cells[6].v != null ? String(cells[6].v).trim() : '';
+            const status = (statusFromExpectedColumn || statusFallbackColumn).toLowerCase();
+
+            if (zip.length === 5 && status === 'qualified') {
+                nextSet.add(zip);
+            }
+        });
+        qualifyingZipSet = nextSet;
+        isZipDataLoaded = true;
+        window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
+    };
+
+    const parseFromCsv = function (csvText) {
+        const lines = csvText.split(/\r?\n/).filter(Boolean);
+        if (!lines.length) {
+            qualifyingZipSet = new Set();
+            isZipDataLoaded = true;
+            window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
+            return;
+        }
+
+        const nextSet = new Set();
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            const cols = line.match(/("([^"]|"")*"|[^,]+)/g) || [];
+            const cleaned = cols.map(function (col) {
+                const trimmed = String(col || '').trim();
+                return trimmed.replace(/^"|"$/g, '').replace(/""/g, '"');
+            });
+            const zip = normalizeZip(cleaned[1] || '');
+            const status = String(cleaned[7] || cleaned[6] || '').trim().toLowerCase();
+            if (zip.length === 5 && status === 'qualified') {
+                nextSet.add(zip);
+            }
+        }
+        qualifyingZipSet = nextSet;
+        isZipDataLoaded = true;
+        window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
+    };
+
+    return fetch(ZIP_GVIZ_URL)
+        .then(response => response.text())
+        .then(text => {
+            const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
+            const rows = (json && json.table && json.table.rows) ? json.table.rows : [];
+            setZipDataFromRows(rows);
+            if (!qualifyingZipSet.size) {
+                return fetch(ZIP_CSV_URL)
+                    .then(response => response.text())
+                    .then(parseFromCsv);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching zip qualification data from gviz, trying csv:', error);
+            return fetch(ZIP_CSV_URL)
+                .then(response => response.text())
+                .then(parseFromCsv)
+                .catch(csvError => {
+                    console.error('Error fetching zip qualification data from csv:', csvError);
+                    qualifyingZipSet = new Set();
+                    isZipDataLoaded = true;
+                    window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
+                });
+        });
+}
 
 // -----------------------
 // Script for GCLID Capture
@@ -57,14 +154,17 @@ type2.addEventListener("change", function () {
 });
 
 // -------------------
-// Script for Zip Code
+// Script for Zip Code (scoped to Salesforce form only)
 // -------------------
-const zipInput = document.getElementById('zip');
-zipInput.addEventListener('input', function () {
-    if (this.value.length > this.maxLength) {
-        this.value = this.value.slice(0, this.maxLength);
-    }
-});
+const formWrapperEl = document.getElementById('form_wrapper');
+const zipInput = formWrapperEl ? formWrapperEl.querySelector('input#zip[name="zip"]') : null;
+if (zipInput) {
+    zipInput.addEventListener('input', function () {
+        if (this.value.length > this.maxLength) {
+            this.value = this.value.slice(0, this.maxLength);
+        }
+    });
+}
 
 // --------------
 // Script for Age
@@ -152,6 +252,22 @@ function getURLParameter(name) {
             /\+/g, '%20')) || null;
 }
 
+function getCookie(name) {
+    var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2].trim()) : '';
+}
+
+// Meta Facebook Click ID: _fbc cookie, or fb.1.{timestamp}.{fbclid} from fbclid URL param
+function getFacebookClickId() {
+    var fbc = getCookie('_fbc');
+    if (fbc) return fbc;
+    var fbclid = getURLParameter('fbclid');
+    if (fbclid) {
+        return 'fb.1.' + Math.floor(Date.now() / 1000) + '.' + fbclid;
+    }
+    return '';
+}
+
 // ----------------------
 // Capture UTM Parameters
 // ----------------------
@@ -176,6 +292,10 @@ function populateHiddenFields() {
     }
     if (document.getElementById('00NRc00000D4OSr')) {
         document.getElementById('00NRc00000D4OSr').value = utm_domain || '';
+    }
+    var fbcField = document.getElementById('fbc_field');
+    if (fbcField) {
+        fbcField.value = getFacebookClickId();
     }
 }
 
@@ -212,16 +332,19 @@ let isScriptInitialized = false;
 
 function onRecaptchaLoad() {
     recaptchaLoaded = true;
-    fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
-        .then(response => response.json())
-        .then(data => {
+    const tofuPromise = fetch('https://cdn.prod.fortahealth.com/assets/tofu_payor_status.json')
+        .then(response => response.json());
+    const zipPromise = loadQualifyingZipData();
+
+    Promise.all([tofuPromise, zipPromise])
+        .then(([data]) => {
             jsonData = data;
             if (!isScriptInitialized) {
                 initializeScript();
                 isScriptInitialized = true;
             }
         })
-        .catch(error => console.error('Error fetching JSON:', error));
+        .catch(error => console.error('Error fetching required data:', error));
 }
 
 // ------------------------------------
@@ -310,8 +433,47 @@ function initializeScript() {
     const stateSecondary = document.getElementById('stateSecondary');
     const asd = document.getElementById('asd');
     const ageInput = document.getElementById('00N8b00000EQM2a');
+    const formZipInput = formSales ? formSales.querySelector('input#zip[name="zip"]') : null;
+    const requestedServiceSelect = document.getElementById('00NRc00000qudCY');
+    const inHomeZipStatusInput = document.getElementById('00NRc00000r0X4m');
+    const languageSelect = document.getElementById('00NRc00000kKz0K');
+    const requestedServiceFieldContainer = requestedServiceSelect ? requestedServiceSelect.closest('.sf-field') : null;
     const leadSource = document.getElementById('lead_source');
     const referralDiv = document.querySelector('.is-referral');
+
+    function updateInHomeFieldVisibilityFromZip() {
+        if (!formZipInput) return;
+        const isQualified = isZipDataLoaded && isZipQualified(formZipInput.value);
+
+        if (requestedServiceFieldContainer) {
+            if (isQualified) {
+                requestedServiceFieldContainer.classList.remove('is-hidden');
+                requestedServiceFieldContainer.style.display = '';
+            } else {
+                requestedServiceFieldContainer.classList.add('is-hidden');
+                requestedServiceFieldContainer.style.display = 'none';
+                if (requestedServiceSelect) {
+                    requestedServiceSelect.value = '';
+                }
+            }
+        }
+
+        if (requestedServiceSelect) {
+            requestedServiceSelect.removeAttribute('required');
+        }
+
+        if (inHomeZipStatusInput) {
+            inHomeZipStatusInput.value = isQualified ? 'Qualified' : 'Disqualified';
+        }
+    }
+
+    if (formZipInput) {
+        updateInHomeFieldVisibilityFromZip();
+        formZipInput.addEventListener('input', updateInHomeFieldVisibilityFromZip);
+        formZipInput.addEventListener('change', updateInHomeFieldVisibilityFromZip);
+        formZipInput.addEventListener('keyup', updateInHomeFieldVisibilityFromZip);
+    }
+    window.addEventListener('qualifyingZipDataLoaded', updateInHomeFieldVisibilityFromZip);
 
     let recaptchaContainer = document.getElementById('recaptcha-container');
     let captchaErrorMessage = document.getElementById('missing_captcha_error_message');
@@ -615,6 +777,11 @@ function initializeScript() {
         }
 
         // Update hidden fields before submission
+        var fbcFieldSubmit = document.getElementById('fbc_field');
+        if (fbcFieldSubmit) {
+            fbcFieldSubmit.value = getFacebookClickId();
+        }
+
         const statePrimaryValue = statePrimary.value;
         const insurancePrimary = insurance.value;
         if (insurancePrimary) {
@@ -632,6 +799,8 @@ function initializeScript() {
         const hasInsurance = insuranceSelect.value;
         const childAge = parseInt(ageInput.value, 10);
         const state = select.value;
+        const zip = formZipInput ? formZipInput.value : '';
+        const isQualifyingZip = isZipQualified(zip);
         const insuranceProvider = insurance.value;
         const mqlStatusField = document.getElementById('00NRc00000Nxa1C');
 
@@ -641,9 +810,18 @@ function initializeScript() {
         // Get primary insurance's TOFU Status using the correct state
         const insuranceData = findInsuranceData(statePrimaryValue, insuranceProvider);
         const tofuStatus = insuranceData ? insuranceData.tofu_status : null;
+        const payorType = insuranceData ? insuranceData.payor_type : null;
+        const selectedLanguage = languageSelect ? languageSelect.value : '';
+        const isSpanishLanguage = selectedLanguage.toLowerCase().includes('spanish');
+        const hasPositiveDiagnosis = asdDiagnosis.toLowerCase() === 'yes';
+        const isInHomePassing = isQualifyingZip && tofuStatus === 'Passing' && hasPositiveDiagnosis;
+
+        if (inHomeZipStatusInput) {
+            inHomeZipStatusInput.value = isQualifyingZip ? 'Qualified' : 'Disqualified';
+        }
 
         // --------------------------------------
-        // Redirect Logic Based on Business Rules
+        // Redirect Logic Based on Business Rules (aligned with lander-form.js)
         // --------------------------------------
         let returnURL = '';
         let mqlStatus = '';
@@ -652,25 +830,43 @@ function initializeScript() {
             returnURL = "https://www.fortahealth.com/thank-you-2";
             mqlStatus = "DQ - No Insurance";
         }
+        else if (
+            state === 'TX' &&
+            !isQualifyingZip &&
+            (payorType === 'Medicaid' || payorType === 'MCO' || type.value === 'Yes')
+        ) {
+            returnURL = "https://www.fortahealth.com/thank-you-2";
+            mqlStatus = "DQ - TX In-Home Zip/Payor";
+        }
         else if (tofuStatus === "Disqualify") {
             returnURL = "https://www.fortahealth.com/thank-you-2";
             mqlStatus = "DQ - Insurance not supported";
         }
+        else if (isInHomePassing) {
+            returnURL = isSpanishLanguage
+                ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
+                : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
+            mqlStatus = "MQL - In-Home";
+        }
+        else if (asdDiagnosis.toLowerCase() === "yes") {
+            returnURL = "https://www.fortahealth.com/thank-you-intake-pre-qualified";
+            mqlStatus = "MQL";
+        }
         else if (
-            asdDiagnosis.toLowerCase() === "no, evaluation scheduled" || 
+            asdDiagnosis.toLowerCase() === "no, evaluation scheduled" ||
             (asdDiagnosis.toLowerCase() === "no, iep only" && state.toLowerCase() === "ca" && type.value.toLowerCase() === "yes")
         ) {
             returnURL = "https://www.fortahealth.com/thank-you-diagnosis";
             mqlStatus = "Dx - Check Eval";
         }
         else if (
-            ["no", "no, iep only", "no, on a waitlist", "no, have non-asd diagnosis"].includes(asdDiagnosis.toLowerCase())
+            ["no", "no, on a waitlist", "no, have non-asd diagnosis", "no, iep only"].includes(asdDiagnosis.toLowerCase())
         ) {
             returnURL = "https://www.fortahealth.com/thank-you-2";
             mqlStatus = "DQ - No Diagnosis";
         }
         else if (tofuStatus === "Passing") {
-            returnURL = "https://www.fortahealth.com/thank-you-intake";
+            returnURL = "https://www.fortahealth.com/thank-you-intake-pre-qualified";
             mqlStatus = "MQL";
         }
         else if (
