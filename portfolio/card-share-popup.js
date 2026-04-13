@@ -1,5 +1,5 @@
 // Syncs share metadata from the active .card-wrapper into #cardPopup before social-share runs.
-// Expects .card-icon with data-share-anchor, data-share-title, data-share-text (set in Webflow).
+// Expects .card-icon or .quote-share-icon with data-share-anchor, data-share-title, data-share-text (set in Webflow).
 
 const POPUP_ID = 'cardPopup';
 
@@ -38,7 +38,7 @@ function clearShareAttrsOn(el) {
 
 function syncCardShareToPopup(cardWrapper) {
   const popup = document.getElementById(POPUP_ID);
-  const icon = cardWrapper.querySelector('.card-icon');
+  const icon = cardWrapper.querySelector('.card-icon, .quote-share-icon');
   if (!popup || !icon) return;
 
   const anchor = icon.dataset.shareAnchor;
@@ -66,7 +66,7 @@ function syncCardShareToPopup(cardWrapper) {
 }
 
 function onCardOpenClick(e) {
-  const fromIcon = e.target.closest('.card-icon');
+  const fromIcon = e.target.closest('.card-icon, .quote-share-icon');
   const fromReadMore = e.target.closest('.card-wrapper .button.is-card');
   if (!fromIcon && !fromReadMore) return;
   const card = e.target.closest('.card-wrapper');
