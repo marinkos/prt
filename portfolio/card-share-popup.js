@@ -36,14 +36,13 @@ function clearShareAttrsOn(el) {
   el.removeAttribute('data-share-text');
 }
 
-function syncCardShareToPopup(cardWrapper) {
+function syncShareToPopup(shareSource) {
   const popup = document.getElementById(POPUP_ID);
-  const icon = cardWrapper.querySelector('.card-icon, .quote-share-icon');
-  if (!popup || !icon) return;
+  if (!popup || !shareSource) return;
 
-  const anchor = icon.dataset.shareAnchor;
-  const title = icon.dataset.shareTitle;
-  const text = icon.dataset.shareText;
+  const anchor = shareSource.dataset.shareAnchor;
+  const title = shareSource.dataset.shareTitle;
+  const text = shareSource.dataset.shareText;
 
   clearShareAttrsOn(popup);
   if (anchor && String(anchor).trim() !== '') {
@@ -69,9 +68,14 @@ function onCardOpenClick(e) {
   const fromIcon = e.target.closest('.card-icon, .quote-share-icon');
   const fromReadMore = e.target.closest('.card-wrapper .button.is-card');
   if (!fromIcon && !fromReadMore) return;
+  if (fromIcon) {
+    syncShareToPopup(fromIcon);
+    return;
+  }
   const card = e.target.closest('.card-wrapper');
   if (!card) return;
-  syncCardShareToPopup(card);
+  const icon = card.querySelector('.card-icon, .quote-share-icon');
+  syncShareToPopup(icon);
 }
 
 document.addEventListener('click', onCardOpenClick);
