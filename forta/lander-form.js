@@ -4,7 +4,10 @@ let isScriptInitialized = false;
 let qualifyingZipSet = new Set();
 let isZipDataLoaded = false;
 
-const ZIP_COVERAGE_URL = 'https://cdn.prod.fortahealth.com/assets/zip_code_coverage.json';
+const ZIP_SHEET_ID = '1U-lD3WUsL1OlR3aeVLVKfuXg4uK0DqCPJVMbCk4_6Dg';
+const ZIP_SHEET_GID = '1108160793';
+const ZIP_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/' + ZIP_SHEET_ID + '/gviz/tq?tqx=out:json&gid=' + ZIP_SHEET_GID;
+const ZIP_CSV_URL = 'https://docs.google.com/spreadsheets/d/' + ZIP_SHEET_ID + '/export?format=csv&gid=' + ZIP_SHEET_GID;
 
 function normalizeZip(zipValue) {
     return String(zipValue || '').trim().replace(/\D/g, '').slice(0, 5);
@@ -24,26 +27,74 @@ function isZipQualified(zipValue) {
 }
 
 function loadQualifyingZipData() {
-    return fetch(ZIP_COVERAGE_URL)
-        .then(response => response.json())
-        .then(rows => {
-            const nextSet = new Set();
-            (Array.isArray(rows) ? rows : []).forEach(row => {
-                const zip = normalizeZip(row && row['Zip Code']);
-                const status = String((row && row.Status) || '').trim().toLowerCase();
-                if (zip.length === 5 && status === 'qualified') {
-                    nextSet.add(zip);
-                }
-            });
-            qualifyingZipSet = nextSet;
-            isZipDataLoaded = true;
-            window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
-        })
-        .catch(error => {
-            console.error('Error fetching zip qualification data from JSON:', error);
+    const setZipDataFromRows = function (rows) {
+        const nextSet = new Set();
+        rows.forEach(row => {
+            const cells = row && row.c ? row.c : [];
+            const zip = cells[1] && cells[1].v != null ? normalizeZip(cells[1].v) : '';
+            const statusFromExpectedColumn = cells[7] && cells[7].v != null ? String(cells[7].v).trim() : '';
+            const statusFallbackColumn = cells[6] && cells[6].v != null ? String(cells[6].v).trim() : '';
+            const status = (statusFromExpectedColumn || statusFallbackColumn).toLowerCase();
+
+            if (zip.length === 5 && status === 'qualified') {
+                nextSet.add(zip);
+            }
+        });
+        qualifyingZipSet = nextSet;
+        isZipDataLoaded = true;
+        window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
+    };
+
+    const parseFromCsv = function (csvText) {
+        const lines = csvText.split(/\r?\n/).filter(Boolean);
+        if (!lines.length) {
             qualifyingZipSet = new Set();
             isZipDataLoaded = true;
-            window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
+            return;
+        }
+
+        const nextSet = new Set();
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            const cols = line.match(/("([^"]|"")*"|[^,]+)/g) || [];
+            const cleaned = cols.map(function (col) {
+                const trimmed = String(col || '').trim();
+                return trimmed.replace(/^"|"$/g, '').replace(/""/g, '"');
+            });
+            const zip = normalizeZip(cleaned[1] || '');
+            const status = String(cleaned[7] || cleaned[6] || '').trim().toLowerCase();
+            if (zip.length === 5 && status === 'qualified') {
+                nextSet.add(zip);
+            }
+        }
+        qualifyingZipSet = nextSet;
+        isZipDataLoaded = true;
+        window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
+    };
+
+    return fetch(ZIP_GVIZ_URL)
+        .then(response => response.text())
+        .then(text => {
+            const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
+            const rows = (json && json.table && json.table.rows) ? json.table.rows : [];
+            setZipDataFromRows(rows);
+            if (!qualifyingZipSet.size) {
+                return fetch(ZIP_CSV_URL)
+                    .then(response => response.text())
+                    .then(parseFromCsv);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching zip qualification data from gviz, trying csv:', error);
+            return fetch(ZIP_CSV_URL)
+                .then(response => response.text())
+                .then(parseFromCsv)
+                .catch(csvError => {
+                    console.error('Error fetching zip qualification data from csv:', csvError);
+                    qualifyingZipSet = new Set();
+                    isZipDataLoaded = true;
+                    window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
+                });
         });
 }
 
