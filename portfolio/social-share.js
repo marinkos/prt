@@ -223,25 +223,43 @@ function shareTwitter(ctx) {
   openUrl(`https://twitter.com/intent/tweet?${encodeParams(params)}`, ctx, false);
 }
 
-function shareLinkedIn(ctx) {
+// LinkedIn/Facebook web popups cannot reliably prefill commentary; shareArticle / sharer only get the URL through.
+// When navigator.share exists, title + text + url go to the OS picker (LinkedIn or Facebook app can prefill).
+async function tryNavigatorShareRichLink(ctx) {
+  const textBlock = [ctx.title, ctx.text].filter(Boolean).join('\n\n').trim();
+  if (!navigator.share) return false;
+  const data = { url: ctx.url };
+  if (ctx.title) data.title = ctx.title;
+  if (textBlock) data.text = textBlock;
+  try {
+    if (navigator.canShare && !navigator.canShare(data)) return false;
+    await navigator.share(data);
+    return true;
+  } catch (e) {
+    if (e && e.name === 'AbortError') return true;
+    return false;
+  }
+}
+
+async function shareLinkedIn(ctx) {
+  if (await tryNavigatorShareRichLink(ctx)) return;
   const u = encodeURIComponent(ctx.url);
   const title = (ctx.title || '').trim();
   const summary = (ctx.text || '').trim();
-  // share-offsite only accepts url; shareArticle can pass title/summary (LinkedIn may normalize/ignore).
   let href = `https://www.linkedin.com/shareArticle?mini=true&url=${u}`;
   if (title) href += `&title=${encodeURIComponent(title)}`;
   if (summary) href += `&summary=${encodeURIComponent(summary)}`;
   openUrl(href, ctx, true);
 }
 
-function shareFacebook(ctx) {
+async function shareFacebook(ctx) {
+  if (await tryNavigatorShareRichLink(ctx)) return;
   const u = encodeURIComponent(ctx.url);
-  let href = `https://www.facebook.com/sharer/sharer.php?u=${u}`;
-  const quote = [ctx.title, ctx.text].filter(Boolean).join('\n\n').trim();
-  if (quote) {
-    href += `&quote=${encodeURIComponent(quote)}`;
-  }
-  openUrl(href, ctx, true);
+  openUrl(
+    `https://www.facebook.com/sharer/sharer.php?u=${u}`,
+    ctx,
+    true
+  );
 }
 
 function shareEmail(ctx) {
@@ -313,7 +331,10 @@ async function onClick(e) {
   if (!fn) return;
   e.preventDefault();
   const ctx = resolveContext(target);
-  fn(ctx);
+  const out = fn(ctx);
+  if (out != null && typeof out.then === 'function') {
+    await out;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
