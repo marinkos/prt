@@ -216,23 +216,27 @@ function showCopyFeedback(el) {
   }, COPY_FEEDBACK_MS);
 }
 
+// X/Twitter intent: `url` = link card, `text` = post body (commentary only — no URL in text).
 function shareTwitter(ctx) {
   const params = { url: ctx.url };
-  const tweetText = [ctx.title, ctx.text].filter(Boolean).join('\n\n').trim();
-  if (tweetText) params.text = tweetText;
+  const commentary = [ctx.title, ctx.text].filter(Boolean).join('\n\n').trim();
+  if (commentary) params.text = commentary;
   openUrl(`https://twitter.com/intent/tweet?${encodeParams(params)}`, ctx, false);
 }
 
-// LinkedIn/Facebook web popups cannot reliably prefill commentary; shareArticle / sharer only get the URL through.
-// When navigator.share exists, title + text + url go to the OS picker (LinkedIn or Facebook app can prefill).
+// Web Share: same idea as manual “paste link + type above it” — `url` is the link, `text` is title + body only.
+// Desktop FB/LI web popups still cannot prefill commentary (fallback URLs are link-only).
 async function tryNavigatorShareRichLink(ctx) {
-  const textBlock = [ctx.title, ctx.text].filter(Boolean).join('\n\n').trim();
   if (!navigator.share) return false;
-  const data = { url: ctx.url };
-  if (ctx.title) data.title = ctx.title;
-  if (textBlock) data.text = textBlock;
+  const title = (ctx.title || '').trim();
+  const body = (ctx.text || '').trim();
+  const url = (ctx.url || '').trim();
+  if (!url) return false;
+
+  const commentary = [title, body].filter(Boolean).join('\n\n').trim();
+  const data = commentary ? { url, text: commentary } : { url };
+
   try {
-    if (navigator.canShare && !navigator.canShare(data)) return false;
     await navigator.share(data);
     return true;
   } catch (e) {
