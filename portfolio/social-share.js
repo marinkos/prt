@@ -224,21 +224,24 @@ function shareTwitter(ctx) {
 }
 
 function shareLinkedIn(ctx) {
-  const encoded = encodeURIComponent(ctx.url);
-  openUrl(
-    `https://www.linkedin.com/sharing/share-offsite/?mini=true&url=${encoded}`,
-    ctx,
-    true
-  );
+  const u = encodeURIComponent(ctx.url);
+  const title = (ctx.title || '').trim();
+  const summary = (ctx.text || '').trim();
+  // share-offsite only accepts url; shareArticle can pass title/summary (LinkedIn may normalize/ignore).
+  let href = `https://www.linkedin.com/shareArticle?mini=true&url=${u}`;
+  if (title) href += `&title=${encodeURIComponent(title)}`;
+  if (summary) href += `&summary=${encodeURIComponent(summary)}`;
+  openUrl(href, ctx, true);
 }
 
 function shareFacebook(ctx) {
-  const q = encodeParams({ u: ctx.url });
-  openUrl(
-    `https://www.facebook.com/sharer/sharer.php?${q}`,
-    ctx,
-    true
-  );
+  const u = encodeURIComponent(ctx.url);
+  let href = `https://www.facebook.com/sharer/sharer.php?u=${u}`;
+  const quote = [ctx.title, ctx.text].filter(Boolean).join('\n\n').trim();
+  if (quote) {
+    href += `&quote=${encodeURIComponent(quote)}`;
+  }
+  openUrl(href, ctx, true);
 }
 
 function shareEmail(ctx) {
