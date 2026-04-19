@@ -114,7 +114,7 @@
   initCursorCoords();
 })();
 
-/* Text reveal */
+/* Text reveal — after document complete + web fonts so SplitText matches final line breaks */
 (function () {
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined' || typeof SplitText === 'undefined') return;
   gsap.registerPlugin(ScrollTrigger, SplitText);
@@ -152,10 +152,33 @@
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initTextReveal);
+  function notifyFontFaceApplied() {
+    if (typeof jQuery !== 'undefined') {
+      jQuery(document).trigger('fontfaceapplied');
+    }
+  }
+
+  function runTextRevealWhenReady() {
+    function afterFonts() {
+      notifyFontFaceApplied();
+      initTextReveal();
+    }
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(afterFonts);
+    } else {
+      afterFonts();
+    }
+  }
+
+  if (document.readyState === 'complete') {
+    runTextRevealWhenReady();
   } else {
-    initTextReveal();
+    document.addEventListener('readystatechange', function onReadyState() {
+      if (document.readyState === 'complete') {
+        document.removeEventListener('readystatechange', onReadyState);
+        runTextRevealWhenReady();
+      }
+    });
   }
 })();
 
