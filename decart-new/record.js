@@ -86,6 +86,8 @@
         });
         audio.currentTime = 0;
         audio.play().catch(function () {});
+        /* If audio was already playing, `play` does not fire again — force UI + spin */
+        setPlayingState(true);
       });
     }
   }
