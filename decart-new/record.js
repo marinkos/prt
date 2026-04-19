@@ -15,7 +15,8 @@
 
     function setPlayingUI(playing) {
       if (playIcon) playIcon.hidden = playing;
-      if (stopIcon) stopIcon.hidden = !playing;
+      /* [data-icon="stop"] { display: none } in Webflow beats the `hidden` attr — override with inline style */
+      if (stopIcon) stopIcon.style.display = playing ? 'flex' : '';
     }
 
     setPlayingUI(false);
