@@ -47,13 +47,23 @@
       setPlayingState(false);
     });
 
-    playStopBtn.addEventListener('click', function () {
+    function togglePlayback() {
       if (audio.paused) {
         audio.play().catch(function () {});
       } else {
         audio.pause();
       }
+    }
+
+    playStopBtn.addEventListener('click', function () {
+      togglePlayback();
     });
+
+    if (recordVideo) {
+      recordVideo.addEventListener('click', function () {
+        togglePlayback();
+      });
+    }
 
     var restartBtns = document.querySelectorAll('[data-record="restart"]');
     for (var i = 0; i < restartBtns.length; i++) {
