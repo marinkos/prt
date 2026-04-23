@@ -253,6 +253,7 @@ function populateHiddenFields() {
     var utm_campaign = getURLParameter('utm_campaign');
     var utm_content = getURLParameter('utm_content');
     var utm_domain = getURLParameter('utm_domain');
+    var utm_adsetname = getURLParameter('utm_adsetname');
 
     if (document.getElementById('00NRc0000083yKn')) {
         document.getElementById('00NRc0000083yKn').value = utm_source || '';
@@ -268,6 +269,9 @@ function populateHiddenFields() {
     }
     if (document.getElementById('00NRc00000D4OSr')) {
         document.getElementById('00NRc00000D4OSr').value = utm_domain || '';
+    }
+    if (document.getElementById('00NRc00000rofku')) {
+        document.getElementById('00NRc00000rofku').value = utm_adsetname || '';
     }
     var fbcField = document.getElementById('fbc_field');
     if (fbcField) {
