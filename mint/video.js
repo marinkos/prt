@@ -6,11 +6,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const videoWrapper = video.closest(".video-wrapper");
   const videoMinimize = document.getElementById("videoMinimize");
   const videoMaximize = document.getElementById("videoMaximize");
-  const wrapperTransition = "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)";
+  const minimizeTransition = "transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)";
+  const maximizeTransition = "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)";
 
   if (videoWrapper) {
-    // Keep one transition/easing setup so minimize/maximize feel identical.
-    videoWrapper.style.transition = wrapperTransition;
+    // Initialize with the default (faster) transition used for maximize.
+    videoWrapper.style.transition = maximizeTransition;
     videoWrapper.style.transformOrigin = "bottom right";
   }
 
@@ -18,12 +19,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!videoWrapper) return;
     video.pause();
     video.currentTime = 0;
+    videoWrapper.style.transition = minimizeTransition;
     videoWrapper.style.transform = "translate(38vw, 36vh) scale(0.28)";
     if (videoMaximize) videoMaximize.style.display = "block";
   }
 
   function applyMaximizedState() {
     if (!videoWrapper) return;
+    videoWrapper.style.transition = maximizeTransition;
     videoWrapper.style.transform = "";
     if (videoMaximize) videoMaximize.style.display = "none";
     video.play().catch(() => {});
