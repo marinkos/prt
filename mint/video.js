@@ -2,6 +2,9 @@
 document.addEventListener("DOMContentLoaded", function () {
     const video = document.getElementById("heroVideo");
     if (!video) return;
+    const videoWrapper = video.closest(".video-wrapper");
+    const videoMinimize = document.getElementById("videoMinimize");
+    const videoMaximize = document.getElementById("videoMaximize");
     const videoLinks = document.querySelectorAll(".video_link");
     let isClickAnimating = false;
     let currentPartIndex = 0;
@@ -21,6 +24,30 @@ document.addEventListener("DOMContentLoaded", function () {
   
     const speedUpMultiplier = 3;
     const normalPlaybackRate = 1;
+    let isMinimized = false;
+
+    function applyMinimizedState() {
+      if (!videoWrapper) return;
+      isMinimized = true;
+      video.pause();
+      video.currentTime = 0;
+      videoWrapper.style.transition = "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)";
+      videoWrapper.style.transformOrigin = "bottom right";
+      // Move and shrink the wrapper so it sits in the lower-right corner.
+      videoWrapper.style.transform = "translate(38vw, 36vh) scale(0.28)";
+      if (videoMaximize) videoMaximize.style.display = "block";
+      if (videoMinimize) videoMinimize.style.display = "none";
+    }
+
+    function applyMaximizedState() {
+      if (!videoWrapper) return;
+      isMinimized = false;
+      videoWrapper.style.transition = "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)";
+      videoWrapper.style.transformOrigin = "";
+      videoWrapper.style.transform = "";
+      if (videoMaximize) videoMaximize.style.display = "none";
+      if (videoMinimize) videoMinimize.style.display = "";
+    }
   
     // Intersection Observer – play when in view, pause and reset when out of view
     const videoObserver = new IntersectionObserver(
@@ -45,6 +72,20 @@ document.addEventListener("DOMContentLoaded", function () {
     );
   
     videoObserver.observe(video);
+
+    if (videoMaximize) {
+      videoMaximize.style.display = "none";
+      videoMaximize.addEventListener("click", function (e) {
+        e.preventDefault();
+        applyMaximizedState();
+      });
+    }
+    if (videoMinimize) {
+      videoMinimize.addEventListener("click", function (e) {
+        e.preventDefault();
+        applyMinimizedState();
+      });
+    }
 
     // Block any play() while we're scrolling to hero after end (prevents restart flash)
     video.addEventListener("play", function onPlayBlock() {
@@ -206,6 +247,7 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener(
       "wheel",
       (e) => {
+        if (isMinimized) return;
         if (!videoIsInView) return;
         if (e.deltaY <= 0) {
           scrollDownCount = 0;
