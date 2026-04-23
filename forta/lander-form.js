@@ -4,6 +4,7 @@ let isScriptInitialized = false;
 let qualifyingZipSet = new Set();
 let isZipDataLoaded = false;
 
+const ZIP_CDN_URL = 'https://cdn.prod.fortahealth.com/assets/zip_code_coverage.json';
 const ZIP_SHEET_ID = '1U-lD3WUsL1OlR3aeVLVKfuXg4uK0DqCPJVMbCk4_6Dg';
 const ZIP_SHEET_GID = '1108160793';
 const ZIP_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/' + ZIP_SHEET_ID + '/gviz/tq?tqx=out:json&gid=' + ZIP_SHEET_GID;
@@ -27,6 +28,20 @@ function isZipQualified(zipValue) {
 }
 
 function loadQualifyingZipData() {
+    const setZipDataFromCoverageJson = function (rows) {
+        const nextSet = new Set();
+        (rows || []).forEach(function (row) {
+            const zip = normalizeZip(row && row['Zip Code']);
+            const status = String((row && row.Status) || '').trim().toLowerCase();
+            if (zip.length === 5 && status === 'qualified') {
+                nextSet.add(zip);
+            }
+        });
+        qualifyingZipSet = nextSet;
+        isZipDataLoaded = true;
+        window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
+    };
+
     const setZipDataFromRows = function (rows) {
         const nextSet = new Set();
         rows.forEach(row => {
@@ -72,7 +87,17 @@ function loadQualifyingZipData() {
         window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
     };
 
-    return fetch(ZIP_GVIZ_URL)
+    return fetch(ZIP_CDN_URL)
+        .then(function (response) {
+            if (!response.ok) {
+                throw new Error('CDN zip data fetch failed with status ' + response.status);
+            }
+            return response.json();
+        })
+        .then(setZipDataFromCoverageJson)
+        .catch(error => {
+            console.error('Error fetching zip qualification data from CDN, trying gviz/csv fallback:', error);
+            return fetch(ZIP_GVIZ_URL)
         .then(response => response.text())
         .then(text => {
             const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
@@ -95,6 +120,7 @@ function loadQualifyingZipData() {
                     isZipDataLoaded = true;
                     window.dispatchEvent(new Event('qualifyingZipDataLoaded'));
                 });
+        });
         });
 }
 
