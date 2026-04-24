@@ -874,6 +874,7 @@ function initializeScript() {
         const isSpanishLanguage = selectedLanguage.toLowerCase().includes('spanish');
         const hasPositiveDiagnosis = asdDiagnosis.toLowerCase() === 'yes';
         const isInHomePassing = isQualifyingZip && tofuStatus === 'Passing' && hasPositiveDiagnosis;
+        const isSouthCarolinaInHomePassing = state === 'SC' && isQualifyingZip && tofuStatus === 'Passing';
 
         if (inHomeZipStatusInput) {
             inHomeZipStatusInput.value = isQualifyingZip ? 'Qualified' : 'Disqualified';
@@ -900,16 +901,22 @@ if (hasInsurance === 'No') {
     mqlStatus = "DQ - No Insurance";
 }
 else if (
-    state === 'TX' &&
+    state === 'SC' &&
     !isQualifyingZip &&
-    (payorType === 'Medicaid' || payorType === 'MCO' || type.value === 'Yes')
+    (payorType === 'Medicaid' || payorType === 'MCO')
 ) {
     returnURL = "https://www.fortahealth.com/thank-you-2";
-    mqlStatus = "DQ - TX In-Home Zip/Payor";
+    mqlStatus = "DQ - Not in Zip Code";
 }
 else if (tofuStatus === "Disqualify") {
     returnURL = "https://www.fortahealth.com/thank-you-2";
     mqlStatus = "DQ - Insurance not supported";
+}
+else if (isSouthCarolinaInHomePassing) {
+    returnURL = isSpanishLanguage
+        ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
+        : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
+    mqlStatus = "MQL - In-Home";
 }
 else if (isInHomePassing) {
     returnURL = isSpanishLanguage
