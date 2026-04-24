@@ -871,6 +871,7 @@ function initializeScript() {
         const isSpanishLanguage = selectedLanguage.toLowerCase().includes('spanish');
         const hasPositiveDiagnosis = asdDiagnosis.toLowerCase() === 'yes';
         const isInHomePassing = isQualifyingZip && tofuStatus === 'Passing' && hasPositiveDiagnosis;
+        const isSouthCarolinaInHomePassing = state === 'SC' && isQualifyingZip && tofuStatus === 'Passing';
 
         if (inHomeZipStatusInput) {
             inHomeZipStatusInput.value = isQualifyingZip ? 'Qualified' : 'Disqualified';
@@ -897,19 +898,26 @@ if (hasInsurance === 'No') {
     returnURL = "https://www.fortahealth.com/thank-you-2";
     mqlStatus = "DQ - No Insurance";
 }
-// Texas nuance: DQ when zip is not qualified and payor type is Medicaid/MCO
+// South Carolina nuance: DQ when zip is not qualified and payor type is Medicaid/MCO
 else if (
-    state === 'TX' &&
+    state === 'SC' &&
     !isQualifyingZip &&
-    (payorType === 'Medicaid' || payorType === 'MCO' || type.value === 'Yes')
+    (payorType === 'Medicaid' || payorType === 'MCO')
 ) {
     returnURL = "https://www.fortahealth.com/thank-you-2";
-    mqlStatus = "DQ - TX In-Home Zip/Payor";
+    mqlStatus = "DQ - Not in Zip Code";
 }
 // DISQUALIFY if primary insurance's TOFU Status is "Disqualify" (regardless of secondary)
 else if (tofuStatus === "Disqualify") {
     returnURL = "https://www.fortahealth.com/thank-you-2";
     mqlStatus = "DQ - Insurance not supported";
+}
+// South Carolina in-home pass route (any form path with qualifying zip + passing TOFU)
+else if (isSouthCarolinaInHomePassing) {
+    returnURL = isSpanishLanguage
+        ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
+        : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
+    mqlStatus = "MQL - In-Home";
 }
 // In-Home pass route (qualified zip + insurance passing + positive Dx)
 else if (isInHomePassing) {
