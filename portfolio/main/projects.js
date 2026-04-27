@@ -26,14 +26,14 @@ let imgIndex = 0;
 let isHovering = false; // Track hover state
 let currentScale = 0.8; // Start scale
 let targetScale = 0.8; // Target scale
-const projectOrder = ['alice', 'koi', 'eon', 'vega', 'decart', 'mate'];
+const projectOrder = ['alice', 'koi', 'vega', 'decart', 'mate', 'willow'];
 const imageByProject = {
     alice: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/698b474fc700b62ccc6f7008_alice.avif',
     koi: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e754aff0f5394a252a_koi.avif',
-    eon: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e6114beeb6006a3543_eon.avif',
     vega: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/698b474f9ddae83c45b9becd_vega.avif',
     decart: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/693d550624b178bc11278c6f_b1e9c9aac9af1d2b6b818cd7fd036e79_decart.avif',
-    mate: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/69ef12de47ca381da2b3be7c_mate.avif'
+    mate: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/69ef12de47ca381da2b3be7c_mate.avif',
+    willow: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/69ef17f4686b686a9e93f430_willow.avif'
 };
 const images = projectOrder.map((name) => imageByProject[name]);
 
