@@ -26,14 +26,16 @@ let imgIndex = 0;
 let isHovering = false; // Track hover state
 let currentScale = 0.8; // Start scale
 let targetScale = 0.8; // Target scale
-const images = [
-    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/698b474fc700b62ccc6f7008_alice.avif',
-    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e754aff0f5394a252a_koi.avif',
-    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e6114beeb6006a3543_eon.avif',
-    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/698b474f9ddae83c45b9becd_vega.avif',
-    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/693d550624b178bc11278c6f_b1e9c9aac9af1d2b6b818cd7fd036e79_decart.avif',
-    'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/69ef12de47ca381da2b3be7c_mate.avif'
-];
+const projectOrder = ['alice', 'koi', 'eon', 'vega', 'decart', 'mate'];
+const imageByProject = {
+    alice: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/698b474fc700b62ccc6f7008_alice.avif',
+    koi: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e754aff0f5394a252a_koi.avif',
+    eon: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/684445e6114beeb6006a3543_eon.avif',
+    vega: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/698b474f9ddae83c45b9becd_vega.avif',
+    decart: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/693d550624b178bc11278c6f_b1e9c9aac9af1d2b6b818cd7fd036e79_decart.avif',
+    mate: 'https://cdn.prod.website-files.com/60f007b4ffba6aa104bcca7c/69ef12de47ca381da2b3be7c_mate.avif'
+};
+const images = projectOrder.map((name) => imageByProject[name]);
 
 let imgArr = [];
 let targetX = 0;
@@ -69,6 +71,12 @@ images.forEach((imageUrl, idx) => {
 });
 
 let target = 0;
+
+function getProjectIndex(linkEl, fallbackIndex) {
+    const text = (linkEl.textContent || '').toLowerCase();
+    const mappedIndex = projectOrder.findIndex((name) => text.includes(name));
+    return mappedIndex >= 0 ? mappedIndex : fallbackIndex;
+}
 
 function drawImage(idx) {
     // Only draw if hovering
@@ -124,7 +132,7 @@ for (let i = 0; i < links.length; i++) {
     });
 
     links[i].addEventListener('mouseenter', () => {
-        imgIndex = i;
+        imgIndex = getProjectIndex(links[i], i);
         target = 1;
         isHovering = true; // Set hover state
         targetScale = 1.0; // Scale to full size
