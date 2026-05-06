@@ -423,7 +423,8 @@ function updateInsuranceDropdown(state, type) {
     // Add new options
     filteredPayors.forEach(payor => {
         const option = document.createElement('option');
-        option.value = payor.tofu_payor_name;
+        // Submit full payor_name to SF while showing tofu_payor_name in the UI.
+        option.value = payor.payor_name || payor.tofu_payor_name;
         option.text = payor.tofu_payor_name;
         insuranceDropdown.appendChild(option);
     });
@@ -444,7 +445,7 @@ function findInsuranceData(state, insuranceName) {
     }
     return jsonData.find(item =>
         item.state === state &&
-        item.tofu_payor_name === insuranceName
+        (item.tofu_payor_name === insuranceName || item.payor_name === insuranceName)
     );
 }
 
