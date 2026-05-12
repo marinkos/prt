@@ -454,10 +454,28 @@ function findInsuranceData(state, insuranceName) {
 // ------------------------------------------
 function updatePrimaryInsuranceFields(state, insuranceName) {
     const insuranceData = findInsuranceData(state, insuranceName);
+    const insuranceField = document.getElementById('00N8b00000EQM3J');
     if (insuranceData) {
         const bayField = document.getElementById('00NRc00000OHqQz');
         const statusField = document.getElementById('00NRc00000OHo1Z');
-        
+        const payorName = (insuranceData.payor_name && String(insuranceData.payor_name).trim()) ||
+            (insuranceData.tofu_payor_name && insuranceData.tofu_payor_name.trim()) ||
+            '';
+
+        // SF submit value must be full payor_name (e.g. "WV - The Health Plan"), not tofu label.
+        if (insuranceField && payorName) {
+            const hasValue = Array.from(insuranceField.options).some(function (o) {
+                return o.value === payorName;
+            });
+            if (!hasValue) {
+                const opt = document.createElement('option');
+                opt.value = payorName;
+                opt.text = insuranceData.tofu_payor_name || payorName;
+                insuranceField.appendChild(opt);
+            }
+            insuranceField.value = payorName;
+        }
+
         if (bayField) {
             bayField.value = insuranceData.final_forta_bay || ''; // Primary Insurance Bay
         }
