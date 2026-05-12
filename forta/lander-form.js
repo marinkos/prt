@@ -5,6 +5,8 @@ let qualifyingZipSet = new Set();
 let isZipDataLoaded = false;
 
 const ZIP_CDN_URL = 'https://cdn.prod.fortahealth.com/assets/zip_code_coverage.json';
+/** Salesforce: Expected Total ABA Hours per Week */
+const EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID = '00NRc00000NxTLk';
 
 function normalizeZip(zipValue) {
     return String(zipValue || '').trim().replace(/\D/g, '').slice(0, 5);
@@ -21,6 +23,51 @@ function isZipQualified(zipValue) {
         return qualifyingZipSet.has(padded);
     }
     return false;
+}
+
+/** Match UI + submit: only true after CDN zip data has loaded. */
+function isZipQualifyingForLead(zipValue) {
+    return isZipDataLoaded && isZipQualified(zipValue);
+}
+
+/**
+ * Parses "Expected Total ABA Hours per Week" (SF field id, optional window override, then label match).
+ * Returns NaN if missing so callers default to the pre-qualified thank-you path.
+ */
+function getExpectedAbaHoursPerWeekValue(formSalesEl) {
+    var el = null;
+    if (typeof window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID === 'string' && window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID) {
+        el = document.getElementById(window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID);
+    }
+    if (!el) {
+        el = document.getElementById(EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID);
+    }
+    if (!el && formSalesEl) {
+        var labels = formSalesEl.querySelectorAll('label');
+        for (var i = 0; i < labels.length; i++) {
+            var text = (labels[i].textContent || '').replace(/\s+/g, ' ').trim();
+            if (/expected\s+total\s+aba\s+hours/i.test(text)) {
+                var forId = labels[i].getAttribute('for');
+                if (forId) {
+                    el = document.getElementById(forId);
+                    if (el) break;
+                }
+            }
+        }
+    }
+    if (!el) return NaN;
+    var raw = String(el.value != null ? el.value : '').replace(/,/g, '').trim();
+    if (raw === '') return NaN;
+    var n = parseFloat(raw);
+    return n;
+}
+
+function thankYouUrlForMqlIntake(formSalesEl) {
+    var hours = getExpectedAbaHoursPerWeekValue(formSalesEl);
+    if (!isNaN(hours) && hours >= 10) {
+        return 'https://www.fortahealth.com/thank-you-schedule-your-call';
+    }
+    return 'https://www.fortahealth.com/thank-you-intake-pre-qualified';
 }
 
 function loadQualifyingZipData() {
@@ -427,7 +474,7 @@ function initializeScript() {
 
     function updateInHomeFieldVisibilityFromZip() {
         if (!formZipInput) return;
-        const isQualified = isZipDataLoaded && isZipQualified(formZipInput.value);
+        const isQualified = isZipQualifyingForLead(formZipInput.value);
 
         if (requestedServiceFieldContainer) {
             if (isQualified) {
@@ -856,7 +903,7 @@ function initializeScript() {
         const childAge = parseInt(ageInput.value, 10);
         const state = select.value; // User's residential state
         const zip = formZipInput ? formZipInput.value : '';
-        const isQualifyingZip = isZipQualified(zip);
+        const isQualifyingZip = isZipQualifyingForLead(zip);
         const insuranceProvider = insurance.value;
         const mqlStatusField = document.getElementById('00NRc00000Nxa1C'); // Hidden MQL Status field
 
@@ -871,7 +918,6 @@ function initializeScript() {
         const isSpanishLanguage = selectedLanguage.toLowerCase().includes('spanish');
         const hasPositiveDiagnosis = asdDiagnosis.toLowerCase() === 'yes';
         const isInHomePassing = isQualifyingZip && tofuStatus === 'Passing' && hasPositiveDiagnosis;
-        const isSouthCarolinaInHomePassing = state === 'SC' && isQualifyingZip && tofuStatus === 'Passing';
 
         if (inHomeZipStatusInput) {
             inHomeZipStatusInput.value = isQualifyingZip ? 'Qualified' : 'Disqualified';
@@ -912,44 +958,37 @@ else if (tofuStatus === "Disqualify") {
     returnURL = "https://www.fortahealth.com/thank-you-2";
     mqlStatus = "DQ - Insurance not supported";
 }
-// South Carolina in-home pass route (any form path with qualifying zip + passing TOFU)
-else if (isSouthCarolinaInHomePassing) {
-    returnURL = isSpanishLanguage
-        ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
-        : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
-    mqlStatus = "MQL - In-Home";
-}
-// In-Home pass route (qualified zip + insurance passing + positive Dx)
-else if (isInHomePassing) {
-    returnURL = isSpanishLanguage
-        ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
-        : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
-    mqlStatus = "MQL - In-Home";
-}
-// MQL - If diagnosis is "Yes", always MQL
-else if (asdDiagnosis.toLowerCase() === "yes") {
-    returnURL = "https://www.fortahealth.com/thank-you-intake-pre-qualified";
-    mqlStatus = "MQL";
-}
-// Dx - Check Eval (only for "no, evaluation scheduled" or CA IEP case)
+// Dx - Check Eval (before in-home / MQL so diagnosis routing wins)
 else if (
-    asdDiagnosis.toLowerCase() === "no, evaluation scheduled" || 
+    asdDiagnosis.toLowerCase() === "no, evaluation scheduled" ||
     // insurance type is unfortunately a variable called type which is Yes for mediciad/mco and No for commercial
     (asdDiagnosis.toLowerCase() === "no, iep only" && state.toLowerCase() === "ca" && type.value.toLowerCase() === "yes")
 ) {
     returnURL = "https://www.fortahealth.com/thank-you-diagnosis";
     mqlStatus = "Dx - Check Eval";
 }
-// DQ - No Diagnosis (FAIL case)
+// DQ - No Diagnosis (before in-home / MQL)
 else if (
     ["no", "no, on a waitlist", "no, have non-asd diagnosis", "no, iep only"].includes(asdDiagnosis.toLowerCase())
 ) {
     returnURL = "https://www.fortahealth.com/thank-you-2";
     mqlStatus = "DQ - No Diagnosis";
 }
+// In-Home pass route (qualified zip + insurance passing + positive Dx; SC uses same rule)
+else if (isInHomePassing) {
+    returnURL = isSpanishLanguage
+        ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
+        : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
+    mqlStatus = "MQL - In-Home";
+}
+// MQL - If diagnosis is "Yes", always MQL (thank-you varies by expected ABA hours/week)
+else if (asdDiagnosis.toLowerCase() === "yes") {
+    returnURL = thankYouUrlForMqlIntake(formSales);
+    mqlStatus = "MQL";
+}
 // MQL - Standard Pass if primary insurance's TOFU Status is "Passing"
 else if (tofuStatus === "Passing") {
-    returnURL = "https://www.fortahealth.com/thank-you-intake-pre-qualified";
+    returnURL = thankYouUrlForMqlIntake(formSales);
     mqlStatus = "MQL";
 }
 // DISQUALIFY based on adjusted ASD diagnosis logic (FAIL case)

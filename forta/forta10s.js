@@ -3,6 +3,8 @@ let qualifyingZipSet = new Set();
 let isZipDataLoaded = false;
 
 const ZIP_CDN_URL = 'https://cdn.prod.fortahealth.com/assets/zip_code_coverage.json';
+/** Salesforce: Expected Total ABA Hours per Week */
+const EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID = '00NRc00000NxTLk';
 
 function normalizeZip(zipValue) {
     return String(zipValue || '').trim().replace(/\D/g, '').slice(0, 5);
@@ -18,6 +20,46 @@ function isZipQualified(zipValue) {
         return qualifyingZipSet.has(padded);
     }
     return false;
+}
+
+function isZipQualifyingForLead(zipValue) {
+    return isZipDataLoaded && isZipQualified(zipValue);
+}
+
+function getExpectedAbaHoursPerWeekValue(formSalesEl) {
+    var el = null;
+    if (typeof window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID === 'string' && window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID) {
+        el = document.getElementById(window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID);
+    }
+    if (!el) {
+        el = document.getElementById(EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID);
+    }
+    if (!el && formSalesEl) {
+        var labels = formSalesEl.querySelectorAll('label');
+        for (var i = 0; i < labels.length; i++) {
+            var text = (labels[i].textContent || '').replace(/\s+/g, ' ').trim();
+            if (/expected\s+total\s+aba\s+hours/i.test(text)) {
+                var forId = labels[i].getAttribute('for');
+                if (forId) {
+                    el = document.getElementById(forId);
+                    if (el) break;
+                }
+            }
+        }
+    }
+    if (!el) return NaN;
+    var raw = String(el.value != null ? el.value : '').replace(/,/g, '').trim();
+    if (raw === '') return NaN;
+    var n = parseFloat(raw);
+    return n;
+}
+
+function thankYouUrlForMqlIntake(formSalesEl) {
+    var hours = getExpectedAbaHoursPerWeekValue(formSalesEl);
+    if (!isNaN(hours) && hours >= 10) {
+        return 'https://www.fortahealth.com/thank-you-schedule-your-call';
+    }
+    return 'https://www.fortahealth.com/thank-you-intake-pre-qualified';
 }
 
 function loadQualifyingZipData() {
@@ -398,7 +440,7 @@ function initializeScript() {
 
     function updateInHomeFieldVisibilityFromZip() {
         if (!formZipInput) return;
-        const isQualified = isZipDataLoaded && isZipQualified(formZipInput.value);
+        const isQualified = isZipQualifyingForLead(formZipInput.value);
 
         if (requestedServiceFieldContainer) {
             if (isQualified) {
@@ -755,7 +797,7 @@ function initializeScript() {
         const childAge = parseInt(ageInput.value, 10);
         const state = select.value;
         const zip = formZipInput ? formZipInput.value : '';
-        const isQualifyingZip = isZipQualified(zip);
+        const isQualifyingZip = isZipQualifyingForLead(zip);
         const insuranceProvider = insurance.value;
         const mqlStatusField = document.getElementById('00NRc00000Nxa1C');
 
@@ -770,7 +812,6 @@ function initializeScript() {
         const isSpanishLanguage = selectedLanguage.toLowerCase().includes('spanish');
         const hasPositiveDiagnosis = asdDiagnosis.toLowerCase() === 'yes';
         const isInHomePassing = isQualifyingZip && tofuStatus === 'Passing' && hasPositiveDiagnosis;
-        const isSouthCarolinaInHomePassing = state === 'SC' && isQualifyingZip && tofuStatus === 'Passing';
 
         if (inHomeZipStatusInput) {
             inHomeZipStatusInput.value = isQualifyingZip ? 'Qualified' : 'Disqualified';
@@ -798,22 +839,6 @@ function initializeScript() {
             returnURL = "https://www.fortahealth.com/thank-you-2";
             mqlStatus = "DQ - Insurance not supported";
         }
-        else if (isSouthCarolinaInHomePassing) {
-            returnURL = isSpanishLanguage
-                ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
-                : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
-            mqlStatus = "MQL - In-Home";
-        }
-        else if (isInHomePassing) {
-            returnURL = isSpanishLanguage
-                ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
-                : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
-            mqlStatus = "MQL - In-Home";
-        }
-        else if (asdDiagnosis.toLowerCase() === "yes") {
-            returnURL = "https://www.fortahealth.com/thank-you-intake-pre-qualified";
-            mqlStatus = "MQL";
-        }
         else if (
             asdDiagnosis.toLowerCase() === "no, evaluation scheduled" ||
             (asdDiagnosis.toLowerCase() === "no, iep only" && state.toLowerCase() === "ca" && type.value.toLowerCase() === "yes")
@@ -827,8 +852,18 @@ function initializeScript() {
             returnURL = "https://www.fortahealth.com/thank-you-2";
             mqlStatus = "DQ - No Diagnosis";
         }
+        else if (isInHomePassing) {
+            returnURL = isSpanishLanguage
+                ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
+                : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
+            mqlStatus = "MQL - In-Home";
+        }
+        else if (asdDiagnosis.toLowerCase() === "yes") {
+            returnURL = thankYouUrlForMqlIntake(formSales);
+            mqlStatus = "MQL";
+        }
         else if (tofuStatus === "Passing") {
-            returnURL = "https://www.fortahealth.com/thank-you-intake-pre-qualified";
+            returnURL = thankYouUrlForMqlIntake(formSales);
             mqlStatus = "MQL";
         }
         else if (
