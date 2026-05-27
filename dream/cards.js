@@ -1,12 +1,11 @@
 function initDreamCards() {
-  if (!window.gsap || !window.ScrollTrigger) return;
+  if (!window.gsap || !window.ScrollTrigger || !window.Flip) return;
   if (!document.querySelector(".scroll-component")) return;
 
-  gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollTrigger, Flip);
 
   const scrollComponents = document.querySelectorAll(".scroll-component");
   scrollComponents.forEach((scrollEl) => {
-    // Scope everything to this section to avoid collisions if multiple exist.
     const scope = scrollEl.closest("section") || scrollEl;
 
     const wrapperEl = scope.querySelector(".ai_cards-wrapper");
@@ -23,114 +22,93 @@ function initDreamCards() {
       ".ai_item p",
     ];
 
-    // Capture which card is "active" in compact mode (based on initial markup).
     const initialActiveIndex = cardEls.findIndex((el) => el.classList.contains("is-active"));
     const activeIndex = initialActiveIndex >= 0 ? initialActiveIndex : 0;
 
-    // Collect unique elements that should get/remove the `compact` class.
     const compactTargets = Array.from(
       new Set(
         compactTargetsSelectors.flatMap((sel) => Array.from(scope.querySelectorAll(sel)))
       )
     );
 
-    let compactOn = null;
-    function applyCompactState(on) {
-      if (compactOn === on) return;
-      compactOn = on;
-
+    function applyCompact(on) {
       compactTargets.forEach((el) => el.classList.toggle("compact", on));
-
-      // `is-active` must exist only in compact mode.
-      cardEls.forEach((el) => el.classList.remove("is-active"));
-      if (on) cardEls[activeIndex]?.classList.add("is-active");
     }
 
-    // Initial state: no compact + no active tab.
-    applyCompactState(false);
-
-    // We switch layout only while cards are hidden to avoid visible "teleport".
-    const switchTime = 0.5; // timeline time where we flip big -> compact (while hidden)
-
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: scrollEl,
-        // Pin so the pinned element sits ~6rem from the top of the viewport.
-        start: "top 6rem",
-        end: "+=1400",
-        pin: true,
-        scrub: 0.8,
-        anticipatePin: 1,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          const currentTime = self.progress * Math.max(0.001, tl.duration());
-          applyCompactState(currentTime >= switchTime);
-        },
-      },
-    });
-
-    // Compute exact deltas so cards converge to wrapper center (no guessing with % transforms).
-    function getCenter(rect) {
-      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    }
-
-    function computeConvergeTweens() {
-      const wrapperRect = wrapperEl.getBoundingClientRect();
-      const wrapperCenter = getCenter(wrapperRect);
-
-      return cardEls.map((cardEl) => {
-        const cardRect = cardEl.getBoundingClientRect();
-        const cardCenter = getCenter(cardRect);
-        return {
-          el: cardEl,
-          dx: wrapperCenter.x - cardCenter.x,
-          dy: wrapperCenter.y - cardCenter.y,
-        };
+    function setActiveTab(on) {
+      cardEls.forEach((el, i) => {
+        el.classList.toggle("is-active", on && i === activeIndex);
       });
     }
 
-    const converge = computeConvergeTweens();
+    // Ensure we capture the big-card layout for Flip.
+    applyCompact(false);
+    setActiveTab(false);
 
-    // Phase 1: cards converge toward wrapper center and fade out.
-    converge.forEach((c) => {
-      tl.to(
-        c.el,
-        {
-          x: c.dx,
-          y: c.dy,
-          scale: 0.08,
-          opacity: 0,
-          ease: "power2.in",
-          duration: switchTime,
-          transformOrigin: "center center",
-        },
-        0
-      );
+    const flipEls = [wrapperEl, ...cardEls];
+    const bgEls = scope.querySelectorAll(".ai_item .card-bg, .ai_item [class*='card-bg']");
+    bgEls.forEach((el) => flipEls.push(el));
+
+    const state = Flip.getState(flipEls, {
+      props: "opacity,borderColor,borderRadius,padding,minHeight,gap,width",
     });
 
-    // Phase 1 (parallel): wrapper morphs to tab-bar shape.
-    tl.to(wrapperEl, {
-      width: "30rem",
-      padding: "0.375rem",
-      borderColor: "#e5e7eb",
-      gap: "0.25rem",
-      ease: "power2.inOut",
-      duration: 0.7,
-    }, 0);
+    // DOM reflows to compact once; Flip animates back to the captured hero state at scroll 0.
+    applyCompact(true);
 
-    // Phase 2: cards fade back in in compact layout.
-    tl.to(
-      cardEls,
+    const heroEls = scope.querySelectorAll(
+      ".ai_item-big-icon, .ai_item-heading h2, .ai_item > p"
+    );
+    const tabEls = scope.querySelectorAll(".ai_tab-icon");
+
+    gsap.set(tabEls, { opacity: 0 });
+
+    const scrollConfig = {
+      trigger: scrollEl,
+      start: "top 6rem",
+      end: "+=1200",
+      scrub: 0.8,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        // Active tab only when compact layout is mostly reached.
+        setActiveTab(self.progress >= 0.85);
+      },
+    };
+
+    // Outer morph: wrapper + cards (matches scroll-cards-to-tabs-flip.html).
+    Flip.from(state, {
+      ease: "power2.inOut",
+      nested: true,
+      scrollTrigger: {
+        ...scrollConfig,
+        pin: true,
+      },
+    });
+
+    // Inner crossfade: hero scales out, then tab icons fade in.
+    const contentTl = gsap.timeline({ scrollTrigger: scrollConfig });
+
+    contentTl.to(
+      heroEls,
       {
-        // Clear the converge transforms so compact CSS can place them.
-        x: 0,
-        y: 0,
-        scale: 1,
+        scale: 0.3,
+        opacity: 0,
+        ease: "power2.in",
+        duration: 0.6,
+        transformOrigin: "top center",
+      },
+      0
+    );
+
+    contentTl.to(
+      tabEls,
+      {
         opacity: 1,
         ease: "power2.out",
-        duration: 0.45,
+        duration: 0.4,
       },
-      switchTime
+      0.6
     );
   });
 }
