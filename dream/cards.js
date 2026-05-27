@@ -15,31 +15,45 @@ function initDreamCards() {
     const cardEls = Array.from(scrollEl.querySelectorAll(".ai_item"));
     if (!wrapperEl || cardEls.length === 0) return;
 
+    // Pin only the cards block (like .pin-target in scroll-cards-to-tabs-flip.html).
+    // Pinning all of .scroll-component includes video and creates a huge pin-spacer.
+    const pinEl = scrollEl.querySelector(".ai_cards-pin") || wrapperEl;
+
     const initialActiveIndex = cardEls.findIndex((el) =>
       el.classList.contains("is-active")
     );
     const activeIndex = initialActiveIndex >= 0 ? initialActiveIndex : 0;
 
-    // Exactly these elements get `compact` (scoped to scroll-component).
-    const compactSelectors = [
-      ".ai_cards-wrapper",
-      ".ai_item",
+    // Layout: always compact after Flip setup (like body.compact → .cards-container / .card).
+    const layoutCompactSelectors = [".ai_cards-wrapper", ".ai_item"];
+
+    // Content combos: turn on with scroll (hero → tab), same timing as reference demo.
+    const contentCompactSelectors = [
       ".ai_item-heading",
       ".ai_item-big-icon",
-      ".text-color-secondary",
+      ".ai_item-title",
+      ".ai_item-p",
       ".ai_tab-icon",
     ];
 
-    const allCompactEls = Array.from(
+    const layoutCompactEls = layoutCompactSelectors.flatMap((sel) =>
+      Array.from(scrollEl.querySelectorAll(sel))
+    );
+
+    const contentCompactEls = Array.from(
       new Set(
-        compactSelectors.flatMap((sel) =>
+        contentCompactSelectors.flatMap((sel) =>
           Array.from(scrollEl.querySelectorAll(sel))
         )
       )
     );
 
-    function setAllCompact(on) {
-      allCompactEls.forEach((el) => el.classList.toggle("compact", on));
+    function setLayoutCompact(on) {
+      layoutCompactEls.forEach((el) => el.classList.toggle("compact", on));
+    }
+
+    function setContentCompact(on) {
+      contentCompactEls.forEach((el) => el.classList.toggle("compact", on));
     }
 
     function setActiveTab(on) {
@@ -50,13 +64,15 @@ function initDreamCards() {
 
     function syncClasses(progress) {
       const p = Math.max(0, Math.min(1, progress));
-      setAllCompact(p >= COMPACT_AT);
+      setLayoutCompact(true);
+      setContentCompact(p >= COMPACT_AT);
       setActiveTab(p >= ACTIVE_TAB_AT);
     }
 
     scope.querySelectorAll(".compact").forEach((el) => el.classList.remove("compact"));
     scope.querySelectorAll(".is-active").forEach((el) => el.classList.remove("is-active"));
-    syncClasses(0);
+    setLayoutCompact(false);
+    setContentCompact(false);
 
     const flipEls = [wrapperEl, ...cardEls];
     scope
@@ -64,21 +80,26 @@ function initDreamCards() {
       .forEach((el) => flipEls.push(el));
 
     const state = Flip.getState(flipEls, {
-      props: "opacity,borderColor,borderRadius,padding,minHeight,gap,width",
+      props: "opacity,borderColor,borderRadius,padding,minHeight,gap",
     });
 
-    setAllCompact(true);
+    setLayoutCompact(true);
+    setContentCompact(true);
 
-    const heroEls = scrollEl.querySelectorAll(
-      ".ai_item-big-icon, .ai_item h2, .ai_item .text-color-secondary"
-    );
+    // Hero layer = one block each (like .card-hero in the reference), not individual transforms on card height.
+    const heroEls = scrollEl.querySelectorAll(".ai_item-heading, .ai_item-p");
     const tabEls = scrollEl.querySelectorAll(".ai_tab-icon");
 
     gsap.set(tabEls, { opacity: 0 });
-    syncClasses(0);
+    setLayoutCompact(true);
+    setContentCompact(false);
+    setActiveTab(false);
 
     const scrollConfig = {
-      id: scrollComponents.length > 1 ? `dream-cards-${scrollIndex}` : "dream-cards",
+      id:
+        scrollComponents.length > 1
+          ? `dream-cards-${scrollIndex}`
+          : "dream-cards",
       trigger: scrollEl,
       start: "top top",
       end: "+=1200",
@@ -93,7 +114,7 @@ function initDreamCards() {
       nested: true,
       scrollTrigger: {
         ...scrollConfig,
-        pin: scrollEl,
+        pin: pinEl,
         pinSpacing: true,
       },
     });
