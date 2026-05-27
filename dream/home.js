@@ -397,7 +397,7 @@
     return best;
   }
 
-  canvas.addEventListener("pointermove", (e) => {
+  function updatePanelsFromPointer(e) {
     const rect = canvas.getBoundingClientRect();
     const clipX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const clipY = 1 - ((e.clientY - rect.top) / rect.height) * 2;
@@ -421,14 +421,34 @@
         panel.targetMouseTiltY = 0;
       }
     }
-  });
+  }
 
-  canvas.addEventListener("pointerleave", () => {
+  function clearPanelTargets() {
     for (const panel of panels) {
       panel.targetHoverActive = 0;
       panel.targetMouseTiltX = 0;
       panel.targetMouseTiltY = 0;
     }
+  }
+
+  canvas.addEventListener("pointerdown", (e) => {
+    updatePanelsFromPointer(e);
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    updatePanelsFromPointer(e);
+  });
+
+  canvas.addEventListener("pointerleave", () => {
+    clearPanelTargets();
+  });
+
+  canvas.addEventListener("pointerup", () => {
+    clearPanelTargets();
+  });
+
+  canvas.addEventListener("pointercancel", () => {
+    clearPanelTargets();
   });
 
   Promise.all(panels.map(setupPanel))

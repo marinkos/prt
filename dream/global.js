@@ -220,14 +220,31 @@
       requestAnimationFrame(animate);
     }
   
-    canvas.addEventListener("pointermove", (e) => {
+    function setHoverFromPointer(e) {
       const rect = canvas.getBoundingClientRect();
       targetHoverX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       targetHoverY = 1 - ((e.clientY - rect.top) / rect.height) * 2;
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      setHoverFromPointer(e);
+      targetHoverActive = 1;
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      setHoverFromPointer(e);
       targetHoverActive = 1;
     });
   
     canvas.addEventListener("pointerleave", () => {
+      targetHoverActive = 0;
+    });
+
+    canvas.addEventListener("pointerup", () => {
+      targetHoverActive = 0;
+    });
+
+    canvas.addEventListener("pointercancel", () => {
       targetHoverActive = 0;
     });
   
