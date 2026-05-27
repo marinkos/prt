@@ -1,21 +1,17 @@
 (function () {
-    const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a16df3735ca38900bb6ff76_2140c4fc126cdf0235b4566bab1955c9_footer-img.png";
+    const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a16e51f7db7a603d7a8db46_footer-img.avif";
   
+    // Original footer params from Train_Footer.html
     const params = {
       density: 1,
-      threshold: 0.01,
-      pointSize: 2.5,
-      depth: 1.0,
-      hoverRadius: 0.92,
+      threshold: 0.02,
+      pointSize: 2,
+      depth: 1,
+      hoverRadius: 0.56,
       hoverSoftness: 0.55,
-      hoverStrength: 1.0,
+      hoverStrength: 1,
       hoverEase: 0.12,
-      zoom: 1,
-      moveX: 0,
-      moveY: 0,
-      rotateX: 0,
-      rotateY: 0,
-      rotateZ: 0,
+      zoom: 0.9,
       perspective: 1.45
     };
   
@@ -33,7 +29,6 @@
     let imgH = 1;
     let particleCount = 0;
     let buffer = null;
-  
     let hoverX = 0;
     let hoverY = 0;
     let hoverActive = 0;
@@ -48,6 +43,7 @@
       attribute vec3 a_col;
       attribute float a_bri;
       varying vec3 v_col;
+  
       uniform vec2 u_res;
       uniform vec2 u_img;
       uniform float u_pointSize;
@@ -59,35 +55,30 @@
       uniform float u_hoverSoftness;
       uniform float u_hoverStrength;
       uniform float u_zoom;
-      uniform float u_moveX;
-      uniform float u_moveY;
-      uniform float u_rotateX;
-      uniform float u_rotateY;
-      uniform float u_rotateZ;
+      uniform float u_fitZoom;
       uniform float u_perspective;
-      mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
-      mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
-      mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,-s,0, s,c,0, 0,0,1); }
-      void main(){
+  
+      void main() {
         vec2 uv = a_pos / u_img;
         vec2 xy = vec2(uv.x - 0.5, 0.5 - uv.y) * vec2(u_img.x / u_img.y, 1.0);
         float aspect = u_res.x / u_res.y;
-        vec2 flatClip = (xy * u_zoom) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
+        float zoom = u_zoom * u_fitZoom;
+        vec2 flatClip = (xy * zoom) / vec2(aspect, 1.0) * 2.0;
   
         float distToMouse = distance(flatClip, vec2(u_hoverX, u_hoverY));
         float innerRadius = max(0.0, u_hoverRadius - u_hoverSoftness);
         float hoverMask = 1.0 - smoothstep(innerRadius, u_hoverRadius, distToMouse);
         hoverMask = hoverMask * hoverMask * (3.0 - 2.0 * hoverMask);
         hoverMask *= u_hoverActive;
+  
         float depthAmount = 1.0 - hoverMask * u_hoverStrength;
-  
         float z = (a_bri - 0.5) * u_depth * depthAmount;
-        vec3 p = vec3(xy, z);
-        p = rotZ(radians(u_rotateZ)) * rotY(radians(u_rotateY)) * rotX(radians(u_rotateX)) * p;
-        p *= u_zoom;
   
+        vec3 p = vec3(xy, z);
+        p *= zoom;
         float persp = u_perspective / max(0.25, u_perspective - p.z);
-        vec2 clip = (p.xy * persp) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
+        vec2 clip = (p.xy * persp) / vec2(aspect, 1.0) * 2.0;
+  
         gl_Position = vec4(clip, 0.0, 1.0);
         gl_PointSize = u_pointSize * persp;
         v_col = a_col;
@@ -97,7 +88,7 @@
     const FS = `
       precision mediump float;
       varying vec3 v_col;
-      void main(){
+      void main() {
         vec2 p = gl_PointCoord - 0.5;
         if (dot(p, p) > 0.25) discard;
         gl_FragColor = vec4(v_col, 1.0);
@@ -108,7 +99,9 @@
       const s = gl.createShader(type);
       gl.shaderSource(s, src);
       gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) || "Shader compile failed");
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(s) || "Shader compile failed");
+      }
       return s;
     }
   
@@ -135,6 +128,7 @@
     function buildParticles(img) {
       imgW = img.naturalWidth || img.width;
       imgH = img.naturalHeight || img.height;
+  
       const c = document.createElement("canvas");
       c.width = imgW;
       c.height = imgH;
@@ -179,6 +173,10 @@
       gl.enableVertexAttribArray(bri);
       gl.vertexAttribPointer(bri, 1, gl.FLOAT, false, stride, 5 * 4);
   
+      const aspect = W / H;
+      const imgAspect = imgW / imgH;
+      const fitZoom = aspect / imgAspect; // fills wrapper width, wrapper crops height if needed
+  
       gl.uniform2f(uni("u_res"), W, H);
       gl.uniform2f(uni("u_img"), imgW, imgH);
       gl.uniform1f(uni("u_pointSize"), params.pointSize);
@@ -190,11 +188,7 @@
       gl.uniform1f(uni("u_hoverSoftness"), params.hoverSoftness);
       gl.uniform1f(uni("u_hoverStrength"), params.hoverStrength);
       gl.uniform1f(uni("u_zoom"), params.zoom);
-      gl.uniform1f(uni("u_moveX"), params.moveX);
-      gl.uniform1f(uni("u_moveY"), params.moveY);
-      gl.uniform1f(uni("u_rotateX"), params.rotateX);
-      gl.uniform1f(uni("u_rotateY"), params.rotateY);
-      gl.uniform1f(uni("u_rotateZ"), params.rotateZ);
+      gl.uniform1f(uni("u_fitZoom"), fitZoom);
       gl.uniform1f(uni("u_perspective"), params.perspective);
   
       gl.enable(gl.BLEND);
@@ -211,14 +205,14 @@
   
     function easeInOut01(t) {
       const x = Math.max(0, Math.min(1, t));
-      return x * x * (3 - 2 * x);
+      return x * x * (3.0 - 2.0 * x);
     }
   
     function animate(now) {
       const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
       lastFrameTime = now;
       const ease = easeInOut01(params.hoverEase);
-      const follow = 1 - Math.pow(1 - ease, dt * 60);
+      const follow = 1.0 - Math.pow(1.0 - ease, dt * 60.0);
       hoverX += (targetHoverX - hoverX) * follow;
       hoverY += (targetHoverY - hoverY) * follow;
       hoverActive += (targetHoverActive - hoverActive) * follow;
@@ -232,6 +226,7 @@
       targetHoverY = 1 - ((e.clientY - rect.top) / rect.height) * 2;
       targetHoverActive = 1;
     });
+  
     canvas.addEventListener("pointerleave", () => {
       targetHoverActive = 0;
     });
@@ -246,3 +241,4 @@
   
     new ResizeObserver(() => render()).observe(canvas);
   })();
+  
