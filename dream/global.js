@@ -1,5 +1,5 @@
 (function () {
-    const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a16df3735ca38900bb6ff76_footer-img.png";
+    const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a16df3735ca38900bb6ff76_2140c4fc126cdf0235b4566bab1955c9_footer-img.png";
   
     const params = {
       density: 1,
