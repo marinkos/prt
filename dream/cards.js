@@ -4,41 +4,37 @@ function initDreamCards() {
 
   gsap.registerPlugin(ScrollTrigger, Flip);
 
-  const PIN_FROM_TOP = "6rem";
-  const COMPACT_AT = 0.6; // all Webflow compact combos turn on together (tab phase)
+  const COMPACT_AT = 0.6;
   const ACTIVE_TAB_AT = 0.85;
 
   const scrollComponents = document.querySelectorAll(".scroll-component");
-  scrollComponents.forEach((scrollEl) => {
+  scrollComponents.forEach((scrollEl, scrollIndex) => {
     const scope = scrollEl.closest("section") || scrollEl;
 
-    const wrapperEl = scope.querySelector(".ai_cards-wrapper");
-    const cardEls = Array.from(scope.querySelectorAll(".ai_item"));
+    const wrapperEl = scrollEl.querySelector(".ai_cards-wrapper");
+    const cardEls = Array.from(scrollEl.querySelectorAll(".ai_item"));
     if (!wrapperEl || cardEls.length === 0) return;
-
-    // Pin ONLY the cards block — not .scroll-component (that includes video and causes jumps).
-    // Optional: add a Webflow div.ai_cards-pin wrapping the wrapper and we will use that.
-    const pinEl =
-      scrollEl.querySelector(".ai_cards-pin") || wrapperEl;
 
     const initialActiveIndex = cardEls.findIndex((el) =>
       el.classList.contains("is-active")
     );
     const activeIndex = initialActiveIndex >= 0 ? initialActiveIndex : 0;
 
-    // Every node that carries the compact combo in Webflow (your compact-state HTML).
+    // Exactly these elements get `compact` (scoped to scroll-component).
+    const compactSelectors = [
+      ".ai_cards-wrapper",
+      ".ai_item",
+      ".ai_item-heading",
+      ".ai_item-big-icon",
+      ".text-color-secondary",
+      ".ai_tab-icon",
+    ];
+
     const allCompactEls = Array.from(
       new Set(
-        [
-          ".ai_cards-wrapper",
-          ".ai_item",
-          ".ai_item-heading",
-          ".ai_item-big-icon",
-          ".ai_tab-icon",
-          ".ai_item h2",
-          ".ai_item p",
-          ".ai_item .text-color-secondary",
-        ].flatMap((sel) => Array.from(scope.querySelectorAll(sel)))
+        compactSelectors.flatMap((sel) =>
+          Array.from(scrollEl.querySelectorAll(sel))
+        )
       )
     );
 
@@ -73,21 +69,21 @@ function initDreamCards() {
 
     setAllCompact(true);
 
-    const heroEls = scope.querySelectorAll(
-      ".ai_item-big-icon, .ai_item-heading h2, .ai_item > p"
+    const heroEls = scrollEl.querySelectorAll(
+      ".ai_item-big-icon, .ai_item h2, .ai_item .text-color-secondary"
     );
-    const tabEls = scope.querySelectorAll(".ai_tab-icon");
+    const tabEls = scrollEl.querySelectorAll(".ai_tab-icon");
 
     gsap.set(tabEls, { opacity: 0 });
     syncClasses(0);
 
     const scrollConfig = {
-      id: "dream-cards",
+      id: scrollComponents.length > 1 ? `dream-cards-${scrollIndex}` : "dream-cards",
       trigger: scrollEl,
-      start: `top top+=${PIN_FROM_TOP}`,
+      start: "top top",
       end: "+=1200",
       scrub: 0.8,
-      anticipatePin: 0,
+      anticipatePin: 1,
       invalidateOnRefresh: true,
       onUpdate: (self) => syncClasses(self.progress),
     };
@@ -97,7 +93,7 @@ function initDreamCards() {
       nested: true,
       scrollTrigger: {
         ...scrollConfig,
-        pin: pinEl,
+        pin: scrollEl,
         pinSpacing: true,
       },
     });
