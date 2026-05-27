@@ -5,14 +5,14 @@
     const params = {
       density: 1,
       threshold: 0.02,
-      pointSize: 2,
-      depth: 1,
+      pointSize: 1.65,
+      depth: 0.5,
       hoverRadius: 0.56,
       hoverSoftness: 0.55,
       hoverStrength: 1,
       hoverEase: 0.12,
-      zoom: 0.9,
-      perspective: 1.45
+      zoom: 1.18,
+      perspective: 2
     };
   
     const canvas = document.getElementById("footer");
