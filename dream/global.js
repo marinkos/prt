@@ -11,7 +11,7 @@
       hoverSoftness: 0.55,
       hoverStrength: 1,
       hoverEase: 0.12,
-      zoom: 1.18,
+      zoom: 1.6,
       perspective: 2
     };
   
