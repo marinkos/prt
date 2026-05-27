@@ -10,7 +10,7 @@
       hoverSoftness: 0.55,
       hoverStrength: 1.0,
       hoverEase: 0.12,
-      zoom: 0.6885,
+      zoom: 1,
       moveX: 0,
       moveY: 0,
       rotateX: 0,
