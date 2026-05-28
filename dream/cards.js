@@ -7,9 +7,27 @@
 
     const scrollComponents = document.querySelectorAll(".scroll-component");
     scrollComponents.forEach((scrollEl, scrollIndex) => {
+      const stageEl =
+        scrollEl.querySelector(".ai_stage") ||
+        scrollEl.querySelector(".ai_cards-stage") ||
+        scrollEl.querySelector(".ai_cards-shell");
       const cardsWrapperEl = scrollEl.querySelector(".ai_cards-wrapper");
       const tabsEl = scrollEl.querySelector(".ai_tabs");
       if (!cardsWrapperEl) return;
+
+      const expandedHeight =
+        stageEl?.getBoundingClientRect().height ||
+        cardsWrapperEl.getBoundingClientRect().height;
+      const collapsedHeight = tabsEl
+        ? Math.max(64, tabsEl.getBoundingClientRect().height)
+        : Math.round(expandedHeight * 0.2);
+
+      if (stageEl) {
+        gsap.set(stageEl, {
+          height: expandedHeight,
+          overflow: "hidden",
+        });
+      }
 
       if (tabsEl) {
         gsap.set(tabsEl, {
@@ -35,6 +53,18 @@
       };
 
       const tl = gsap.timeline({ scrollTrigger: scrollConfig });
+
+      if (stageEl) {
+        tl.to(
+          stageEl,
+          {
+            height: collapsedHeight,
+            ease: "power2.inOut",
+            duration: 1,
+          },
+          0
+        );
+      }
 
       tl.to(cardsWrapperEl, {
           scale: 0.3,
