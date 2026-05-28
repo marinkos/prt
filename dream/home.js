@@ -463,7 +463,7 @@
 /* Playideo on active tab) */
 $(".system_tabs-link").on("click", function () {
   var tn = $(this).attr("tn");
-  $(".jazz_tabs-video video").each(function () {
+  $(".system_tabs-video video").each(function () {
     $(this).get(0).pause();
     $(this).get(0).currentTime = 0;
   });
