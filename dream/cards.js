@@ -44,8 +44,8 @@
             : "dream-cards",
         trigger: scrollEl,
         start: "top top",
-        end: "+=100vh",
-        scrub: 0.4,
+        end: "+=140vh",
+        scrub: 0.8,
         pin: scrollEl,
         pinSpacing: true,
         anticipatePin: 1,
@@ -60,9 +60,9 @@
           {
             height: collapsedHeight,
             ease: "none",
-            duration: 0.8,
+            duration: 0.6,
           },
-          0.2
+          0.4
         );
       }
 
@@ -70,7 +70,7 @@
           scale: 0.3,
           opacity: 0,
           ease: "power2.inOut",
-          duration: 0.5,
+          duration: 0.45,
           transformOrigin: "center top",
         });
 
