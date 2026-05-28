@@ -56,7 +56,7 @@
             duration: 0.5,
             transformOrigin: "center top",
           },
-          0.5
+          0.4
         );
       }
     });
