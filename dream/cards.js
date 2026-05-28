@@ -4,30 +4,14 @@
     if (!document.querySelector(".scroll-component")) return;
 
     gsap.registerPlugin(ScrollTrigger);
+    const CARD_HEIGHT_REM = 34;
+    const PIN_HEIGHT_FACTOR = 0.85;
 
     const scrollComponents = document.querySelectorAll(".scroll-component");
     scrollComponents.forEach((scrollEl, scrollIndex) => {
-      const stageEl =
-        scrollEl.querySelector(".ai_stage") ||
-        scrollEl.querySelector(".ai_cards-stage") ||
-        scrollEl.querySelector(".ai_cards-shell");
       const cardsWrapperEl = scrollEl.querySelector(".ai_cards-wrapper");
       const tabsEl = scrollEl.querySelector(".ai_tabs");
       if (!cardsWrapperEl) return;
-
-      const expandedHeight =
-        stageEl?.getBoundingClientRect().height ||
-        cardsWrapperEl.getBoundingClientRect().height;
-      const collapsedHeight = tabsEl
-        ? Math.max(64, tabsEl.getBoundingClientRect().height)
-        : Math.round(expandedHeight * 0.2);
-
-      if (stageEl) {
-        gsap.set(stageEl, {
-          height: expandedHeight,
-          overflow: "hidden",
-        });
-      }
 
       if (tabsEl) {
         gsap.set(tabsEl, {
@@ -37,6 +21,12 @@
         });
       }
 
+      const rootFontSize =
+        parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const pinDistancePx = Math.round(
+        CARD_HEIGHT_REM * rootFontSize * PIN_HEIGHT_FACTOR
+      );
+
       const scrollConfig = {
         id:
           scrollComponents.length > 1
@@ -44,7 +34,7 @@
             : "dream-cards",
         trigger: scrollEl,
         start: "top top",
-        end: "+=140vh",
+        end: `+=${pinDistancePx}`,
         scrub: 0.8,
         pin: scrollEl,
         pinSpacing: true,
@@ -53,18 +43,6 @@
       };
 
       const tl = gsap.timeline({ scrollTrigger: scrollConfig });
-
-      if (stageEl) {
-        tl.to(
-          stageEl,
-          {
-            height: collapsedHeight,
-            ease: "none",
-            duration: 0.6,
-          },
-          0.4
-        );
-      }
 
       tl.to(cardsWrapperEl, {
           scale: 0.3,
