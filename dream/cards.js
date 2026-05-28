@@ -5,7 +5,7 @@
 
     gsap.registerPlugin(ScrollTrigger);
 
-    const SCROLL_DISTANCE = 700;
+    const SCROLL_DISTANCE = 560;
 
     const scrollComponents = document.querySelectorAll(".scroll-component");
     scrollComponents.forEach((scrollEl, scrollIndex) => {
@@ -56,7 +56,7 @@
             duration: 0.5,
             transformOrigin: "center top",
           },
-          0.4
+          0.3
         );
       }
     });
