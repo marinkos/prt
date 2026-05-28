@@ -30,7 +30,7 @@
       gsap
         .timeline({ scrollTrigger: scrollConfig })
         .to(cardsWrapperEl, {
-          scale: 0.85,
+          scale: 0,
           opacity: 0.35,
           ease: "power2.inOut",
           duration: 1,
