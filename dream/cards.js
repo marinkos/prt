@@ -5,7 +5,7 @@
 
     gsap.registerPlugin(ScrollTrigger);
 
-    const SCROLL_DISTANCE = 1200;
+    const SCROLL_DISTANCE = 700;
 
     const scrollComponents = document.querySelectorAll(".scroll-component");
     scrollComponents.forEach((scrollEl, scrollIndex) => {
@@ -16,7 +16,7 @@
       if (tabsEl) {
         gsap.set(tabsEl, {
           scale: 0.8,
-          opacity: 0.4,
+          opacity: 0,
           transformOrigin: "center top",
         });
       }
@@ -29,7 +29,7 @@
         trigger: scrollEl,
         start: "top top",
         end: `+=${SCROLL_DISTANCE}`,
-        scrub: 0.8,
+        scrub: 0.4,
         pin: scrollEl,
         pinSpacing: true,
         anticipatePin: 1,
@@ -39,10 +39,10 @@
       const tl = gsap.timeline({ scrollTrigger: scrollConfig });
 
       tl.to(cardsWrapperEl, {
-          scale: 0,
-          opacity: 0.35,
+          scale: 0.3,
+          opacity: 0,
           ease: "power2.inOut",
-          duration: 1,
+          duration: 0.5,
           transformOrigin: "center top",
         });
 
@@ -53,10 +53,10 @@
             scale: 1,
             opacity: 1,
             ease: "power2.inOut",
-            duration: 1,
+            duration: 0.5,
             transformOrigin: "center top",
           },
-          0
+          0.5
         );
       }
     });
