@@ -10,7 +10,16 @@
     const scrollComponents = document.querySelectorAll(".scroll-component");
     scrollComponents.forEach((scrollEl, scrollIndex) => {
       const cardsWrapperEl = scrollEl.querySelector(".ai_cards-wrapper");
+      const tabsEl = scrollEl.querySelector(".ai_tabs");
       if (!cardsWrapperEl) return;
+
+      if (tabsEl) {
+        gsap.set(tabsEl, {
+          scale: 0.8,
+          opacity: 0.4,
+          transformOrigin: "center top",
+        });
+      }
 
       const scrollConfig = {
         id:
@@ -27,15 +36,29 @@
         invalidateOnRefresh: true,
       };
 
-      gsap
-        .timeline({ scrollTrigger: scrollConfig })
-        .to(cardsWrapperEl, {
+      const tl = gsap.timeline({ scrollTrigger: scrollConfig });
+
+      tl.to(cardsWrapperEl, {
           scale: 0,
           opacity: 0.35,
           ease: "power2.inOut",
           duration: 1,
           transformOrigin: "center top",
         });
+
+      if (tabsEl) {
+        tl.to(
+          tabsEl,
+          {
+            scale: 1,
+            opacity: 1,
+            ease: "power2.inOut",
+            duration: 1,
+            transformOrigin: "center top",
+          },
+          0
+        );
+      }
     });
   }
 
