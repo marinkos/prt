@@ -1,5 +1,5 @@
+/* Hero point cloud */
 (function () {
-  // First-try defaults (from image.html / single rocket embed)
   const BASE = {
     density: 1,
     threshold: 0.01,
@@ -17,12 +17,10 @@
     perspective: 1.45
   };
 
-  // Panel spacing (spread = center distance, scale = column width in clip space)
   const LAYOUT_SPREAD = 0.58;
   const LAYOUT_SCALE = 0.34;
   const MAX_MOUSE_TILT = 12;
 
-  // Gentle idle motion (stops when a panel is hovered)
   const IDLE = {
     tiltDeg: 2.2,
     drift: 0.014,
@@ -461,3 +459,13 @@
 
   new ResizeObserver(() => render()).observe(canvas);
 })();
+
+/* Playideo on active tab) */
+$(".system_tabs-link").on("click", function () {
+  var tn = $(this).attr("tn");
+  $(".jazz_tabs-video video").each(function () {
+    $(this).get(0).pause();
+    $(this).get(0).currentTime = 0;
+  });
+  $("#bg-video-" + tn + " video").get(0).play();
+});
