@@ -5,8 +5,6 @@
 
     gsap.registerPlugin(ScrollTrigger);
 
-    const SCROLL_DISTANCE = 560;
-
     const scrollComponents = document.querySelectorAll(".scroll-component");
     scrollComponents.forEach((scrollEl, scrollIndex) => {
       const cardsWrapperEl = scrollEl.querySelector(".ai_cards-wrapper");
@@ -28,7 +26,7 @@
             : "dream-cards",
         trigger: scrollEl,
         start: "top top",
-        end: `+=${SCROLL_DISTANCE}`,
+        end: "+=100vh",
         scrub: 0.4,
         pin: scrollEl,
         pinSpacing: true,
