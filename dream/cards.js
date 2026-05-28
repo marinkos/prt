@@ -59,10 +59,10 @@
           stageEl,
           {
             height: collapsedHeight,
-            ease: "power2.inOut",
-            duration: 1,
+            ease: "none",
+            duration: 0.8,
           },
-          0
+          0.2
         );
       }
 
