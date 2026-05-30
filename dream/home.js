@@ -257,6 +257,7 @@
     index,
     layoutX: (index - 1) * LAYOUT_SPREAD,
     layoutScale: LAYOUT_SCALE,
+    visible: true,
     buffer: null,
     particleCount: 0,
     imgW: 1,
@@ -278,6 +279,42 @@
     phase: index * 2.17
   }));
 
+  // Tablet: shrink the three panels so they don't overlap. Mobile: single centered panel.
+  const TABLET_SPREAD = 0.42;
+  const TABLET_SCALE = 0.24;
+  const MOBILE_SCALE = 0.6;
+
+  let lastLayoutWidth = -1;
+
+  function applyResponsiveLayout() {
+    const vw = window.innerWidth;
+    if (vw === lastLayoutWidth) return;
+    lastLayoutWidth = vw;
+
+    if (vw <= 767) {
+      // Mobile: only the center image, centered.
+      for (const panel of panels) {
+        panel.visible = panel.key === "center";
+        panel.layoutX = 0;
+        panel.layoutScale = MOBILE_SCALE;
+      }
+    } else if (vw <= 991) {
+      // Tablet: all three, smaller and tighter so they don't overlap.
+      for (const panel of panels) {
+        panel.visible = true;
+        panel.layoutX = (panel.index - 1) * TABLET_SPREAD;
+        panel.layoutScale = TABLET_SCALE;
+      }
+    } else {
+      // Desktop: default layout.
+      for (const panel of panels) {
+        panel.visible = true;
+        panel.layoutX = (panel.index - 1) * LAYOUT_SPREAD;
+        panel.layoutScale = LAYOUT_SCALE;
+      }
+    }
+  }
+
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rect = canvas.getBoundingClientRect();
@@ -292,6 +329,7 @@
   }
 
   function drawPanel(panel) {
+    if (!panel.visible) return;
     if (!panel.buffer || panel.particleCount === 0) return;
     const panelW = W * panel.layoutScale;
     const stride = 6 * 4;
@@ -339,6 +377,7 @@
 
   function render() {
     resize();
+    applyResponsiveLayout();
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -386,6 +425,7 @@
     let best = 0;
     let bestDist = Infinity;
     for (let i = 0; i < panels.length; i++) {
+      if (!panels[i].visible) continue;
       const d = Math.abs(clipX - panels[i].layoutX);
       if (d < bestDist) {
         bestDist = d;
