@@ -14,6 +14,12 @@
       zoom: 1.6,
       perspective: 2
     };
+
+    const IDLE = {
+      tiltDeg: 1.0,
+      drift: 0.006,
+      speed: 0.55
+    };
   
     const canvas = document.getElementById("footer");
     if (!canvas) return;
@@ -36,6 +42,12 @@
     let targetHoverY = 0;
     let targetHoverActive = 0;
     let lastFrameTime = performance.now();
+    let globalTime = 0;
+    const phase = Math.random() * Math.PI * 2;
+    let idleRotateX = 0;
+    let idleRotateY = 0;
+    let idleMoveX = 0;
+    let idleMoveY = 0;
   
     const VS = `
       precision highp float;
@@ -56,14 +68,23 @@
       uniform float u_hoverStrength;
       uniform float u_zoom;
       uniform float u_fitZoom;
+      uniform float u_moveX;
+      uniform float u_moveY;
+      uniform float u_rotateX;
+      uniform float u_rotateY;
+      uniform float u_rotateZ;
       uniform float u_perspective;
+
+      mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
+      mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
+      mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,-s,0, s,c,0, 0,0,1); }
   
       void main() {
         vec2 uv = a_pos / u_img;
         vec2 xy = vec2(uv.x - 0.5, 0.5 - uv.y) * vec2(u_img.x / u_img.y, 1.0);
         float aspect = u_res.x / u_res.y;
         float zoom = u_zoom * u_fitZoom;
-        vec2 flatClip = (xy * zoom) / vec2(aspect, 1.0) * 2.0;
+        vec2 flatClip = (xy * zoom) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
   
         float distToMouse = distance(flatClip, vec2(u_hoverX, u_hoverY));
         float innerRadius = max(0.0, u_hoverRadius - u_hoverSoftness);
@@ -75,9 +96,10 @@
         float z = (a_bri - 0.5) * u_depth * depthAmount;
   
         vec3 p = vec3(xy, z);
+        p = rotZ(radians(u_rotateZ)) * rotY(radians(u_rotateY)) * rotX(radians(u_rotateX)) * p;
         p *= zoom;
         float persp = u_perspective / max(0.25, u_perspective - p.z);
-        vec2 clip = (p.xy * persp) / vec2(aspect, 1.0) * 2.0;
+        vec2 clip = (p.xy * persp) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
   
         gl_Position = vec4(clip, 0.0, 1.0);
         gl_PointSize = u_pointSize * persp;
@@ -189,6 +211,11 @@
       gl.uniform1f(uni("u_hoverStrength"), params.hoverStrength);
       gl.uniform1f(uni("u_zoom"), params.zoom);
       gl.uniform1f(uni("u_fitZoom"), fitZoom);
+      gl.uniform1f(uni("u_moveX"), idleMoveX);
+      gl.uniform1f(uni("u_moveY"), idleMoveY);
+      gl.uniform1f(uni("u_rotateX"), idleRotateX);
+      gl.uniform1f(uni("u_rotateY"), idleRotateY);
+      gl.uniform1f(uni("u_rotateZ"), 0);
       gl.uniform1f(uni("u_perspective"), params.perspective);
   
       gl.enable(gl.BLEND);
@@ -211,11 +238,21 @@
     function animate(now) {
       const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
       lastFrameTime = now;
+      globalTime += dt;
+
       const ease = easeInOut01(params.hoverEase);
       const follow = 1.0 - Math.pow(1.0 - ease, dt * 60.0);
       hoverX += (targetHoverX - hoverX) * follow;
       hoverY += (targetHoverY - hoverY) * follow;
       hoverActive += (targetHoverActive - hoverActive) * follow;
+
+      const idleMix = 1 - hoverActive;
+      const t = globalTime * IDLE.speed + phase;
+      idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg * idleMix;
+      idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg * idleMix;
+      idleMoveX = Math.sin(t * 0.58) * IDLE.drift * idleMix;
+      idleMoveY = Math.cos(t * 0.71) * IDLE.drift * idleMix;
+
       render();
       requestAnimationFrame(animate);
     }
