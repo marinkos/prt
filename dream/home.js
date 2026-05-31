@@ -568,3 +568,219 @@ document.addEventListener('DOMContentLoaded', () => {
   
     show('sovereign', { loop: true });
   });
+
+/* Marquee slider */
+document.addEventListener('DOMContentLoaded', () => {
+  const SLIDE_DURATION  = 12;
+  const TWEEN_DUR       = 0.7;
+  const RESUME_DELAY    = 2000;
+  const SWIPE_THRESHOLD = 50;   // px to count as a swipe
+  const SWIPE_VELOCITY  = 0.3;  // px/ms fling threshold
+
+  function initSlider(container) {
+    const track = container.querySelector('.swiper-wrapper');
+    if (!track) return;
+
+    track.querySelectorAll('.swiper-slide-duplicate').forEach(el => el.remove());
+    track.removeAttribute('style');
+    container.style.overflow    = 'visible';
+    container.style.touchAction = 'pan-y'; // allow vertical scroll, intercept horizontal
+    gsap.set(track, { display: 'flex' });
+
+    const slides = Array.from(track.children);
+    if (!slides.length) return;
+    const slideW = slides[0].offsetWidth;
+    const totalW = slideW * slides.length;
+    slides.forEach(s => track.appendChild(s.cloneNode(true)));
+
+    const pagination = container.querySelector('.swiper-pagination');
+    if (pagination) {
+      slides.forEach((_, i) => {
+        const dot = document.createElement('span');
+        dot.classList.add('swiper-pagination-bullet');
+        if (i === 0) dot.classList.add('swiper-pagination-bullet-active');
+        dot.addEventListener('click', () => goToIndex(i));
+        pagination.appendChild(dot);
+      });
+    }
+
+    function updateDots() {
+      if (!pagination) return;
+      const index = Math.round((-x % totalW + totalW) % totalW / slideW) % slides.length;
+      pagination.querySelectorAll('.swiper-pagination-bullet').forEach((dot, i) => {
+        dot.classList.toggle('swiper-pagination-bullet-active', i === index);
+      });
+    }
+
+    let x           = 0;
+    let paused      = false;
+    let isHovering  = false;
+    let resumeTimer = null;
+
+    gsap.ticker.add((time, deltaTime) => {
+      if (paused) return;
+      const speed = slideW / SLIDE_DURATION;
+      x -= (speed * deltaTime) / 1000;
+      if (x <= -totalW) x += totalW;
+      gsap.set(track, { x });
+      updateDots();
+    });
+
+    container.addEventListener('mouseenter', () => {
+      isHovering = true;
+      paused = true;
+      clearTimeout(resumeTimer);
+    });
+    container.addEventListener('mouseleave', () => {
+      isHovering = false;
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(() => { paused = false; }, 300);
+    });
+
+    function tweenTo(targetX, onDone) {
+      const proxy = { val: x };
+      gsap.killTweensOf(proxy);
+      gsap.to(proxy, {
+        val: targetX,
+        duration: TWEEN_DUR,
+        ease: 'power2.out',
+        onUpdate() {
+          x = proxy.val;
+          gsap.set(track, { x });
+          updateDots();
+        },
+        onComplete() {
+          while (x <= -totalW) x += totalW;
+          while (x > 0)        x -= totalW;
+          gsap.set(track, { x });
+          if (onDone) onDone();
+        }
+      });
+    }
+
+    function afterMove() {
+      resumeTimer = setTimeout(() => {
+        if (!isHovering) paused = false;
+      }, RESUME_DELAY);
+    }
+
+    function step(direction) {
+      paused = true;
+      clearTimeout(resumeTimer);
+      const negX = -x;
+      const targetNegX = direction === 'next'
+        ? Math.ceil(negX  / slideW + 0.01) * slideW
+        : Math.floor(negX / slideW - 0.01) * slideW;
+      tweenTo(-targetNegX, afterMove);
+    }
+
+    function goToIndex(index) {
+      paused = true;
+      clearTimeout(resumeTimer);
+      const targetNegX  = index * slideW;
+      const currentNegX = -x;
+      let delta = targetNegX - currentNegX;
+      if (delta >  totalW / 2) delta -= totalW;
+      if (delta < -totalW / 2) delta += totalW;
+      tweenTo(-(currentNegX + delta), afterMove);
+    }
+
+    // ---------- Swipe / drag ----------
+    let dragging     = false;
+    let didDrag      = false;
+    let axisLocked   = null; // null | 'x' | 'y'
+    let dragStartX   = 0;
+    let dragStartY   = 0;
+    let dragStartPos = 0;
+    let dragLastX    = 0;
+    let dragLastTime = 0;
+    let dragVelocity = 0;
+
+    container.addEventListener('pointerdown', (e) => {
+      // don't hijack pagination
+      if (e.target.closest('.swiper-pagination')) return;
+      // only primary mouse button (touch/pen always pass)
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+      dragging     = true;
+      didDrag      = false;
+      axisLocked   = null;
+      dragStartX   = e.clientX;
+      dragStartY   = e.clientY;
+      dragStartPos = x;
+      dragLastX    = e.clientX;
+      dragLastTime = performance.now();
+      dragVelocity = 0;
+
+      paused = true;
+      clearTimeout(resumeTimer);
+      try { container.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+
+    container.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+
+      if (axisLocked === null) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        axisLocked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      }
+      if (axisLocked === 'y') return;
+
+      e.preventDefault();
+      didDrag = true;
+
+      const now = performance.now();
+      const dt  = now - dragLastTime;
+      if (dt > 0) dragVelocity = (e.clientX - dragLastX) / dt;
+      dragLastX    = e.clientX;
+      dragLastTime = now;
+
+      x = dragStartPos + dx;
+      if (x <= -totalW) x += totalW;
+      if (x > 0)        x -= totalW;
+      gsap.set(track, { x });
+      updateDots();
+    });
+
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+
+      if (axisLocked !== 'x') { afterMove(); return; }
+
+      const dx = (e ? e.clientX : dragLastX) - dragStartX;
+      let direction = null;
+
+      if (Math.abs(dragVelocity) > SWIPE_VELOCITY) {
+        direction = dragVelocity < 0 ? 'next' : 'prev';
+      } else if (Math.abs(dx) > SWIPE_THRESHOLD) {
+        direction = dx < 0 ? 'next' : 'prev';
+      }
+
+      if (direction) {
+        step(direction);
+      } else {
+        // snap to nearest slide
+        const negX = -x;
+        const targetNegX = Math.round(negX / slideW) * slideW;
+        tweenTo(-targetNegX, afterMove);
+      }
+    }
+
+    container.addEventListener('pointerup',     endDrag);
+    container.addEventListener('pointercancel', endDrag);
+
+    // swallow the click that fires after a drag on links inside slides
+    container.addEventListener('click', (e) => {
+      if (didDrag) {
+        e.preventDefault();
+        e.stopPropagation();
+        didDrag = false;
+      }
+    }, true);
+  }
+
+  document.querySelectorAll('.swiper').forEach(initSlider);
+});
