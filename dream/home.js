@@ -583,9 +583,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     track.querySelectorAll('.swiper-slide-duplicate').forEach(el => el.remove());
     track.removeAttribute('style');
-    container.style.overflow    = 'visible';
-    container.style.touchAction = 'pan-y'; // allow vertical scroll, intercept horizontal
+    container.style.overflow            = 'visible';
+    container.style.touchAction         = 'pan-y'; // allow vertical scroll, intercept horizontal
+    container.style.userSelect          = 'none';  // don't start text selection while dragging
+    container.style.webkitUserSelect    = 'none';
+    container.style.cursor              = 'grab';
     gsap.set(track, { display: 'flex' });
+
+    // prevent native image/link drag from hijacking the pointer drag
+    container.addEventListener('dragstart', (e) => e.preventDefault());
 
     const slides = Array.from(track.children);
     if (!slides.length) return;
@@ -614,7 +620,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let x           = 0;
     let paused      = false;
-    let isHovering  = false;
     let resumeTimer = null;
 
     gsap.ticker.add((time, deltaTime) => {
@@ -624,17 +629,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (x <= -totalW) x += totalW;
       gsap.set(track, { x });
       updateDots();
-    });
-
-    container.addEventListener('mouseenter', () => {
-      isHovering = true;
-      paused = true;
-      clearTimeout(resumeTimer);
-    });
-    container.addEventListener('mouseleave', () => {
-      isHovering = false;
-      clearTimeout(resumeTimer);
-      resumeTimer = setTimeout(() => { paused = false; }, 300);
     });
 
     function tweenTo(targetX, onDone) {
@@ -659,9 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function afterMove() {
-      resumeTimer = setTimeout(() => {
-        if (!isHovering) paused = false;
-      }, RESUME_DELAY);
+      resumeTimer = setTimeout(() => { paused = false; }, RESUME_DELAY);
     }
 
     function step(direction) {
@@ -714,6 +706,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       paused = true;
       clearTimeout(resumeTimer);
+      container.style.cursor = 'grabbing';
       try { container.setPointerCapture(e.pointerId); } catch (_) {}
     });
 
@@ -747,6 +740,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function endDrag(e) {
       if (!dragging) return;
       dragging = false;
+      container.style.cursor = 'grab';
 
       if (axisLocked !== 'x') { afterMove(); return; }
 
