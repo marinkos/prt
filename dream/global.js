@@ -5,7 +5,7 @@
     const params = {
       density: 1,
       threshold: 0.02,
-      pointSize: 1.8,
+      pointSize: 2,
       depth: 0.5,
       hoverRadius: 0.56,
       hoverSoftness: 0.55,
