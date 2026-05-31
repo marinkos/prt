@@ -524,7 +524,7 @@
     rotateZ: 0,
     perspective: 1.22,
     focusU: 0.527,
-    focusV: 0.31,
+    focusV: 0.28,
     centerFocusRadius: 0.6,
     centerFocusSoftness: 0.35,
     centerFocusStrength: 1.0
