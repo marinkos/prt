@@ -4,23 +4,22 @@
   const SCRUB = 0.8;
   const TABS_HEIGHT_REM = 6;
 
+  const DEFAULT_TAB_IDS = ["sovereign", "cyber"];
+
   const FLIP_SELECTOR =
-    ".ai_cards-wrapper, .ai_card, .ai_cards, .ai_card-inner, .ai_card-bg, .ai_card_bg, .ai_item-video-icon, .ai_item-title, .ai_item-p, .ai_card-hero, .ai_card-tab, .ai_video-wrapper";
+    ".ai_cards-wrapper, .ai_card, .ai_cards, .ai_item-title-wrapper, .ai_item-video-icon, .ai_item-title, .ai_item-p, .ai_video-wrapper";
   const FLIP_PROPS =
     "opacity,borderColor,borderRadius,padding,minHeight,gap,width,maxWidth";
 
+  // Match Webflow combo targets. Exclude .ai_item-small-icon (permanent is-compact combo class).
   const COMPACT_TOGGLE_SELECTOR = [
     ".scroll-component",
     ".ai_cards-wrapper",
     ".ai_card",
-    ".ai_card-inner",
-    ".ai_card-bg",
-    ".ai_card_bg",
+    ".ai_item-title-wrapper",
     ".ai_item-video-icon",
     ".ai_item-title",
     ".ai_item-p",
-    ".ai_card-hero",
-    ".ai_card-tab",
     ".ai_video-wrapper",
   ].join(",");
 
@@ -39,8 +38,37 @@
   function getCompactElements(scrollEl) {
     const root = scrollEl.closest(".scroll-component") || scrollEl;
     const set = new Set([root]);
-    root.querySelectorAll(COMPACT_TOGGLE_SELECTOR).forEach((el) => set.add(el));
+
+    const marked = root.querySelectorAll("[data-compact-toggle]");
+    if (marked.length) {
+      marked.forEach((el) => set.add(el));
+      return [...set];
+    }
+
+    root.querySelectorAll(COMPACT_TOGGLE_SELECTOR).forEach((el) => {
+      if (el.classList.contains("ai_item-small-icon")) return;
+      set.add(el);
+    });
     return [...set];
+  }
+
+  function getCardTabId(card, scrollEl) {
+    if (!card) return null;
+    const attr = card.getAttribute("data-tab");
+    if (attr) return attr;
+    const cards = getCards(scrollEl);
+    const index = cards.indexOf(card);
+    return index >= 0 ? DEFAULT_TAB_IDS[index] : null;
+  }
+
+  function notifyTabActivate(tabId) {
+    if (!tabId) return;
+    document.dispatchEvent(
+      new CustomEvent("dream-cards-tab", {
+        detail: { tab: tabId },
+        bubbles: true,
+      })
+    );
   }
 
   function setCompact(scrollEl, compact) {
@@ -74,7 +102,7 @@
     const cards = getCards(scrollEl);
     const innerTargets = cards.flatMap((card) =>
       gsap.utils.toArray(
-        ".ai_card-inner, .ai_card-inner *, .ai_card-hero, .ai_card-hero *, .ai_card-tab, .ai_card-tab *",
+        ".ai_item-title-wrapper, .ai_item-title-wrapper *, .ai_item-video-icon, .ai_item-p",
         card
       )
     );
@@ -185,9 +213,12 @@
 
         if (card) setActiveCard(scrollEl, card);
 
-        const tabToActivate = tab || card?.querySelector(".ai_tab") || null;
+        const tabId = card ? getCardTabId(card, scrollEl) : null;
+        const tabEl = tab || card?.querySelector(".ai_tab");
+
         collapse(() => {
-          if (tabToActivate) tabToActivate.click();
+          if (tabEl) tabEl.click();
+          else if (tabId) notifyTabActivate(tabId);
         });
         return;
       }
@@ -200,13 +231,12 @@
       }
 
       if (card) {
-        const tabEl = tab || card.querySelector(".ai_tab");
-        if (tabEl) {
-          e.preventDefault();
-          tabEl.click();
-          return;
-        }
+        e.preventDefault();
         setActiveCard(scrollEl, card);
+
+        const tabEl = tab || card.querySelector(".ai_tab");
+        if (tabEl) tabEl.click();
+        else notifyTabActivate(getCardTabId(card, scrollEl));
       }
     });
 
