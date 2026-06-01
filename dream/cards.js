@@ -104,12 +104,45 @@
     });
   }
 
+  function getCardFromEvent(scrollEl, e) {
+    const card = e.target.closest(".ai_card, .ai_cards");
+    return card && scrollEl.contains(card) ? card : null;
+  }
+
+  function getTabFromEvent(scrollEl, e) {
+    const tab = e.target.closest(".ai_tab");
+    return tab && scrollEl.contains(tab) ? tab : null;
+  }
+
+  function cardIsActive(card) {
+    if (!card) return false;
+    if (card.classList.contains("is-active")) return true;
+    const tab = card.matches(".ai_tab")
+      ? card
+      : card.querySelector(".ai_tab");
+    return Boolean(tab && tab.classList.contains("is-active"));
+  }
+
+  function setActiveCard(scrollEl, card) {
+    getCards(scrollEl).forEach((c) => {
+      c.classList.toggle("is-active", c === card);
+      c.querySelectorAll(".ai_tab").forEach((tab) => {
+        tab.classList.toggle("is-active", c === card);
+      });
+    });
+  }
+
   function initClickFlipSection(scrollEl) {
     const cardsWrapperEl = scrollEl.querySelector(".ai_cards-wrapper");
-    if (!cardsWrapperEl || !getCards(scrollEl).length) return false;
+    const cards = getCards(scrollEl);
+    if (!cardsWrapperEl || !cards.length) return false;
 
     setCompact(scrollEl, false);
     scrollEl.style.pointerEvents = "";
+
+    if (!cards.some(cardIsActive)) {
+      setActiveCard(scrollEl, cards[0]);
+    }
 
     let busy = false;
 
@@ -141,26 +174,39 @@
     }
 
     scrollEl.addEventListener("click", (e) => {
-      const tab = e.target.closest(".ai_tab");
-      const card = e.target.closest(".ai_card, .ai_cards");
+      const card = getCardFromEvent(scrollEl, e);
+      const tab = getTabFromEvent(scrollEl, e);
 
-      if (!tab && !card) return;
+      if (!card && !tab) return;
 
       if (!isCompact(scrollEl)) {
         e.preventDefault();
         e.stopImmediatePropagation();
 
-        const tabToActivate = tab;
+        if (card) setActiveCard(scrollEl, card);
+
+        const tabToActivate = tab || card?.querySelector(".ai_tab") || null;
         collapse(() => {
           if (tabToActivate) tabToActivate.click();
         });
         return;
       }
 
-      if (tab && tab.classList.contains("is-active")) {
+      if (card && cardIsActive(card)) {
         e.preventDefault();
         e.stopImmediatePropagation();
         expand();
+        return;
+      }
+
+      if (card) {
+        const tabEl = tab || card.querySelector(".ai_tab");
+        if (tabEl) {
+          e.preventDefault();
+          tabEl.click();
+          return;
+        }
+        setActiveCard(scrollEl, card);
       }
     });
 
