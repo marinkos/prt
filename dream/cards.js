@@ -1,112 +1,206 @@
 (function () {
   const COMPACT_CLASS = "is-compact";
-  const HERO_OUT_AT = 0.6;
+  const FLIP_DURATION = 0.5;
   const SCRUB = 0.8;
   const TABS_HEIGHT_REM = 6;
 
   const FLIP_SELECTOR =
-    ".ai_cards-wrapper, .ai_card, .ai_cards, .ai_card-inner, .ai_card-bg, .ai_card_bg";
+    ".ai_cards-wrapper, .ai_card, .ai_cards, .ai_card-inner, .ai_card-bg, .ai_card_bg, .ai_item-video-icon, .ai_item-title, .ai_item-p, .ai_card-hero, .ai_card-tab, .ai_video-wrapper";
   const FLIP_PROPS =
     "opacity,borderColor,borderRadius,padding,minHeight,gap,width,maxWidth";
+
+  const COMPACT_TOGGLE_SELECTOR = [
+    ".scroll-component",
+    ".ai_cards-wrapper",
+    ".ai_card",
+    ".ai_card-inner",
+    ".ai_card-bg",
+    ".ai_card_bg",
+    ".ai_item-video-icon",
+    ".ai_item-title",
+    ".ai_item-p",
+    ".ai_card-hero",
+    ".ai_card-tab",
+    ".ai_video-wrapper",
+  ].join(",");
 
   function prefersReducedMotion() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
 
+  function getTriggerMode(scrollEl) {
+    return scrollEl.dataset.cardsTrigger === "scroll" ? "scroll" : "click";
+  }
+
   function getCards(scrollEl) {
-    return scrollEl.querySelectorAll(".ai_card, .ai_cards");
+    return gsap.utils.toArray(".ai_card, .ai_cards", scrollEl);
   }
 
-  function getHeroTargets(scrollEl) {
-    return scrollEl.querySelectorAll(
-      ".ai_card-hero, .ai_item-p, .ai_card .ai_item-p"
-    );
+  function getCompactElements(scrollEl) {
+    const root = scrollEl.closest(".scroll-component") || scrollEl;
+    const set = new Set([root]);
+    root.querySelectorAll(COMPACT_TOGGLE_SELECTOR).forEach((el) => set.add(el));
+    return [...set];
   }
 
-  function getCompactTabTargets(scrollEl) {
-    const inCard = scrollEl.querySelectorAll(
-      ".ai_card-tab, .ai_card .ai_card-tab"
-    );
-    if (inCard.length) return inCard;
-    return scrollEl.querySelector(".ai_tabs");
+  function setCompact(scrollEl, compact) {
+    getCompactElements(scrollEl).forEach((el) => {
+      el.classList.toggle(COMPACT_CLASS, compact);
+    });
+  }
+
+  function isCompact(scrollEl) {
+    return scrollEl.classList.contains(COMPACT_CLASS);
+  }
+
+  function getFlipTargets(scrollEl, extra) {
+    const base = gsap.utils.toArray(FLIP_SELECTOR, scrollEl);
+    return extra && extra.length ? base.concat(extra) : base;
   }
 
   function measureWrapperHeight(el) {
     return Math.round(el.getBoundingClientRect().height);
   }
 
-  function measureCompactHeight(scrollEl, wrapper, tabsRow) {
-    const hadCompact = scrollEl.classList.contains(COMPACT_CLASS);
-    scrollEl.classList.add(COMPACT_CLASS);
-    let height = measureWrapperHeight(wrapper);
-    if (tabsRow) {
-      height = Math.max(height, measureWrapperHeight(tabsRow));
-    }
-    if (!hadCompact) scrollEl.classList.remove(COMPACT_CLASS);
+  function measureCompactHeight(scrollEl, wrapper) {
+    const wasCompact = isCompact(scrollEl);
+    setCompact(scrollEl, true);
+    const height = measureWrapperHeight(wrapper);
+    setCompact(scrollEl, wasCompact);
     return height;
   }
 
-  function setupPointerEvents(scrollEl, cardsWrapperEl) {
-    scrollEl.style.pointerEvents = "none";
-    cardsWrapperEl.style.pointerEvents = "auto";
+  function runFlip(scrollEl, applyLayout, onComplete) {
+    const cards = getCards(scrollEl);
+    const innerTargets = cards.flatMap((card) =>
+      gsap.utils.toArray(
+        ".ai_card-inner, .ai_card-inner *, .ai_card-hero, .ai_card-hero *, .ai_card-tab, .ai_card-tab *",
+        card
+      )
+    );
+    const targets = getFlipTargets(scrollEl, innerTargets);
+    const state = Flip.getState(targets, { props: FLIP_PROPS });
 
-    const videoWrap =
-      scrollEl.querySelector(".ai_video-wrapper") ||
-      scrollEl.parentElement?.querySelector(".ai_video-wrapper");
-    if (videoWrap) videoWrap.style.pointerEvents = "auto";
+    applyLayout();
 
-    scrollEl.querySelectorAll(".ai_tab, .ai_card-tab, .ai_card").forEach((el) => {
-      el.style.pointerEvents = "auto";
+    return Flip.from(state, {
+      duration: FLIP_DURATION,
+      ease: "power1.inOut",
+      absolute: true,
+      nested: true,
+      onEnter: (elements) =>
+        gsap.fromTo(
+          elements,
+          { opacity: 0 },
+          { opacity: 1, duration: FLIP_DURATION / 2, delay: FLIP_DURATION / 2 }
+        ),
+      onLeave: (elements) =>
+        gsap.fromTo(
+          elements,
+          { opacity: (i, el) => state.getProperty(el, "opacity") },
+          { opacity: 0, duration: FLIP_DURATION / 2 }
+        ),
+      onComplete,
     });
   }
 
-  function initFlipSection(scrollEl, scrollIndex, scrollCount) {
+  function initClickFlipSection(scrollEl) {
     const cardsWrapperEl = scrollEl.querySelector(".ai_cards-wrapper");
     if (!cardsWrapperEl || !getCards(scrollEl).length) return false;
 
-    if (!window.Flip) {
-      console.warn(
-        "[dream/cards] GSAP Flip is required. Load Flip.min.js before cards.js."
+    setCompact(scrollEl, false);
+    scrollEl.style.pointerEvents = "";
+
+    let busy = false;
+
+    function collapse(after) {
+      if (busy || isCompact(scrollEl)) return;
+      busy = true;
+
+      runFlip(
+        scrollEl,
+        () => setCompact(scrollEl, true),
+        () => {
+          busy = false;
+          after?.();
+        }
       );
-      return false;
     }
 
-    const tabsRow = scrollEl.querySelector(".ai_tabs");
-    if (tabsRow) {
-      gsap.set(tabsRow, {
-        opacity: 0,
-        scale: 0.92,
-        transformOrigin: "center top",
-      });
+    function expand() {
+      if (busy || !isCompact(scrollEl)) return;
+      busy = true;
+
+      runFlip(
+        scrollEl,
+        () => setCompact(scrollEl, false),
+        () => {
+          busy = false;
+        }
+      );
     }
-    setupPointerEvents(scrollEl, cardsWrapperEl);
+
+    scrollEl.addEventListener("click", (e) => {
+      const tab = e.target.closest(".ai_tab");
+      const card = e.target.closest(".ai_card, .ai_cards");
+
+      if (!tab && !card) return;
+
+      if (!isCompact(scrollEl)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        const tabToActivate = tab;
+        collapse(() => {
+          if (tabToActivate) tabToActivate.click();
+        });
+        return;
+      }
+
+      if (tab && tab.classList.contains("is-active")) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        expand();
+      }
+    });
+
+    return true;
+  }
+
+  function initScrollFlipSection(scrollEl, scrollIndex, scrollCount) {
+    const cardsWrapperEl = scrollEl.querySelector(".ai_cards-wrapper");
+    if (!cardsWrapperEl || !getCards(scrollEl).length) return false;
+
+    const videoWrap = scrollEl.querySelector(".ai_video-wrapper");
+    scrollEl.style.pointerEvents = "none";
+    cardsWrapperEl.style.pointerEvents = "auto";
+    if (videoWrap) videoWrap.style.pointerEvents = "auto";
+    getCards(scrollEl).forEach((card) => {
+      card.style.pointerEvents = "auto";
+    });
+    scrollEl.querySelectorAll(".ai_tab").forEach((tab) => {
+      tab.style.pointerEvents = "auto";
+    });
 
     const rootFontSize =
       parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 
-    scrollEl.classList.remove(COMPACT_CLASS);
+    setCompact(scrollEl, false);
 
     const expandedHeightPx = measureWrapperHeight(cardsWrapperEl);
-    let collapsedHeightPx = measureCompactHeight(
-      scrollEl,
-      cardsWrapperEl,
-      tabsRow
-    );
+    let collapsedHeightPx = measureCompactHeight(scrollEl, cardsWrapperEl);
 
     if (!collapsedHeightPx || collapsedHeightPx >= expandedHeightPx) {
-      collapsedHeightPx = tabsRow
-        ? measureWrapperHeight(tabsRow)
-        : Math.round(TABS_HEIGHT_REM * rootFontSize);
+      collapsedHeightPx = Math.round(TABS_HEIGHT_REM * rootFontSize);
     }
 
     const pinDistancePx = Math.max(1, expandedHeightPx - collapsedHeightPx);
-
     const flipState = Flip.getState(
       scrollEl.querySelectorAll(FLIP_SELECTOR),
       { props: FLIP_PROPS }
     );
 
-    scrollEl.classList.add(COMPACT_CLASS);
+    setCompact(scrollEl, true);
 
     const scrollConfig = {
       id:
@@ -127,73 +221,30 @@
       scrollTrigger: scrollConfig,
     });
 
-    const heroes = getHeroTargets(scrollEl);
-    const compactTabs = getCompactTabTargets(scrollEl);
-    const useLegacyTabRow =
-      tabsRow && !scrollEl.querySelector(".ai_card-tab");
-
-    if (heroes.length || compactTabs) {
-      const contentTl = gsap.timeline({ scrollTrigger: { ...scrollConfig } });
-
-      if (heroes.length) {
-        contentTl.fromTo(
-          heroes,
-          { opacity: 1, y: 0 },
-          {
-            opacity: 0,
-            y: -12,
-            ease: "power2.in",
-            duration: HERO_OUT_AT,
-          },
-          0
-        );
-      }
-
-      if (useLegacyTabRow) {
-        contentTl.to(
-          cardsWrapperEl,
-          { opacity: 0, ease: "power2.in", duration: 0.25 },
-          HERO_OUT_AT - 0.05
-        );
-      }
-
-      if (compactTabs) {
-        contentTl.to(
-          compactTabs,
-          {
-            opacity: 1,
-            scale: 1,
-            ease: "power2.out",
-            duration: 1 - HERO_OUT_AT,
-            onStart: () => {
-              if (tabsRow) tabsRow.style.pointerEvents = "auto";
-            },
-          },
-          HERO_OUT_AT
-        );
-      }
-    }
-
     return true;
   }
 
-  function initLegacySection(scrollEl, scrollIndex, scrollCount) {
+  function initLegacyScrollSection(scrollEl, scrollIndex, scrollCount) {
     const cardsWrapperEl = scrollEl.querySelector(".ai_cards-wrapper");
     const tabsEl = scrollEl.querySelector(".ai_tabs");
     if (!cardsWrapperEl) return;
 
     const COLLAPSE_START = 0.35;
 
-    setupPointerEvents(scrollEl, cardsWrapperEl);
+    scrollEl.style.pointerEvents = "none";
+    cardsWrapperEl.style.pointerEvents = "auto";
     if (tabsEl) tabsEl.style.pointerEvents = "auto";
 
     const rootFontSize =
       parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 
+    setCompact(scrollEl, false);
+
     const expandedHeightPx = measureWrapperHeight(cardsWrapperEl);
     const collapsedHeightPx = tabsEl
       ? measureWrapperHeight(tabsEl)
-      : Math.round(TABS_HEIGHT_REM * rootFontSize);
+      : measureCompactHeight(scrollEl, cardsWrapperEl) ||
+        Math.round(TABS_HEIGHT_REM * rootFontSize);
 
     const pinDistancePx = Math.max(1, expandedHeightPx - collapsedHeightPx);
 
@@ -275,12 +326,30 @@
       scrollEl.dataset.dreamCardsInit = "true";
 
       if (prefersReducedMotion()) {
-        scrollEl.classList.add(COMPACT_CLASS);
+        setCompact(scrollEl, true);
         return;
       }
 
-      if (!initFlipSection(scrollEl, scrollIndex, scrollComponents.length)) {
-        initLegacySection(scrollEl, scrollIndex, scrollComponents.length);
+      if (!window.Flip) {
+        if (getTriggerMode(scrollEl) === "scroll") {
+          initLegacyScrollSection(
+            scrollEl,
+            scrollIndex,
+            scrollComponents.length
+          );
+        }
+        return;
+      }
+
+      if (getTriggerMode(scrollEl) === "click") {
+        initClickFlipSection(scrollEl);
+        return;
+      }
+
+      if (
+        !initScrollFlipSection(scrollEl, scrollIndex, scrollComponents.length)
+      ) {
+        initLegacyScrollSection(scrollEl, scrollIndex, scrollComponents.length);
       }
     });
 
