@@ -505,7 +505,8 @@
 (function () {
   const BASE = {
     density: 1,
-    threshold: 0.01,
+    threshold: 0.08,
+    minAlpha: 0.35,
     pointSize: 2.5,
     depth: 1,
     zoom: 1.3,
@@ -521,7 +522,9 @@
 
   const STAR_TRAVEL = {
     speed: 0.105,
-    range: 1.85
+    range: 1.85,
+    depthSpread: 0.45,
+    loopFade: 0.14
   };
 
   const IDLE = {
@@ -569,6 +572,7 @@
     attribute vec3 a_col;
     attribute float a_bri;
     varying vec3 v_col;
+    varying float v_alpha;
 
     uniform vec2 u_res;
     uniform vec2 u_img;
@@ -583,6 +587,8 @@
     uniform float u_perspective;
     uniform float u_travel;
     uniform float u_travelRange;
+    uniform float u_depthSpread;
+    uniform float u_loopFade;
 
     mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
     mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
@@ -593,29 +599,37 @@
       vec2 xy = vec2(uv.x - 0.5, 0.5 - uv.y) * vec2(u_img.x / u_img.y, 1.0);
       float aspect = u_res.x / u_res.y;
 
-      float zDepth = (a_bri - 0.5) * u_depth;
-      float z = mod(zDepth + u_travel, u_travelRange) - u_travelRange * 0.5;
+      float loopPhase = fract(u_travel / u_travelRange);
+      float travel = loopPhase * u_travelRange;
+      float z = (a_bri - 0.5) * u_depth * u_depthSpread + travel - u_travelRange * 0.5;
+      float loopFade = smoothstep(0.0, u_loopFade, loopPhase)
+        * (1.0 - smoothstep(1.0 - u_loopFade, 1.0, loopPhase));
 
       vec3 p = vec3(xy, z);
       p = rotZ(radians(u_rotateZ)) * rotY(radians(u_rotateY)) * rotX(radians(u_rotateX)) * p;
       p *= u_zoom;
 
       float persp = u_perspective / max(0.25, u_perspective - p.z);
+      persp = clamp(persp, 0.9, 3.2);
       vec2 clip = (p.xy * persp) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
 
-      gl_Position = vec4(clip, 0.0, 1.0);
-      gl_PointSize = u_pointSize * persp;
       v_col = a_col;
+      gl_Position = vec4(clip, 0.0, 1.0);
+      gl_PointSize = clamp(u_pointSize * persp, 1.0, 8.0);
+      v_alpha = loopFade;
     }
   `;
 
   const FS = `
     precision mediump float;
     varying vec3 v_col;
+    varying float v_alpha;
     void main(){
       vec2 p = gl_PointCoord - 0.5;
-      if (dot(p, p) > 0.25) discard;
-      gl_FragColor = vec4(v_col, 1.0);
+      float r2 = dot(p, p);
+      if (r2 > 0.25) discard;
+      float edge = 1.0 - smoothstep(0.12, 0.25, r2);
+      gl_FragColor = vec4(v_col, v_alpha * edge);
     }
   `;
 
@@ -674,6 +688,7 @@
 
     const arr = [];
     const step = Math.max(1, Math.floor(panel.density));
+    const minAlpha = panel.minAlpha ?? 0.35;
 
     for (let y = 0; y < imgH; y += step) {
       for (let x = 0; x < imgW; x += step) {
@@ -683,7 +698,7 @@
         const b = data[i + 2] / 255;
         const a = data[i + 3] / 255;
         const bri = (0.2126 * r + 0.7152 * g + 0.0722 * b) * a;
-        if (a > 0.04 && bri >= panel.threshold) {
+        if (a >= minAlpha && bri >= panel.threshold) {
           arr.push(x, y, r, g, b, bri);
         }
       }
@@ -744,6 +759,8 @@
 
     gl.uniform1f(uni("u_travel"), starTravel);
     gl.uniform1f(uni("u_travelRange"), STAR_TRAVEL.range);
+    gl.uniform1f(uni("u_depthSpread"), STAR_TRAVEL.depthSpread);
+    gl.uniform1f(uni("u_loopFade"), STAR_TRAVEL.loopFade);
 
     gl.drawArrays(gl.POINTS, 0, panel.particleCount);
   }
@@ -763,7 +780,7 @@
     const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
     lastFrameTime = now;
     globalTime += dt;
-    starTravel = (starTravel + dt * STAR_TRAVEL.speed) % STAR_TRAVEL.range;
+    starTravel += dt * STAR_TRAVEL.speed;
 
     const t = globalTime * IDLE.speed + panel.phase;
 
