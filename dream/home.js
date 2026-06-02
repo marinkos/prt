@@ -512,7 +512,7 @@
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
     hoverEase: 0.12,
-    zoom: 0.6885,
+    zoom: 1,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
@@ -524,11 +524,9 @@
     "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a1eb1caee4efb8901e9bcfc_Sky.avif";
 
   const STAR_TRAVEL = {
-    speed: 0.42,
+    speed: 0.21,
     range: 1.85
   };
-
-  const MAX_MOUSE_TILT = 12;
 
   const IDLE = {
     tiltDeg: 2.2,
@@ -567,10 +565,6 @@
     targetHoverX: 0,
     targetHoverY: 0,
     targetHoverActive: 0,
-    mouseTiltX: 0,
-    mouseTiltY: 0,
-    targetMouseTiltX: 0,
-    targetMouseTiltY: 0,
     idleRotateX: 0,
     idleRotateY: 0,
     idleMoveX: 0,
@@ -778,8 +772,8 @@
     gl.uniform1f(uni("u_zoom"), drawZoom);
     gl.uniform1f(uni("u_moveX"), panel.moveX + panel.idleMoveX);
     gl.uniform1f(uni("u_moveY"), panel.moveY + panel.idleMoveY);
-    gl.uniform1f(uni("u_rotateX"), panel.rotateX + panel.mouseTiltX + panel.idleRotateX);
-    gl.uniform1f(uni("u_rotateY"), panel.rotateY + panel.mouseTiltY + panel.idleRotateY);
+    gl.uniform1f(uni("u_rotateX"), panel.rotateX + panel.idleRotateX);
+    gl.uniform1f(uni("u_rotateY"), panel.rotateY + panel.idleRotateY);
     gl.uniform1f(uni("u_rotateZ"), panel.rotateZ);
     gl.uniform1f(uni("u_perspective"), panel.perspective);
 
@@ -825,8 +819,6 @@
     panel.hoverX += (panel.targetHoverX - panel.hoverX) * follow;
     panel.hoverY += (panel.targetHoverY - panel.hoverY) * follow;
     panel.hoverActive += (panel.targetHoverActive - panel.hoverActive) * follow;
-    panel.mouseTiltX += (panel.targetMouseTiltX - panel.mouseTiltX) * follow;
-    panel.mouseTiltY += (panel.targetMouseTiltY - panel.mouseTiltY) * follow;
 
     render();
     requestAnimationFrame(animate);
@@ -837,14 +829,10 @@
     panel.targetHoverX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     panel.targetHoverY = 1 - ((e.clientY - rect.top) / rect.height) * 2;
     panel.targetHoverActive = 1;
-    panel.targetMouseTiltY = panel.targetHoverX * MAX_MOUSE_TILT;
-    panel.targetMouseTiltX = -panel.targetHoverY * MAX_MOUSE_TILT;
   }
 
   function clearTargets() {
     panel.targetHoverActive = 0;
-    panel.targetMouseTiltX = 0;
-    panel.targetMouseTiltY = 0;
   }
 
   canvas.addEventListener("pointerdown", updateFromPointer);
