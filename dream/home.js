@@ -1,4 +1,4 @@
-/* Hero point cloud */
+/* Hero point cloud (legacy triple-panel) — preserved, not active
 (function () {
   const BASE = {
     density: 1,
@@ -499,6 +499,371 @@
 
   new ResizeObserver(() => render()).observe(canvas);
 })();
+*/
+
+/* Hero sky starfield — full canvas, looping forward travel */
+(function () {
+  const BASE = {
+    density: 1,
+    threshold: 0.01,
+    pointSize: 2.5,
+    depth: 1,
+    hoverRadius: 0.92,
+    hoverSoftness: 0.55,
+    hoverStrength: 1.0,
+    hoverEase: 0.12,
+    zoom: 0.6885,
+    moveX: 0,
+    moveY: 0,
+    rotateX: 0,
+    rotateZ: 0,
+    perspective: 1.45
+  };
+
+  const SKY_URL =
+    "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a1eb1caee4efb8901e9bcfc_Sky.avif";
+
+  const STAR_TRAVEL = {
+    speed: 0.42,
+    range: 1.85
+  };
+
+  const MAX_MOUSE_TILT = 12;
+
+  const IDLE = {
+    tiltDeg: 2.2,
+    drift: 0.014,
+    speed: 0.65
+  };
+
+  const canvas = document.getElementById("hero");
+  if (!canvas) return;
+  if (canvas.__heroSkyInit) return;
+  canvas.__heroSkyInit = true;
+
+  const gl = canvas.getContext("webgl", { alpha: true, antialias: false });
+  if (!gl) {
+    console.error("WebGL not supported");
+    return;
+  }
+
+  let W = 1;
+  let H = 1;
+  let lastFrameTime = performance.now();
+  let globalTime = 0;
+  let starTravel = 0;
+
+  const panel = {
+    ...BASE,
+    url: SKY_URL,
+    rotateY: 0,
+    buffer: null,
+    particleCount: 0,
+    imgW: 1,
+    imgH: 1,
+    hoverX: 0,
+    hoverY: 0,
+    hoverActive: 0,
+    targetHoverX: 0,
+    targetHoverY: 0,
+    targetHoverActive: 0,
+    mouseTiltX: 0,
+    mouseTiltY: 0,
+    targetMouseTiltX: 0,
+    targetMouseTiltY: 0,
+    idleRotateX: 0,
+    idleRotateY: 0,
+    idleMoveX: 0,
+    idleMoveY: 0,
+    phase: 0
+  };
+
+  const VS = `
+    precision highp float;
+
+    attribute vec2 a_pos;
+    attribute vec3 a_col;
+    attribute float a_bri;
+    varying vec3 v_col;
+
+    uniform vec2 u_res;
+    uniform vec2 u_img;
+    uniform float u_pointSize;
+    uniform float u_depth;
+
+    uniform float u_hoverX;
+    uniform float u_hoverY;
+    uniform float u_hoverActive;
+    uniform float u_hoverRadius;
+    uniform float u_hoverSoftness;
+    uniform float u_hoverStrength;
+
+    uniform float u_zoom;
+    uniform float u_moveX;
+    uniform float u_moveY;
+    uniform float u_rotateX;
+    uniform float u_rotateY;
+    uniform float u_rotateZ;
+    uniform float u_perspective;
+
+    uniform float u_travel;
+    uniform float u_travelRange;
+
+    mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
+    mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
+    mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,-s,0, s,c,0, 0,0,1); }
+
+    void main(){
+      vec2 uv = a_pos / u_img;
+      vec2 xy = vec2(uv.x - 0.5, 0.5 - uv.y) * vec2(u_img.x / u_img.y, 1.0);
+      float aspect = u_res.x / u_res.y;
+
+      vec2 flatClip = (xy * u_zoom) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
+
+      float distToMouse = distance(flatClip, vec2(u_hoverX, u_hoverY));
+      float innerRadius = max(0.0, u_hoverRadius - u_hoverSoftness);
+      float hoverMask = 1.0 - smoothstep(innerRadius, u_hoverRadius, distToMouse);
+      hoverMask = hoverMask * hoverMask * (3.0 - 2.0 * hoverMask);
+      hoverMask *= u_hoverActive;
+
+      float depthAmount = 1.0 - hoverMask * u_hoverStrength;
+      float zDepth = (a_bri - 0.5) * u_depth * depthAmount;
+      float z = mod(zDepth + u_travel, u_travelRange) - u_travelRange * 0.5;
+
+      vec3 p = vec3(xy, z);
+      p = rotZ(radians(u_rotateZ)) * rotY(radians(u_rotateY)) * rotX(radians(u_rotateX)) * p;
+      p *= u_zoom;
+
+      float persp = u_perspective / max(0.25, u_perspective - p.z);
+      vec2 clip = (p.xy * persp) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
+
+      gl_Position = vec4(clip, 0.0, 1.0);
+      gl_PointSize = u_pointSize * persp;
+      v_col = a_col;
+    }
+  `;
+
+  const FS = `
+    precision mediump float;
+    varying vec3 v_col;
+    void main(){
+      vec2 p = gl_PointCoord - 0.5;
+      if (dot(p, p) > 0.25) discard;
+      gl_FragColor = vec4(v_col, 1.0);
+    }
+  `;
+
+  function compileShader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(s) || "Shader compile failed");
+    }
+    return s;
+  }
+
+  const program = gl.createProgram();
+  gl.attachShader(program, compileShader(gl.VERTEX_SHADER, VS));
+  gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(program));
+    return;
+  }
+
+  const uni = (name) => gl.getUniformLocation(program, name);
+
+  function loadImage(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Failed to load " + url));
+      img.src = url;
+    });
+  }
+
+  function coverZoom(imgW, imgH, viewW, viewH) {
+    const imgAspect = imgW / imgH;
+    const viewAspect = viewW / viewH;
+    if (viewAspect > imgAspect) {
+      return panel.zoom * (viewAspect / imgAspect);
+    }
+    return panel.zoom;
+  }
+
+  function buildParticles(img) {
+    const imgW = img.naturalWidth || img.width;
+    const imgH = img.naturalHeight || img.height;
+    panel.imgW = imgW;
+    panel.imgH = imgH;
+
+    const c = document.createElement("canvas");
+    c.width = imgW;
+    c.height = imgH;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, imgW, imgH);
+    const data = ctx.getImageData(0, 0, imgW, imgH).data;
+
+    const arr = [];
+    const step = Math.max(1, Math.floor(panel.density));
+
+    for (let y = 0; y < imgH; y += step) {
+      for (let x = 0; x < imgW; x += step) {
+        const i = (y * imgW + x) * 4;
+        const r = data[i] / 255;
+        const g = data[i + 1] / 255;
+        const b = data[i + 2] / 255;
+        const a = data[i + 3] / 255;
+        const bri = (0.2126 * r + 0.7152 * g + 0.0722 * b) * a;
+        if (a > 0.04 && bri >= panel.threshold) {
+          arr.push(x, y, r, g, b, bri);
+        }
+      }
+    }
+
+    panel.particleCount = arr.length / 6;
+    panel.buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, panel.buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW);
+  }
+
+  let drawZoom = panel.zoom;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = canvas.getBoundingClientRect();
+    const newW = Math.max(1, Math.floor(rect.width * dpr));
+    const newH = Math.max(1, Math.floor(rect.height * dpr));
+    if (newW === W && newH === H) return;
+    W = newW;
+    H = newH;
+    canvas.width = W;
+    canvas.height = H;
+    gl.viewport(0, 0, W, H);
+    drawZoom = coverZoom(panel.imgW, panel.imgH, W, H);
+  }
+
+  function draw() {
+    if (!panel.buffer || panel.particleCount === 0) return;
+    const stride = 6 * 4;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, panel.buffer);
+
+    const pos = gl.getAttribLocation(program, "a_pos");
+    gl.enableVertexAttribArray(pos);
+    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, stride, 0);
+
+    const col = gl.getAttribLocation(program, "a_col");
+    gl.enableVertexAttribArray(col);
+    gl.vertexAttribPointer(col, 3, gl.FLOAT, false, stride, 2 * 4);
+
+    const bri = gl.getAttribLocation(program, "a_bri");
+    gl.enableVertexAttribArray(bri);
+    gl.vertexAttribPointer(bri, 1, gl.FLOAT, false, stride, 5 * 4);
+
+    gl.uniform2f(uni("u_res"), W, H);
+    gl.uniform2f(uni("u_img"), panel.imgW, panel.imgH);
+    gl.uniform1f(uni("u_pointSize"), panel.pointSize);
+    gl.uniform1f(uni("u_depth"), panel.depth);
+
+    gl.uniform1f(uni("u_hoverX"), panel.hoverX);
+    gl.uniform1f(uni("u_hoverY"), panel.hoverY);
+    gl.uniform1f(uni("u_hoverActive"), panel.hoverActive);
+    gl.uniform1f(uni("u_hoverRadius"), panel.hoverRadius);
+    gl.uniform1f(uni("u_hoverSoftness"), panel.hoverSoftness);
+    gl.uniform1f(uni("u_hoverStrength"), panel.hoverStrength);
+
+    gl.uniform1f(uni("u_zoom"), drawZoom);
+    gl.uniform1f(uni("u_moveX"), panel.moveX + panel.idleMoveX);
+    gl.uniform1f(uni("u_moveY"), panel.moveY + panel.idleMoveY);
+    gl.uniform1f(uni("u_rotateX"), panel.rotateX + panel.mouseTiltX + panel.idleRotateX);
+    gl.uniform1f(uni("u_rotateY"), panel.rotateY + panel.mouseTiltY + panel.idleRotateY);
+    gl.uniform1f(uni("u_rotateZ"), panel.rotateZ);
+    gl.uniform1f(uni("u_perspective"), panel.perspective);
+
+    gl.uniform1f(uni("u_travel"), starTravel);
+    gl.uniform1f(uni("u_travelRange"), STAR_TRAVEL.range);
+
+    gl.drawArrays(gl.POINTS, 0, panel.particleCount);
+  }
+
+  function render() {
+    resize();
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.useProgram(program);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    draw();
+  }
+
+  function easeInOut01(t) {
+    t = Math.max(0, Math.min(1, t));
+    return t * t * (3 - 2 * t);
+  }
+
+  function animate(now) {
+    const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+    lastFrameTime = now;
+    globalTime += dt;
+    starTravel = (starTravel + dt * STAR_TRAVEL.speed) % STAR_TRAVEL.range;
+
+    const ease = easeInOut01(panel.hoverEase);
+    const follow = 1 - Math.pow(1 - ease, dt * 60);
+
+    const idleMix = 1 - panel.hoverActive;
+    const t = globalTime * IDLE.speed + panel.phase;
+
+    panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg * idleMix;
+    panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg * idleMix;
+    panel.idleMoveX = Math.sin(t * 0.58) * IDLE.drift * idleMix;
+    panel.idleMoveY = Math.cos(t * 0.71) * IDLE.drift * idleMix;
+
+    panel.hoverX += (panel.targetHoverX - panel.hoverX) * follow;
+    panel.hoverY += (panel.targetHoverY - panel.hoverY) * follow;
+    panel.hoverActive += (panel.targetHoverActive - panel.hoverActive) * follow;
+    panel.mouseTiltX += (panel.targetMouseTiltX - panel.mouseTiltX) * follow;
+    panel.mouseTiltY += (panel.targetMouseTiltY - panel.mouseTiltY) * follow;
+
+    render();
+    requestAnimationFrame(animate);
+  }
+
+  function updateFromPointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    panel.targetHoverX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    panel.targetHoverY = 1 - ((e.clientY - rect.top) / rect.height) * 2;
+    panel.targetHoverActive = 1;
+    panel.targetMouseTiltY = panel.targetHoverX * MAX_MOUSE_TILT;
+    panel.targetMouseTiltX = -panel.targetHoverY * MAX_MOUSE_TILT;
+  }
+
+  function clearTargets() {
+    panel.targetHoverActive = 0;
+    panel.targetMouseTiltX = 0;
+    panel.targetMouseTiltY = 0;
+  }
+
+  canvas.addEventListener("pointerdown", updateFromPointer);
+  canvas.addEventListener("pointermove", updateFromPointer);
+  canvas.addEventListener("pointerleave", clearTargets);
+  canvas.addEventListener("pointerup", clearTargets);
+  canvas.addEventListener("pointercancel", clearTargets);
+
+  loadImage(SKY_URL)
+    .then((img) => {
+      buildParticles(img);
+      resize();
+      render();
+      requestAnimationFrame(animate);
+    })
+    .catch(console.error);
+
+  new ResizeObserver(() => render()).observe(canvas);
+})();
 
 /* Figures point cloud (wong, alswaha, modi, babis) */
 (function (global) {
@@ -966,7 +1331,12 @@ document.addEventListener('DOMContentLoaded', () => {
     tabs.forEach(tab => tab.addEventListener('click', e => {
       e.preventDefault();
       goTo(tab.getAttribute('data-tab'));
-    }));
+    });
+
+    document.addEventListener('dream-cards-tab', (e) => {
+      const tab = e.detail?.tab;
+      if (tab) goTo(tab);
+    });
   
     show('sovereign', { loop: true });
   });
