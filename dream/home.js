@@ -792,14 +792,14 @@
 (function () {
   const BASE = {
     density: 1,
-    threshold: 0.01,
+    threshold: 0.6,
     pointSize: 2.5,
     depth: 1,
     hoverRadius: 0.92,
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
     hoverEase: 0.12,
-    zoom: 0.6885,
+    zoom: 1.8,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
