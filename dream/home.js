@@ -1331,7 +1331,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tabs.forEach(tab => tab.addEventListener('click', e => {
       e.preventDefault();
       goTo(tab.getAttribute('data-tab'));
-    });
+    }));
 
     document.addEventListener('dream-cards-tab', (e) => {
       const tab = e.detail?.tab;
