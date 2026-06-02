@@ -508,11 +508,7 @@
     threshold: 0.01,
     pointSize: 2.5,
     depth: 1,
-    hoverRadius: 0.92,
-    hoverSoftness: 0.55,
-    hoverStrength: 1.0,
-    hoverEase: 0.12,
-    zoom: 1,
+    zoom: 1.3,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
@@ -524,7 +520,7 @@
     "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a1eb1caee4efb8901e9bcfc_Sky.avif";
 
   const STAR_TRAVEL = {
-    speed: 0.21,
+    speed: 0.105,
     range: 1.85
   };
 
@@ -559,12 +555,6 @@
     particleCount: 0,
     imgW: 1,
     imgH: 1,
-    hoverX: 0,
-    hoverY: 0,
-    hoverActive: 0,
-    targetHoverX: 0,
-    targetHoverY: 0,
-    targetHoverActive: 0,
     idleRotateX: 0,
     idleRotateY: 0,
     idleMoveX: 0,
@@ -584,14 +574,6 @@
     uniform vec2 u_img;
     uniform float u_pointSize;
     uniform float u_depth;
-
-    uniform float u_hoverX;
-    uniform float u_hoverY;
-    uniform float u_hoverActive;
-    uniform float u_hoverRadius;
-    uniform float u_hoverSoftness;
-    uniform float u_hoverStrength;
-
     uniform float u_zoom;
     uniform float u_moveX;
     uniform float u_moveY;
@@ -599,7 +581,6 @@
     uniform float u_rotateY;
     uniform float u_rotateZ;
     uniform float u_perspective;
-
     uniform float u_travel;
     uniform float u_travelRange;
 
@@ -612,16 +593,7 @@
       vec2 xy = vec2(uv.x - 0.5, 0.5 - uv.y) * vec2(u_img.x / u_img.y, 1.0);
       float aspect = u_res.x / u_res.y;
 
-      vec2 flatClip = (xy * u_zoom) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
-
-      float distToMouse = distance(flatClip, vec2(u_hoverX, u_hoverY));
-      float innerRadius = max(0.0, u_hoverRadius - u_hoverSoftness);
-      float hoverMask = 1.0 - smoothstep(innerRadius, u_hoverRadius, distToMouse);
-      hoverMask = hoverMask * hoverMask * (3.0 - 2.0 * hoverMask);
-      hoverMask *= u_hoverActive;
-
-      float depthAmount = 1.0 - hoverMask * u_hoverStrength;
-      float zDepth = (a_bri - 0.5) * u_depth * depthAmount;
+      float zDepth = (a_bri - 0.5) * u_depth;
       float z = mod(zDepth + u_travel, u_travelRange) - u_travelRange * 0.5;
 
       vec3 p = vec3(xy, z);
@@ -762,13 +734,6 @@
     gl.uniform1f(uni("u_pointSize"), panel.pointSize);
     gl.uniform1f(uni("u_depth"), panel.depth);
 
-    gl.uniform1f(uni("u_hoverX"), panel.hoverX);
-    gl.uniform1f(uni("u_hoverY"), panel.hoverY);
-    gl.uniform1f(uni("u_hoverActive"), panel.hoverActive);
-    gl.uniform1f(uni("u_hoverRadius"), panel.hoverRadius);
-    gl.uniform1f(uni("u_hoverSoftness"), panel.hoverSoftness);
-    gl.uniform1f(uni("u_hoverStrength"), panel.hoverStrength);
-
     gl.uniform1f(uni("u_zoom"), drawZoom);
     gl.uniform1f(uni("u_moveX"), panel.moveX + panel.idleMoveX);
     gl.uniform1f(uni("u_moveY"), panel.moveY + panel.idleMoveY);
@@ -794,52 +759,22 @@
     draw();
   }
 
-  function easeInOut01(t) {
-    t = Math.max(0, Math.min(1, t));
-    return t * t * (3 - 2 * t);
-  }
-
   function animate(now) {
     const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
     lastFrameTime = now;
     globalTime += dt;
     starTravel = (starTravel + dt * STAR_TRAVEL.speed) % STAR_TRAVEL.range;
 
-    const ease = easeInOut01(panel.hoverEase);
-    const follow = 1 - Math.pow(1 - ease, dt * 60);
-
-    const idleMix = 1 - panel.hoverActive;
     const t = globalTime * IDLE.speed + panel.phase;
 
-    panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg * idleMix;
-    panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg * idleMix;
-    panel.idleMoveX = Math.sin(t * 0.58) * IDLE.drift * idleMix;
-    panel.idleMoveY = Math.cos(t * 0.71) * IDLE.drift * idleMix;
-
-    panel.hoverX += (panel.targetHoverX - panel.hoverX) * follow;
-    panel.hoverY += (panel.targetHoverY - panel.hoverY) * follow;
-    panel.hoverActive += (panel.targetHoverActive - panel.hoverActive) * follow;
+    panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg;
+    panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg;
+    panel.idleMoveX = Math.sin(t * 0.58) * IDLE.drift;
+    panel.idleMoveY = Math.cos(t * 0.71) * IDLE.drift;
 
     render();
     requestAnimationFrame(animate);
   }
-
-  function updateFromPointer(e) {
-    const rect = canvas.getBoundingClientRect();
-    panel.targetHoverX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    panel.targetHoverY = 1 - ((e.clientY - rect.top) / rect.height) * 2;
-    panel.targetHoverActive = 1;
-  }
-
-  function clearTargets() {
-    panel.targetHoverActive = 0;
-  }
-
-  canvas.addEventListener("pointerdown", updateFromPointer);
-  canvas.addEventListener("pointermove", updateFromPointer);
-  canvas.addEventListener("pointerleave", clearTargets);
-  canvas.addEventListener("pointerup", clearTargets);
-  canvas.addEventListener("pointercancel", clearTargets);
 
   loadImage(SKY_URL)
     .then((img) => {
