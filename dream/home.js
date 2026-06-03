@@ -1618,8 +1618,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const SLIDE_DURATION  = 12;
   const TWEEN_DUR       = 0.7;
   const RESUME_DELAY    = 2000;
-  const SWIPE_THRESHOLD = 50;   // px to count as a swipe
-  const SWIPE_VELOCITY  = 0.3;  // px/ms fling threshold
 
   function initSlider(container) {
     const track = container.querySelector('.swiper-wrapper');
@@ -1627,15 +1625,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     track.querySelectorAll('.swiper-slide-duplicate').forEach(el => el.remove());
     track.removeAttribute('style');
-    container.style.overflow            = 'visible';
-    container.style.touchAction         = 'pan-y'; // allow vertical scroll, intercept horizontal
-    container.style.userSelect          = 'none';  // don't start text selection while dragging
-    container.style.webkitUserSelect    = 'none';
-    container.style.cursor              = 'grab';
+    container.style.overflow = 'visible';
     gsap.set(track, { display: 'flex' });
-
-    // prevent native image/link drag from hijacking the pointer drag
-    container.addEventListener('dragstart', (e) => e.preventDefault());
 
     const slides = Array.from(track.children);
     if (!slides.length) return;
@@ -1700,16 +1691,6 @@ document.addEventListener('DOMContentLoaded', () => {
       resumeTimer = setTimeout(() => { paused = false; }, RESUME_DELAY);
     }
 
-    function step(direction) {
-      paused = true;
-      clearTimeout(resumeTimer);
-      const negX = -x;
-      const targetNegX = direction === 'next'
-        ? Math.ceil(negX  / slideW + 0.01) * slideW
-        : Math.floor(negX / slideW - 0.01) * slideW;
-      tweenTo(-targetNegX, afterMove);
-    }
-
     function goToIndex(index) {
       paused = true;
       clearTimeout(resumeTimer);
@@ -1720,104 +1701,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (delta < -totalW / 2) delta += totalW;
       tweenTo(-(currentNegX + delta), afterMove);
     }
-
-    // ---------- Swipe / drag ----------
-    let dragging     = false;
-    let didDrag      = false;
-    let axisLocked   = null; // null | 'x' | 'y'
-    let dragStartX   = 0;
-    let dragStartY   = 0;
-    let dragStartPos = 0;
-    let dragLastX    = 0;
-    let dragLastTime = 0;
-    let dragVelocity = 0;
-
-    container.addEventListener('pointerdown', (e) => {
-      // don't hijack pagination
-      if (e.target.closest('.swiper-pagination')) return;
-      // only primary mouse button (touch/pen always pass)
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-
-      dragging     = true;
-      didDrag      = false;
-      axisLocked   = null;
-      dragStartX   = e.clientX;
-      dragStartY   = e.clientY;
-      dragStartPos = x;
-      dragLastX    = e.clientX;
-      dragLastTime = performance.now();
-      dragVelocity = 0;
-
-      paused = true;
-      clearTimeout(resumeTimer);
-      container.style.cursor = 'grabbing';
-      try { container.setPointerCapture(e.pointerId); } catch (_) {}
-    });
-
-    container.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const dx = e.clientX - dragStartX;
-      const dy = e.clientY - dragStartY;
-
-      if (axisLocked === null) {
-        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-        axisLocked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
-      }
-      if (axisLocked === 'y') return;
-
-      e.preventDefault();
-      didDrag = true;
-
-      const now = performance.now();
-      const dt  = now - dragLastTime;
-      if (dt > 0) dragVelocity = (e.clientX - dragLastX) / dt;
-      dragLastX    = e.clientX;
-      dragLastTime = now;
-
-      x = dragStartPos + dx;
-      if (x <= -totalW) x += totalW;
-      if (x > 0)        x -= totalW;
-      gsap.set(track, { x });
-      updateDots();
-    });
-
-    function endDrag(e) {
-      if (!dragging) return;
-      dragging = false;
-      container.style.cursor = 'grab';
-
-      if (axisLocked !== 'x') { afterMove(); return; }
-
-      const dx = (e ? e.clientX : dragLastX) - dragStartX;
-      let direction = null;
-
-      if (Math.abs(dragVelocity) > SWIPE_VELOCITY) {
-        direction = dragVelocity < 0 ? 'next' : 'prev';
-      } else if (Math.abs(dx) > SWIPE_THRESHOLD) {
-        direction = dx < 0 ? 'next' : 'prev';
-      }
-
-      if (direction) {
-        step(direction);
-      } else {
-        // snap to nearest slide
-        const negX = -x;
-        const targetNegX = Math.round(negX / slideW) * slideW;
-        tweenTo(-targetNegX, afterMove);
-      }
-    }
-
-    container.addEventListener('pointerup',     endDrag);
-    container.addEventListener('pointercancel', endDrag);
-
-    // swallow the click that fires after a drag on links inside slides
-    container.addEventListener('click', (e) => {
-      if (didDrag) {
-        e.preventDefault();
-        e.stopPropagation();
-        didDrag = false;
-      }
-    }, true);
   }
 
   document.querySelectorAll('.swiper').forEach(initSlider);
