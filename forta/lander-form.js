@@ -971,7 +971,7 @@ if (hasInsurance === 'No') {
 }
 // South Carolina nuance: DQ when zip is not qualified and payor type is Medicaid/MCO
 else if (
-    state === 'SC' &&
+    state === 'TX' &&
     !isQualifyingZip &&
     (payorType === 'Medicaid' || payorType === 'MCO')
 ) {
