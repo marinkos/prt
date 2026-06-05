@@ -7,6 +7,28 @@ let isZipDataLoaded = false;
 const ZIP_CDN_URL = 'https://cdn.prod.fortahealth.com/assets/zip_code_coverage.json';
 /** Salesforce: Expected Total ABA Hours per Week */
 const EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID = '00NRc00000NxTLk';
+/** Salesforce: External Lead Value (Meta fbclid / _fbc) */
+const EXTERNAL_LEAD_VALUE_FIELD_ID = '00NRc00000m9vt3';
+/** Salesforce: UTM Ad Set Name */
+const UTM_ADSET_NAME_FIELD_ID = '00NRc00000rofku';
+
+function setSalesforceHiddenField(fieldId, value) {
+    var el = document.getElementById(fieldId);
+    if (!el) {
+        el = document.querySelector('[name="' + fieldId + '"]');
+    }
+    if (el) {
+        el.value = value != null ? value : '';
+    }
+}
+
+function setExternalLeadValue(value) {
+    setSalesforceHiddenField(EXTERNAL_LEAD_VALUE_FIELD_ID, value);
+    var legacy = document.getElementById('fbc_field');
+    if (legacy && legacy.id !== EXTERNAL_LEAD_VALUE_FIELD_ID && legacy.getAttribute('name') !== EXTERNAL_LEAD_VALUE_FIELD_ID) {
+        legacy.value = value != null ? value : '';
+    }
+}
 
 function normalizeZip(zipValue) {
     return String(zipValue || '').trim().replace(/\D/g, '').slice(0, 5);
@@ -328,13 +350,8 @@ function populateHiddenFields() {
     if (document.getElementById('00NRc00000D4OSr')) {
         document.getElementById('00NRc00000D4OSr').value = utm_domain || '';
     }
-    if (document.getElementById('00NRc00000rofku')) {
-        document.getElementById('00NRc00000rofku').value = utm_adsetname || '';
-    }
-    var fbcField = document.getElementById('fbc_field');
-    if (fbcField) {
-        fbcField.value = getFacebookClickId();
-    }
+    setSalesforceHiddenField(UTM_ADSET_NAME_FIELD_ID, utm_adsetname || '');
+    setExternalLeadValue(getFacebookClickId());
 }
 
 document.addEventListener('DOMContentLoaded', populateHiddenFields);
@@ -891,10 +908,7 @@ function initializeScript() {
     formSales.addEventListener('submit', function (event) {
 
         // Update hidden fields before submission
-        var fbcFieldSubmit = document.getElementById('fbc_field');
-        if (fbcFieldSubmit) {
-            fbcFieldSubmit.value = getFacebookClickId();
-        }
+        setExternalLeadValue(getFacebookClickId());
 
         const statePrimaryValue = statePrimary.value;
         const insurancePrimary = insurance.value;
