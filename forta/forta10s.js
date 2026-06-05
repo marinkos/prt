@@ -492,7 +492,7 @@ function initializeScript() {
         }
 
         if (inHomeZipStatusInput) {
-            inHomeZipStatusInput.value = isQualified ? 'Qualified' : 'Disqualified';
+            inHomeZipStatusInput.value = isQualified ? 'Yes' : 'No';
         }
     }
 
@@ -843,7 +843,7 @@ function initializeScript() {
         const isInHomePassing = isQualifyingZip && tofuStatus === 'Passing' && hasPositiveDiagnosis;
 
         if (inHomeZipStatusInput) {
-            inHomeZipStatusInput.value = isQualifyingZip ? 'Qualified' : 'Disqualified';
+            inHomeZipStatusInput.value = isQualifyingZip ? 'Yes' : 'No';
         }
 
         // --------------------------------------
@@ -857,7 +857,7 @@ function initializeScript() {
             mqlStatus = "DQ - No Insurance";
         }
         else if (
-            state === 'TX' &&
+            (state === 'SC' || state === 'TX') &&
             !isQualifyingZip &&
             (payorType === 'Medicaid' || payorType === 'MCO')
         ) {

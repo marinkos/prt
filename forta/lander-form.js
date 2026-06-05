@@ -522,7 +522,7 @@ function initializeScript() {
         }
 
         if (inHomeZipStatusInput) {
-            inHomeZipStatusInput.value = isQualified ? 'Qualified' : 'Disqualified';
+            inHomeZipStatusInput.value = isQualified ? 'Yes' : 'No';
         }
     }
 
@@ -945,7 +945,7 @@ function initializeScript() {
         const isInHomePassing = isQualifyingZip && tofuStatus === 'Passing' && hasPositiveDiagnosis;
 
         if (inHomeZipStatusInput) {
-            inHomeZipStatusInput.value = isQualifyingZip ? 'Qualified' : 'Disqualified';
+            inHomeZipStatusInput.value = isQualifyingZip ? 'Yes' : 'No';
         }
 
         if (typeof grecaptcha !== "undefined" && !grecaptcha.getResponse()) {
@@ -969,9 +969,9 @@ if (hasInsurance === 'No') {
     returnURL = "https://www.fortahealth.com/thank-you-2";
     mqlStatus = "DQ - No Insurance";
 }
-// South Carolina nuance: DQ when zip is not qualified and payor type is Medicaid/MCO
+// SC / TX: DQ when zip is not qualified and payor type is Medicaid/MCO
 else if (
-    state === 'TX' &&
+    (state === 'SC' || state === 'TX') &&
     !isQualifyingZip &&
     (payorType === 'Medicaid' || payorType === 'MCO')
 ) {
