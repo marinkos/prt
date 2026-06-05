@@ -857,7 +857,7 @@ function initializeScript() {
             mqlStatus = "DQ - No Insurance";
         }
         else if (
-            state === 'SC' &&
+            state === 'TX' &&
             !isQualifyingZip &&
             (payorType === 'Medicaid' || payorType === 'MCO')
         ) {
