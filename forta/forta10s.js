@@ -67,7 +67,7 @@ function getExpectedAbaHoursPerWeekValue(formSalesEl) {
 
 function thankYouUrlForMqlIntake(formSalesEl) {
     var hours = getExpectedAbaHoursPerWeekValue(formSalesEl);
-    if (!isNaN(hours) && hours >= 10) {
+    if (!isNaN(hours) && hours >= 15) {
         return 'https://www.fortahealth.com/thank-you-schedule-your-call';
     }
     return 'https://www.fortahealth.com/thank-you-intake-pre-qualified';
