@@ -35,28 +35,39 @@ function isZipQualifyingForLead(zipValue) {
  * Returns NaN if missing so callers default to the pre-qualified thank-you path.
  */
 function getExpectedAbaHoursPerWeekValue(formSalesEl) {
-    var el = null;
-    if (typeof window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID === 'string' && window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID) {
-        el = document.getElementById(window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID);
-    }
+    var fieldId = (typeof window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID === 'string' && window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID)
+        ? window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID
+        : EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID;
+    var el = document.getElementById(fieldId);
     if (!el) {
-        el = document.getElementById(EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID);
+        el = document.querySelector('[name="' + fieldId + '"]');
     }
-    if (!el && formSalesEl) {
-        var labels = formSalesEl.querySelectorAll('label');
+    function findByLabel(root) {
+        if (!root) return null;
+        var labels = root.querySelectorAll('label');
         for (var i = 0; i < labels.length; i++) {
             var text = (labels[i].textContent || '').replace(/\s+/g, ' ').trim();
             if (/expected\s+total\s+aba\s+hours/i.test(text)) {
                 var forId = labels[i].getAttribute('for');
                 if (forId) {
-                    el = document.getElementById(forId);
-                    if (el) break;
+                    var match = document.getElementById(forId);
+                    if (match) return match;
                 }
             }
         }
+        return null;
+    }
+    if (!el) {
+        el = findByLabel(formSalesEl);
+    }
+    if (!el) {
+        el = findByLabel(document);
     }
     if (!el) return NaN;
     var raw = String(el.value != null ? el.value : '').replace(/,/g, '').trim();
+    if (raw === '' && el.options && el.selectedIndex >= 0) {
+        raw = String(el.options[el.selectedIndex].text || '').replace(/,/g, '').trim();
+    }
     if (raw === '') return NaN;
     var n = parseFloat(raw);
     return n;
@@ -953,11 +964,6 @@ else if (
     returnURL = "https://www.fortahealth.com/thank-you-2";
     mqlStatus = "DQ - Not in Zip Code";
 }
-// DISQUALIFY if primary insurance's TOFU Status is "Disqualify" (regardless of secondary)
-else if (tofuStatus === "Disqualify") {
-    returnURL = "https://www.fortahealth.com/thank-you-2";
-    mqlStatus = "DQ - Insurance not supported";
-}
 // Dx - Check Eval (before in-home / MQL so diagnosis routing wins)
 else if (
     asdDiagnosis.toLowerCase() === "no, evaluation scheduled" ||
@@ -990,6 +996,11 @@ else if (asdDiagnosis.toLowerCase() === "yes") {
 else if (tofuStatus === "Passing") {
     returnURL = thankYouUrlForMqlIntake(formSales);
     mqlStatus = "MQL";
+}
+// DISQUALIFY if primary insurance's TOFU Status is "Disqualify" (after MQL so diagnosis-yes + hours routing wins)
+else if (tofuStatus === "Disqualify") {
+    returnURL = "https://www.fortahealth.com/thank-you-2";
+    mqlStatus = "DQ - Insurance not supported";
 }
 // DISQUALIFY based on adjusted ASD diagnosis logic (FAIL case)
 else if (
