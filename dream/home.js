@@ -626,7 +626,7 @@
   }
 })();
 
-/* Legacy hero point cloud — single panel (ship, cta, …) */
+/* Cta ship */
 (function () {
   const BASE = {
     density: 1,
@@ -637,7 +637,7 @@
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
     hoverEase: 0.12,
-    zoom: 1.8,
+    zoom: 0.6,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
