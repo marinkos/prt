@@ -626,17 +626,13 @@
   }
 })();
 
-/* Cta ship */
+/* CTA point cloud */
 (function () {
   const BASE = {
     density: 1,
     threshold: 0.05,
     pointSize: 2.5,
     depth: 1,
-    hoverRadius: 0.92,
-    hoverSoftness: 0.55,
-    hoverStrength: 1.0,
-    hoverEase: 0.12,
     zoom: 0.8,
     moveX: 0,
     moveY: 0,
@@ -645,28 +641,12 @@
     perspective: 1.45
   };
 
-  const LEGACY_PANELS = [
-    {
-      id: "ship",
-      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a1eb1dacce01dabaf4f772e_ship.avif"
-    },
-    {
-      id: "cta",
-      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.png",
-      spinYPeriodSec: 120
-    }
-  ];
-
-  const MAX_MOUSE_TILT = 12;
-
-  const IDLE = {
-    tiltDeg: 2.2,
-    drift: 0.014,
-    speed: 0.65
+  const CTA = {
+    url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a257c80f5d99b0739a7c57d_cta-new.avif",
+    spinYPeriodSec: 120
   };
 
-  function initLegacyPointCloud(canvas, imageUrl, cfg) {
-  cfg = cfg || {};
+  function initCtaPointCloud(canvas, cfg) {
   if (!canvas) return;
   if (canvas.__legacyPcInit) return;
   canvas.__legacyPcInit = true;
@@ -684,30 +664,14 @@
 
   const panel = {
     ...BASE,
-    rotateY: 0,
     layoutX: 0,
     layoutScale: 1,
     buffer: null,
     particleCount: 0,
     imgW: 1,
     imgH: 1,
-    hoverX: 0,
-    hoverY: 0,
-    hoverActive: 0,
-    targetHoverX: 0,
-    targetHoverY: 0,
-    targetHoverActive: 0,
-    mouseTiltX: 0,
-    mouseTiltY: 0,
-    targetMouseTiltX: 0,
-    targetMouseTiltY: 0,
-    idleRotateX: 0,
-    idleRotateY: 0,
-    idleMoveX: 0,
-    idleMoveY: 0,
     spinRotateY: 0,
-    fitScale: 1,
-    phase: 0
+    fitScale: 1
   };
 
   const VS = `
@@ -890,18 +854,18 @@
     gl.uniform1f(uni("u_pointSize"), panel.pointSize);
     gl.uniform1f(uni("u_depth"), panel.depth);
 
-    gl.uniform1f(uni("u_hoverX"), panel.hoverX);
-    gl.uniform1f(uni("u_hoverY"), panel.hoverY);
-    gl.uniform1f(uni("u_hoverActive"), panel.hoverActive);
-    gl.uniform1f(uni("u_hoverRadius"), panel.hoverRadius);
-    gl.uniform1f(uni("u_hoverSoftness"), panel.hoverSoftness);
-    gl.uniform1f(uni("u_hoverStrength"), panel.hoverStrength);
+    gl.uniform1f(uni("u_hoverX"), 0);
+    gl.uniform1f(uni("u_hoverY"), 0);
+    gl.uniform1f(uni("u_hoverActive"), 0);
+    gl.uniform1f(uni("u_hoverRadius"), 0.92);
+    gl.uniform1f(uni("u_hoverSoftness"), 0.55);
+    gl.uniform1f(uni("u_hoverStrength"), 0);
 
     gl.uniform1f(uni("u_zoom"), panel.zoom);
-    gl.uniform1f(uni("u_moveX"), panel.moveX + panel.idleMoveX);
-    gl.uniform1f(uni("u_moveY"), panel.moveY + panel.idleMoveY);
-    gl.uniform1f(uni("u_rotateX"), panel.rotateX + panel.idleRotateX);
-    gl.uniform1f(uni("u_rotateY"), panel.rotateY + panel.idleRotateY + panel.spinRotateY);
+    gl.uniform1f(uni("u_moveX"), panel.moveX);
+    gl.uniform1f(uni("u_moveY"), panel.moveY);
+    gl.uniform1f(uni("u_rotateX"), panel.rotateX);
+    gl.uniform1f(uni("u_rotateY"), panel.spinRotateY);
     gl.uniform1f(uni("u_rotateZ"), panel.rotateZ);
     gl.uniform1f(uni("u_perspective"), panel.perspective);
 
@@ -924,10 +888,6 @@
   }
 
   function updateSpinFitScale() {
-    if (!cfg.spinYPeriodSec) {
-      panel.fitScale = 1;
-      return;
-    }
     const rad = (panel.spinRotateY * Math.PI) / 180;
     const depthRatio = panel.depth * 0.55;
     const extent = Math.abs(Math.cos(rad)) + Math.abs(Math.sin(rad)) * depthRatio;
@@ -939,25 +899,14 @@
     lastFrameTime = now;
     globalTime += dt;
 
-    const t = globalTime * IDLE.speed + panel.phase;
-
-    if (cfg.spinYPeriodSec) {
-      panel.spinRotateY = (globalTime * 360 / cfg.spinYPeriodSec) % 360;
-      panel.idleRotateY = 0;
-      updateSpinFitScale();
-    } else {
-      panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg;
-      panel.fitScale = 1;
-    }
-    panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg;
-    panel.idleMoveX = Math.sin(t * 0.58) * IDLE.drift;
-    panel.idleMoveY = Math.cos(t * 0.71) * IDLE.drift;
+    panel.spinRotateY = (globalTime * 360 / cfg.spinYPeriodSec) % 360;
+    updateSpinFitScale();
 
     render();
     requestAnimationFrame(animate);
   }
 
-  loadImage(imageUrl)
+  loadImage(cfg.url)
     .then((img) => {
       buildParticles(img);
       resize();
@@ -969,9 +918,7 @@
   new ResizeObserver(() => render()).observe(canvas);
   }
 
-  for (const cfg of LEGACY_PANELS) {
-    initLegacyPointCloud(document.getElementById(cfg.id), cfg.url, cfg);
-  }
+  initCtaPointCloud(document.getElementById("cta"), CTA);
 })();
 
 /* Figures point cloud (wong, alswaha, modi, babis) */
