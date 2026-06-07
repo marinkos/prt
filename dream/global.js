@@ -1,5 +1,5 @@
 (function () {
-    const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a16e51f7db7a603d7a8db46_footer-img.avif";
+    const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a2555fb6c87c45a3ac55f66_train.avif";
   
     // Original footer params from Train_Footer.html
     const params = {
