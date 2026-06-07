@@ -653,7 +653,7 @@
     {
       id: "cta",
       url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.png",
-      spinXPeriodSec: 120
+      spinYPeriodSec: 120
     }
   ];
 
@@ -705,7 +705,7 @@
     idleRotateY: 0,
     idleMoveX: 0,
     idleMoveY: 0,
-    spinRotateX: 0,
+    spinRotateY: 0,
     phase: 0
   };
 
@@ -898,8 +898,8 @@
     gl.uniform1f(uni("u_zoom"), panel.zoom);
     gl.uniform1f(uni("u_moveX"), panel.moveX + panel.idleMoveX);
     gl.uniform1f(uni("u_moveY"), panel.moveY + panel.idleMoveY);
-    gl.uniform1f(uni("u_rotateX"), panel.rotateX + panel.mouseTiltX + panel.idleRotateX + panel.spinRotateX);
-    gl.uniform1f(uni("u_rotateY"), panel.rotateY + panel.mouseTiltY + panel.idleRotateY);
+    gl.uniform1f(uni("u_rotateX"), panel.rotateX + panel.mouseTiltX + panel.idleRotateX);
+    gl.uniform1f(uni("u_rotateY"), panel.rotateY + panel.mouseTiltY + panel.idleRotateY + panel.spinRotateY);
     gl.uniform1f(uni("u_rotateZ"), panel.rotateZ);
     gl.uniform1f(uni("u_perspective"), panel.perspective);
 
@@ -936,13 +936,13 @@
     const idleMix = 1 - panel.hoverActive;
     const t = globalTime * IDLE.speed + panel.phase;
 
-    if (cfg.spinXPeriodSec) {
-      panel.spinRotateX = (globalTime * 360 / cfg.spinXPeriodSec) % 360;
-      panel.idleRotateX = 0;
+    if (cfg.spinYPeriodSec) {
+      panel.spinRotateY = (globalTime * 360 / cfg.spinYPeriodSec) % 360;
+      panel.idleRotateY = 0;
     } else {
-      panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg * idleMix;
+      panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg * idleMix;
     }
-    panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg * idleMix;
+    panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg * idleMix;
     panel.idleMoveX = Math.sin(t * 0.58) * IDLE.drift * idleMix;
     panel.idleMoveY = Math.cos(t * 0.71) * IDLE.drift * idleMix;
 
