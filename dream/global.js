@@ -1,3 +1,29 @@
+function dreamFitCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round(rect.width * dpr));
+  const h = Math.max(1, Math.round(rect.height * dpr));
+  const changed = canvas.width !== w || canvas.height !== h;
+  if (changed) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+  return { w, h, dpr, rect, changed };
+}
+
+function dreamWatchCanvas(canvas, onResize) {
+  const tick = function () {
+    onResize();
+  };
+  tick();
+  const ro = new ResizeObserver(tick);
+  ro.observe(canvas);
+  if (canvas.parentElement) ro.observe(canvas.parentElement);
+  if (document.readyState === "complete") tick();
+  else window.addEventListener("load", tick, { once: true });
+  return ro;
+}
+
 (function () {
   const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a2555fb6c87c45a3ac55f66_train.avif";
 
@@ -123,15 +149,10 @@
   const uni = (name) => gl.getUniformLocation(program, name);
 
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = canvas.getBoundingClientRect();
-    const newW = Math.max(1, Math.floor(rect.width * dpr));
-    const newH = Math.max(1, Math.floor(rect.height * dpr));
-    if (newW === W && newH === H) return;
-    W = newW;
-    H = newH;
-    canvas.width = W;
-    canvas.height = H;
+    const size = dreamFitCanvas(canvas);
+    if (!size.changed && W === size.w && H === size.h) return;
+    W = size.w;
+    H = size.h;
     gl.viewport(0, 0, W, H);
   }
 
@@ -273,5 +294,5 @@
   };
   img.src = IMAGE_SRC;
 
-  new ResizeObserver(() => render()).observe(canvas);
+  dreamWatchCanvas(canvas, render);
 })();

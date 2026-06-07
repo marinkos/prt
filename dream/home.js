@@ -1,3 +1,29 @@
+function dreamFitCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round(rect.width * dpr));
+  const h = Math.max(1, Math.round(rect.height * dpr));
+  const changed = canvas.width !== w || canvas.height !== h;
+  if (changed) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+  return { w, h, dpr, rect, changed };
+}
+
+function dreamWatchCanvas(canvas, onResize) {
+  const tick = function () {
+    onResize();
+  };
+  tick();
+  const ro = new ResizeObserver(tick);
+  ro.observe(canvas);
+  if (canvas.parentElement) ro.observe(canvas.parentElement);
+  if (document.readyState === "complete") tick();
+  else window.addEventListener("load", tick, { once: true });
+  return ro;
+}
+
 /* Hero point cloud (legacy triple-panel) — preserved, not active
 (function () {
   const BASE = {
@@ -316,15 +342,10 @@
   }
 
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = canvas.getBoundingClientRect();
-    const newW = Math.max(1, Math.floor(rect.width * dpr));
-    const newH = Math.max(1, Math.floor(rect.height * dpr));
-    if (newW === W && newH === H) return;
-    W = newW;
-    H = newH;
-    canvas.width = W;
-    canvas.height = H;
+    const size = dreamFitCanvas(canvas);
+    if (!size.changed && W === size.w && H === size.h) return;
+    W = size.w;
+    H = size.h;
     gl.viewport(0, 0, W, H);
   }
 
@@ -497,7 +518,7 @@
     })
     .catch(console.error);
 
-  new ResizeObserver(() => render()).observe(canvas);
+  dreamWatchCanvas(canvas, render);
 })();
 */
 
@@ -705,15 +726,10 @@
   let drawZoom = panel.zoom;
 
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = canvas.getBoundingClientRect();
-    const newW = Math.max(1, Math.floor(rect.width * dpr));
-    const newH = Math.max(1, Math.floor(rect.height * dpr));
-    if (newW === W && newH === H) return;
-    W = newW;
-    H = newH;
-    canvas.width = W;
-    canvas.height = H;
+    const size = dreamFitCanvas(canvas);
+    if (!size.changed && W === size.w && H === size.h) return;
+    W = size.w;
+    H = size.h;
     gl.viewport(0, 0, W, H);
     drawZoom = coverZoom(panel.imgW, panel.imgH, W, H);
   }
@@ -792,7 +808,7 @@
     })
     .catch(console.error);
 
-  new ResizeObserver(() => render()).observe(canvas);
+  dreamWatchCanvas(canvas, render);
   }
 
   function bootHeroSkyStarfield() {
@@ -1014,15 +1030,10 @@
   }
 
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = canvas.getBoundingClientRect();
-    const newW = Math.max(1, Math.floor(rect.width * dpr));
-    const newH = Math.max(1, Math.floor(rect.height * dpr));
-    if (newW === W && newH === H) return;
-    W = newW;
-    H = newH;
-    canvas.width = W;
-    canvas.height = H;
+    const size = dreamFitCanvas(canvas);
+    if (!size.changed && W === size.w && H === size.h) return;
+    W = size.w;
+    H = size.h;
     gl.viewport(0, 0, W, H);
   }
 
@@ -1130,7 +1141,7 @@
     })
     .catch(console.error);
 
-  new ResizeObserver(() => render()).observe(canvas);
+  dreamWatchCanvas(canvas, render);
   }
 
   initCtaPointCloud(document.getElementById("cta"), CTA);
@@ -1147,7 +1158,7 @@
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
     hoverEase: 0.12,
-    zoom: 0.9,
+    zoom: 0.6,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
@@ -1160,6 +1171,11 @@
     hoverTrailRadius: 1.0,
     hoverTrailDecay: 0.06,
     hoverTrailBlendMode: "add"
+  };
+
+  const IDLE = {
+    depthPulse: 0.22,
+    speed: 0.45
   };
 
   const PANELS = [
@@ -1226,6 +1242,9 @@
     let hoverU = 0.5;
     let hoverV = 0.5;
     let lastFrameTime = performance.now();
+    let globalTime = 0;
+    let idleDepth = PARAMS.depth;
+    const phase = Math.random() * Math.PI * 2;
 
     function shader(type, src) {
       const s = gl.createShader(type);
@@ -1329,14 +1348,10 @@ void main(){
     );
 
     function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      W = Math.max(1, Math.floor(canvas.clientWidth * dpr));
-      H = Math.max(1, Math.floor(canvas.clientHeight * dpr));
-      if (canvas.width !== W || canvas.height !== H) {
-        canvas.width = W;
-        canvas.height = H;
-        gl.viewport(0, 0, W, H);
-      }
+      const size = dreamFitCanvas(canvas);
+      W = size.w;
+      H = size.h;
+      if (size.changed) gl.viewport(0, 0, W, H);
     }
 
     function setupPaintTexture() {
@@ -1486,7 +1501,7 @@ void main(){
       gl.uniform2f(uni("u_res"), W, H);
       gl.uniform2f(uni("u_img"), imgW, imgH);
       gl.uniform1f(uni("u_pointSize"), PARAMS.pointSize);
-      gl.uniform1f(uni("u_depth"), PARAMS.depth);
+      gl.uniform1f(uni("u_depth"), idleDepth);
       gl.uniform1f(uni("u_hoverX"), hoverX);
       gl.uniform1f(uni("u_hoverY"), hoverY);
       gl.uniform1f(uni("u_hoverActive"), hoverActive);
@@ -1540,6 +1555,10 @@ void main(){
       hoverX += (targetHoverX - hoverX) * follow;
       hoverY += (targetHoverY - hoverY) * follow;
       hoverActive += (targetHoverActive - hoverActive) * follow;
+      globalTime += dt;
+      const idleMix = 1 - hoverActive;
+      const t = globalTime * IDLE.speed + phase;
+      idleDepth = PARAMS.depth * (1 + Math.sin(t) * IDLE.depthPulse * idleMix);
       fadeTrail(dt);
       depositTrail();
       uploadTrailTexture(false);
@@ -1568,9 +1587,7 @@ void main(){
       targetHoverActive = 0;
     });
 
-    new ResizeObserver(function () {
-      render();
-    }).observe(canvas);
+    dreamWatchCanvas(canvas, render);
 
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -1794,14 +1811,10 @@ void main(){
     );
 
     function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      W = Math.max(1, Math.floor(canvas.clientWidth * dpr));
-      H = Math.max(1, Math.floor(canvas.clientHeight * dpr));
-      if (canvas.width !== W || canvas.height !== H) {
-        canvas.width = W;
-        canvas.height = H;
-        gl.viewport(0, 0, W, H);
-      }
+      const size = dreamFitCanvas(canvas);
+      W = size.w;
+      H = size.h;
+      if (size.changed) gl.viewport(0, 0, W, H);
       updateFocusClip();
     }
 
@@ -1951,8 +1964,7 @@ void main(){
       targetHoverActive = 0;
     });
 
-    const ro = new ResizeObserver(() => render());
-    ro.observe(canvas);
+    dreamWatchCanvas(canvas, render);
 
     const img = new Image();
     img.crossOrigin = "anonymous";
