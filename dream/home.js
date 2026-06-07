@@ -898,8 +898,8 @@
     gl.uniform1f(uni("u_zoom"), panel.zoom);
     gl.uniform1f(uni("u_moveX"), panel.moveX + panel.idleMoveX);
     gl.uniform1f(uni("u_moveY"), panel.moveY + panel.idleMoveY);
-    gl.uniform1f(uni("u_rotateX"), panel.rotateX + panel.mouseTiltX + panel.idleRotateX);
-    gl.uniform1f(uni("u_rotateY"), panel.rotateY + panel.mouseTiltY + panel.idleRotateY + panel.spinRotateY);
+    gl.uniform1f(uni("u_rotateX"), panel.rotateX + panel.idleRotateX);
+    gl.uniform1f(uni("u_rotateY"), panel.rotateY + panel.idleRotateY + panel.spinRotateY);
     gl.uniform1f(uni("u_rotateZ"), panel.rotateZ);
     gl.uniform1f(uni("u_perspective"), panel.perspective);
 
@@ -920,64 +920,26 @@
     draw();
   }
 
-  function easeInOut01(t) {
-    t = Math.max(0, Math.min(1, t));
-    return t * t * (3 - 2 * t);
-  }
-
   function animate(now) {
     const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
     lastFrameTime = now;
     globalTime += dt;
 
-    const ease = easeInOut01(panel.hoverEase);
-    const follow = 1 - Math.pow(1 - ease, dt * 60);
-
-    const idleMix = 1 - panel.hoverActive;
     const t = globalTime * IDLE.speed + panel.phase;
 
     if (cfg.spinYPeriodSec) {
       panel.spinRotateY = (globalTime * 360 / cfg.spinYPeriodSec) % 360;
       panel.idleRotateY = 0;
     } else {
-      panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg * idleMix;
+      panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg;
     }
-    panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg * idleMix;
-    panel.idleMoveX = Math.sin(t * 0.58) * IDLE.drift * idleMix;
-    panel.idleMoveY = Math.cos(t * 0.71) * IDLE.drift * idleMix;
-
-    panel.hoverX += (panel.targetHoverX - panel.hoverX) * follow;
-    panel.hoverY += (panel.targetHoverY - panel.hoverY) * follow;
-    panel.hoverActive += (panel.targetHoverActive - panel.hoverActive) * follow;
-    panel.mouseTiltX += (panel.targetMouseTiltX - panel.mouseTiltX) * follow;
-    panel.mouseTiltY += (panel.targetMouseTiltY - panel.mouseTiltY) * follow;
+    panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg;
+    panel.idleMoveX = Math.sin(t * 0.58) * IDLE.drift;
+    panel.idleMoveY = Math.cos(t * 0.71) * IDLE.drift;
 
     render();
     requestAnimationFrame(animate);
   }
-
-  function updateFromPointer(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clipX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const clipY = 1 - ((e.clientY - rect.top) / rect.height) * 2;
-    panel.targetHoverX = clipX;
-    panel.targetHoverY = clipY;
-    panel.targetHoverActive = 1;
-    panel.targetMouseTiltY = clipX * MAX_MOUSE_TILT;
-    panel.targetMouseTiltX = -clipY * MAX_MOUSE_TILT;
-  }
-
-  function clearTargets() {
-    panel.targetHoverActive = 0;
-    panel.targetMouseTiltX = 0;
-    panel.targetMouseTiltY = 0;
-  }
-
-  canvas.addEventListener("pointerdown", updateFromPointer);
-  canvas.addEventListener("pointermove", updateFromPointer);
-  canvas.addEventListener("pointerleave", clearTargets);
-  canvas.addEventListener("pointerup", clearTargets);
-  canvas.addEventListener("pointercancel", clearTargets);
 
   loadImage(imageUrl)
     .then((img) => {
