@@ -501,291 +501,129 @@
 })();
 */
 
-/* Hero sky starfield — full canvas, looping forward travel */
+/* Sky starfield — full canvas */
 (function () {
-  const BASE = {
-    density: 1,
-    threshold: 0.01,
-    pointSize: 2.5,
-    depth: 1,
-    zoom: 1.3,
-    moveX: 0,
-    moveY: 0,
-    rotateX: 0,
-    rotateZ: 0,
-    perspective: 1.45
+  var CONFIG = {
+    density: 20,
+    spread: 2,
+    grain: 2,
+    trail: 1,
+    speed: 1,
+    count: 200,
+    hue: 40,
+    origin: 70,
+    hoverAccel: 2
   };
-
-  const SKY_URL =
-    "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a1eb1caee4efb8901e9bcfc_Sky.avif";
-
-  const STAR_TRAVEL = {
-    speed: 0.105,
-    range: 1.85
-  };
-
-  const IDLE = {
-    tiltDeg: 2.2,
-    drift: 0.014,
-    speed: 0.65
-  };
-
-  const canvas = document.getElementById("hero");
-  if (!canvas) return;
-  if (canvas.__heroSkyInit) return;
-  canvas.__heroSkyInit = true;
-
-  const gl = canvas.getContext("webgl", { alpha: true, antialias: false });
-  if (!gl) {
-    console.error("WebGL not supported");
-    return;
-  }
-
-  let W = 1;
-  let H = 1;
-  let lastFrameTime = performance.now();
-  let globalTime = 0;
-  let starTravel = 0;
-
-  const panel = {
-    ...BASE,
-    url: SKY_URL,
-    rotateY: 0,
-    buffer: null,
-    particleCount: 0,
-    imgW: 1,
-    imgH: 1,
-    idleRotateX: 0,
-    idleRotateY: 0,
-    idleMoveX: 0,
-    idleMoveY: 0,
-    phase: 0
-  };
-
-  const VS = `
-    precision highp float;
-
-    attribute vec2 a_pos;
-    attribute vec3 a_col;
-    attribute float a_bri;
-    varying vec3 v_col;
-
-    uniform vec2 u_res;
-    uniform vec2 u_img;
-    uniform float u_pointSize;
-    uniform float u_depth;
-    uniform float u_zoom;
-    uniform float u_moveX;
-    uniform float u_moveY;
-    uniform float u_rotateX;
-    uniform float u_rotateY;
-    uniform float u_rotateZ;
-    uniform float u_perspective;
-    uniform float u_travel;
-    uniform float u_travelRange;
-
-    mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
-    mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
-    mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,-s,0, s,c,0, 0,0,1); }
-
-    void main(){
-      vec2 uv = a_pos / u_img;
-      vec2 xy = vec2(uv.x - 0.5, 0.5 - uv.y) * vec2(u_img.x / u_img.y, 1.0);
-      float aspect = u_res.x / u_res.y;
-
-      float zDepth = (a_bri - 0.5) * u_depth;
-      float z = mod(zDepth + u_travel, u_travelRange) - u_travelRange * 0.5;
-
-      vec3 p = vec3(xy, z);
-      p = rotZ(radians(u_rotateZ)) * rotY(radians(u_rotateY)) * rotX(radians(u_rotateX)) * p;
-      p *= u_zoom;
-
-      float persp = u_perspective / max(0.25, u_perspective - p.z);
-      vec2 clip = (p.xy * persp) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
-
-      gl_Position = vec4(clip, 0.0, 1.0);
-      gl_PointSize = u_pointSize * persp;
-      v_col = a_col;
+ 
+  function initStarfield(canvas) {
+    var ctx = canvas.getContext('2d');
+    var W, H, cx, cy, dpr;
+    var stars = [];
+    var accel = 1, targetAccel = 1;
+    var pointerActive = false;
+ 
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = canvas.clientWidth || canvas.offsetWidth;
+      H = canvas.clientHeight || canvas.offsetHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      cx = W / 2;
+      cy = H / 2;
     }
-  `;
-
-  const FS = `
-    precision mediump float;
-    varying vec3 v_col;
-    void main(){
-      vec2 p = gl_PointCoord - 0.5;
-      if (dot(p, p) > 0.25) discard;
-      gl_FragColor = vec4(v_col, 1.0);
+ 
+    function spawn(reset) {
+      var angle = Math.random() * Math.PI * 2;
+      var rad = reset ? Math.random() * Math.hypot(cx, cy)
+                      : CONFIG.origin + Math.random() * CONFIG.origin;
+      return {
+        angle: angle,
+        r: rad,
+        v: 0.4 + Math.random() * 1.6,
+        bright: 0.5 + Math.random() * 0.5,
+        hueShift: (Math.random() - 0.5) * 2
+      };
     }
-  `;
-
-  function compileShader(type, src) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-      throw new Error(gl.getShaderInfoLog(s) || "Shader compile failed");
+ 
+    function build() {
+      stars = [];
+      for (var i = 0; i < CONFIG.count; i++) stars.push(spawn(true));
     }
-    return s;
-  }
-
-  const program = gl.createProgram();
-  gl.attachShader(program, compileShader(gl.VERTEX_SHADER, VS));
-  gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, FS));
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.error(gl.getProgramInfoLog(program));
-    return;
-  }
-
-  const uni = (name) => gl.getUniformLocation(program, name);
-
-  function loadImage(url) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error("Failed to load " + url));
-      img.src = url;
-    });
-  }
-
-  function coverZoom(imgW, imgH, viewW, viewH) {
-    const imgAspect = imgW / imgH;
-    const viewAspect = viewW / viewH;
-    if (viewAspect > imgAspect) {
-      return panel.zoom * (viewAspect / imgAspect);
-    }
-    return panel.zoom;
-  }
-
-  function buildParticles(img) {
-    const imgW = img.naturalWidth || img.width;
-    const imgH = img.naturalHeight || img.height;
-    panel.imgW = imgW;
-    panel.imgH = imgH;
-
-    const c = document.createElement("canvas");
-    c.width = imgW;
-    c.height = imgH;
-    const ctx = c.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(img, 0, 0, imgW, imgH);
-    const data = ctx.getImageData(0, 0, imgW, imgH).data;
-
-    const arr = [];
-    const step = Math.max(1, Math.floor(panel.density));
-
-    for (let y = 0; y < imgH; y += step) {
-      for (let x = 0; x < imgW; x += step) {
-        const i = (y * imgW + x) * 4;
-        const r = data[i] / 255;
-        const g = data[i + 1] / 255;
-        const b = data[i + 2] / 255;
-        const a = data[i + 3] / 255;
-        const bri = (0.2126 * r + 0.7152 * g + 0.0722 * b) * a;
-        if (a > 0.04 && bri >= panel.threshold) {
-          arr.push(x, y, r, g, b, bri);
+ 
+    function frame() {
+      ctx.clearRect(0, 0, W, H);
+      targetAccel = pointerActive ? CONFIG.hoverAccel : 1;
+      accel += (targetAccel - accel) * 0.06;
+ 
+      var maxR = Math.hypot(W, H) * 0.62;
+ 
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        s.r += s.v * CONFIG.speed * accel;
+        var nx = cx + Math.cos(s.angle) * s.r;
+        var ny = cy + Math.sin(s.angle) * s.r;
+ 
+        if (s.r > maxR || nx < -20 || nx > W + 20 || ny < -20 || ny > H + 20) {
+          stars[i] = spawn(false);
+          continue;
+        }
+ 
+        var dirx = Math.cos(s.angle), diry = Math.sin(s.angle);
+        var speedFactor = Math.min(1, s.r / maxR);
+        var a = (0.35 + speedFactor * 0.65) * s.bright;
+        var hch = 200 + s.hueShift * CONFIG.hue;
+        var sat = Math.min(60, CONFIG.hue * 0.6);
+        var light = 80 + speedFactor * 18;
+ 
+        var trailLen = 6 + speedFactor * CONFIG.trail * 240;
+        var grains = Math.max(2, Math.round(trailLen * (CONFIG.density / 40)));
+ 
+        for (var g = 0; g < grains; g++) {
+          var f = g / (grains - 1);
+          var fade = (1 - f) * (1 - f);
+          var d = f * trailLen;
+          var gx = nx - dirx * d;
+          var gy = ny - diry * d;
+          var perp = (Math.random() - 0.5) * CONFIG.spread;
+          gx += -diry * perp;
+          gy += dirx * perp;
+          ctx.fillStyle = 'hsla(' + hch + ',' + sat + '%,' + light + '%,' + (a * fade) + ')';
+          ctx.fillRect(gx | 0, gy | 0, CONFIG.grain, CONFIG.grain);
         }
       }
+      requestAnimationFrame(frame);
     }
-
-    panel.particleCount = arr.length / 6;
-    panel.buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, panel.buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW);
-  }
-
-  let drawZoom = panel.zoom;
-
-  function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = canvas.getBoundingClientRect();
-    const newW = Math.max(1, Math.floor(rect.width * dpr));
-    const newH = Math.max(1, Math.floor(rect.height * dpr));
-    if (newW === W && newH === H) return;
-    W = newW;
-    H = newH;
-    canvas.width = W;
-    canvas.height = H;
-    gl.viewport(0, 0, W, H);
-    drawZoom = coverZoom(panel.imgW, panel.imgH, W, H);
-  }
-
-  function draw() {
-    if (!panel.buffer || panel.particleCount === 0) return;
-    const stride = 6 * 4;
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, panel.buffer);
-
-    const pos = gl.getAttribLocation(program, "a_pos");
-    gl.enableVertexAttribArray(pos);
-    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, stride, 0);
-
-    const col = gl.getAttribLocation(program, "a_col");
-    gl.enableVertexAttribArray(col);
-    gl.vertexAttribPointer(col, 3, gl.FLOAT, false, stride, 2 * 4);
-
-    const bri = gl.getAttribLocation(program, "a_bri");
-    gl.enableVertexAttribArray(bri);
-    gl.vertexAttribPointer(bri, 1, gl.FLOAT, false, stride, 5 * 4);
-
-    gl.uniform2f(uni("u_res"), W, H);
-    gl.uniform2f(uni("u_img"), panel.imgW, panel.imgH);
-    gl.uniform1f(uni("u_pointSize"), panel.pointSize);
-    gl.uniform1f(uni("u_depth"), panel.depth);
-
-    gl.uniform1f(uni("u_zoom"), drawZoom);
-    gl.uniform1f(uni("u_moveX"), panel.moveX + panel.idleMoveX);
-    gl.uniform1f(uni("u_moveY"), panel.moveY + panel.idleMoveY);
-    gl.uniform1f(uni("u_rotateX"), panel.rotateX + panel.idleRotateX);
-    gl.uniform1f(uni("u_rotateY"), panel.rotateY + panel.idleRotateY);
-    gl.uniform1f(uni("u_rotateZ"), panel.rotateZ);
-    gl.uniform1f(uni("u_perspective"), panel.perspective);
-
-    gl.uniform1f(uni("u_travel"), starTravel);
-    gl.uniform1f(uni("u_travelRange"), STAR_TRAVEL.range);
-
-    gl.drawArrays(gl.POINTS, 0, panel.particleCount);
-  }
-
-  function render() {
+ 
+    canvas.addEventListener('pointermove', function (e) {
+      pointerActive = e.buttons > 0 || e.pointerType === 'mouse';
+    });
+    canvas.addEventListener('pointerdown', function () { pointerActive = true; });
+    canvas.addEventListener('pointerup', function () { pointerActive = false; });
+    canvas.addEventListener('pointerleave', function () { pointerActive = false; });
+ 
+    if (window.ResizeObserver) {
+      new ResizeObserver(function () { resize(); build(); }).observe(canvas);
+    } else {
+      window.addEventListener('resize', function () { resize(); build(); });
+    }
+ 
     resize();
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    gl.useProgram(program);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    draw();
+    build();
+    frame();
   }
-
-  function animate(now) {
-    const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
-    lastFrameTime = now;
-    globalTime += dt;
-    starTravel = (starTravel + dt * STAR_TRAVEL.speed) % STAR_TRAVEL.range;
-
-    const t = globalTime * IDLE.speed + panel.phase;
-
-    panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg;
-    panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg;
-    panel.idleMoveX = Math.sin(t * 0.58) * IDLE.drift;
-    panel.idleMoveY = Math.cos(t * 0.71) * IDLE.drift;
-
-    render();
-    requestAnimationFrame(animate);
+ 
+  function boot() {
+    var nodes = document.querySelectorAll('.starfield-canvas');
+    for (var i = 0; i < nodes.length; i++) initStarfield(nodes[i]);
   }
-
-  loadImage(SKY_URL)
-    .then((img) => {
-      buildParticles(img);
-      resize();
-      render();
-      requestAnimationFrame(animate);
-    })
-    .catch(console.error);
-
-  new ResizeObserver(() => render()).observe(canvas);
+ 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 })();
 
 /* Ship point cloud — legacy hero settings, single panel */
