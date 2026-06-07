@@ -5,20 +5,14 @@
     const params = {
       density: 1,
       threshold: 0.02,
-      pointSize: 1.65,
-      depth: 0.5,
-      hoverRadius: 0.56,
+      pointSize: 1,
+      depth: 1,
+      hoverRadius: 1.5,
       hoverSoftness: 0.55,
       hoverStrength: 1,
       hoverEase: 0.12,
-      zoom: 1.6,
+      zoom: 1.2,
       perspective: 2
-    };
-
-    const IDLE = {
-      tiltDeg: 1.0,
-      drift: 0.006,
-      speed: 0.55
     };
   
     const canvas = document.getElementById("footer");
@@ -42,12 +36,6 @@
     let targetHoverY = 0;
     let targetHoverActive = 0;
     let lastFrameTime = performance.now();
-    let globalTime = 0;
-    const phase = Math.random() * Math.PI * 2;
-    let idleRotateX = 0;
-    let idleRotateY = 0;
-    let idleMoveX = 0;
-    let idleMoveY = 0;
   
     const VS = `
       precision highp float;
@@ -211,10 +199,10 @@
       gl.uniform1f(uni("u_hoverStrength"), params.hoverStrength);
       gl.uniform1f(uni("u_zoom"), params.zoom);
       gl.uniform1f(uni("u_fitZoom"), fitZoom);
-      gl.uniform1f(uni("u_moveX"), idleMoveX);
-      gl.uniform1f(uni("u_moveY"), idleMoveY);
-      gl.uniform1f(uni("u_rotateX"), idleRotateX);
-      gl.uniform1f(uni("u_rotateY"), idleRotateY);
+      gl.uniform1f(uni("u_moveX"), 0);
+      gl.uniform1f(uni("u_moveY"), 0);
+      gl.uniform1f(uni("u_rotateX"), 0);
+      gl.uniform1f(uni("u_rotateY"), 0);
       gl.uniform1f(uni("u_rotateZ"), 0);
       gl.uniform1f(uni("u_perspective"), params.perspective);
   
@@ -238,20 +226,12 @@
     function animate(now) {
       const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
       lastFrameTime = now;
-      globalTime += dt;
 
       const ease = easeInOut01(params.hoverEase);
       const follow = 1.0 - Math.pow(1.0 - ease, dt * 60.0);
       hoverX += (targetHoverX - hoverX) * follow;
       hoverY += (targetHoverY - hoverY) * follow;
       hoverActive += (targetHoverActive - hoverActive) * follow;
-
-      const idleMix = 1 - hoverActive;
-      const t = globalTime * IDLE.speed + phase;
-      idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg * idleMix;
-      idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg * idleMix;
-      idleMoveX = Math.sin(t * 0.58) * IDLE.drift * idleMix;
-      idleMoveY = Math.cos(t * 0.71) * IDLE.drift * idleMix;
 
       render();
       requestAnimationFrame(animate);
