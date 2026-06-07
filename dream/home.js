@@ -626,7 +626,7 @@
   }
 })();
 
-/* Ship point cloud — legacy hero settings, single panel */
+/* Legacy hero point cloud — single panel (ship, cta, …) */
 (function () {
   const BASE = {
     density: 1,
@@ -645,8 +645,16 @@
     perspective: 1.45
   };
 
-  const SHIP_URL =
-    "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a1eb1dacce01dabaf4f772e_ship.avif";
+  const LEGACY_PANELS = [
+    {
+      id: "ship",
+      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a1eb1dacce01dabaf4f772e_ship.avif"
+    },
+    {
+      id: "cta",
+      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.png"
+    }
+  ];
 
   const MAX_MOUSE_TILT = 12;
 
@@ -656,10 +664,10 @@
     speed: 0.65
   };
 
-  const canvas = document.getElementById("ship");
+  function initLegacyPointCloud(canvas, imageUrl) {
   if (!canvas) return;
-  if (canvas.__shipPcInit) return;
-  canvas.__shipPcInit = true;
+  if (canvas.__legacyPcInit) return;
+  canvas.__legacyPcInit = true;
 
   const gl = canvas.getContext("webgl", { alpha: true, antialias: false });
   if (!gl) {
@@ -963,7 +971,7 @@
   canvas.addEventListener("pointerup", clearTargets);
   canvas.addEventListener("pointercancel", clearTargets);
 
-  loadImage(SHIP_URL)
+  loadImage(imageUrl)
     .then((img) => {
       buildParticles(img);
       resize();
@@ -973,6 +981,11 @@
     .catch(console.error);
 
   new ResizeObserver(() => render()).observe(canvas);
+  }
+
+  for (const cfg of LEGACY_PANELS) {
+    initLegacyPointCloud(document.getElementById(cfg.id), cfg.url);
+  }
 })();
 
 /* Figures point cloud (wong, alswaha, modi, babis) */
