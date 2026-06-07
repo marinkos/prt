@@ -5,9 +5,9 @@
     const params = {
       density: 1,
       threshold: 0.02,
-      pointSize: 1,
-      depth: 1,
-      hoverRadius: 1.5,
+      pointSize: 1.3,
+      depth: 0.6,
+      hoverRadius: 0.7,
       hoverSoftness: 0.55,
       hoverStrength: 1,
       hoverEase: 0.12,
