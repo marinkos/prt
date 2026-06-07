@@ -633,7 +633,11 @@
     threshold: 0.05,
     pointSize: 2.5,
     depth: 1,
-    zoom: 0.8,
+    hoverRadius: 0.92,
+    hoverSoftness: 0.55,
+    hoverStrength: 1.0,
+    hoverEase: 0.12,
+    zoom: 0.7,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
@@ -670,8 +674,13 @@
     particleCount: 0,
     imgW: 1,
     imgH: 1,
-    spinRotateY: 0,
-    fitScale: 1
+    hoverX: 0,
+    hoverY: 0,
+    hoverActive: 0,
+    targetHoverX: 0,
+    targetHoverY: 0,
+    targetHoverActive: 0,
+    spinRotateY: 0
   };
 
   const VS = `
@@ -704,7 +713,6 @@
 
     uniform float u_layoutX;
     uniform float u_layoutScale;
-    uniform float u_fitScale;
 
     mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
     mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
@@ -732,7 +740,7 @@
 
       float persp = u_perspective / max(0.25, u_perspective - p.z);
       vec2 clipLocal = (p.xy * persp) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
-      vec2 clip = vec2(clipLocal.x * u_layoutScale + u_layoutX, clipLocal.y) * u_fitScale;
+      vec2 clip = vec2(clipLocal.x * u_layoutScale + u_layoutX, clipLocal.y);
 
       gl_Position = vec4(clip, 0.0, 1.0);
       gl_PointSize = u_pointSize * persp;
@@ -854,12 +862,12 @@
     gl.uniform1f(uni("u_pointSize"), panel.pointSize);
     gl.uniform1f(uni("u_depth"), panel.depth);
 
-    gl.uniform1f(uni("u_hoverX"), 0);
-    gl.uniform1f(uni("u_hoverY"), 0);
-    gl.uniform1f(uni("u_hoverActive"), 0);
-    gl.uniform1f(uni("u_hoverRadius"), 0.92);
-    gl.uniform1f(uni("u_hoverSoftness"), 0.55);
-    gl.uniform1f(uni("u_hoverStrength"), 0);
+    gl.uniform1f(uni("u_hoverX"), panel.hoverX);
+    gl.uniform1f(uni("u_hoverY"), panel.hoverY);
+    gl.uniform1f(uni("u_hoverActive"), panel.hoverActive);
+    gl.uniform1f(uni("u_hoverRadius"), panel.hoverRadius);
+    gl.uniform1f(uni("u_hoverSoftness"), panel.hoverSoftness);
+    gl.uniform1f(uni("u_hoverStrength"), panel.hoverStrength);
 
     gl.uniform1f(uni("u_zoom"), panel.zoom);
     gl.uniform1f(uni("u_moveX"), panel.moveX);
@@ -871,7 +879,6 @@
 
     gl.uniform1f(uni("u_layoutX"), panel.layoutX);
     gl.uniform1f(uni("u_layoutScale"), panel.layoutScale);
-    gl.uniform1f(uni("u_fitScale"), panel.fitScale);
 
     gl.drawArrays(gl.POINTS, 0, panel.particleCount);
   }
@@ -887,11 +894,9 @@
     draw();
   }
 
-  function updateSpinFitScale() {
-    const rad = (panel.spinRotateY * Math.PI) / 180;
-    const depthRatio = panel.depth * 0.55;
-    const extent = Math.abs(Math.cos(rad)) + Math.abs(Math.sin(rad)) * depthRatio;
-    panel.fitScale = Math.min(1, 1 / (extent * 1.12));
+  function easeInOut01(t) {
+    t = Math.max(0, Math.min(1, t));
+    return t * t * (3 - 2 * t);
   }
 
   function animate(now) {
@@ -899,12 +904,34 @@
     lastFrameTime = now;
     globalTime += dt;
 
+    const ease = easeInOut01(panel.hoverEase);
+    const follow = 1 - Math.pow(1 - ease, dt * 60);
+
     panel.spinRotateY = (globalTime * 360 / cfg.spinYPeriodSec) % 360;
-    updateSpinFitScale();
+    panel.hoverX += (panel.targetHoverX - panel.hoverX) * follow;
+    panel.hoverY += (panel.targetHoverY - panel.hoverY) * follow;
+    panel.hoverActive += (panel.targetHoverActive - panel.hoverActive) * follow;
 
     render();
     requestAnimationFrame(animate);
   }
+
+  function updateFromPointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    panel.targetHoverX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    panel.targetHoverY = 1 - ((e.clientY - rect.top) / rect.height) * 2;
+    panel.targetHoverActive = 1;
+  }
+
+  function clearTargets() {
+    panel.targetHoverActive = 0;
+  }
+
+  canvas.addEventListener("pointerdown", updateFromPointer);
+  canvas.addEventListener("pointermove", updateFromPointer);
+  canvas.addEventListener("pointerleave", clearTargets);
+  canvas.addEventListener("pointerup", clearTargets);
+  canvas.addEventListener("pointercancel", clearTargets);
 
   loadImage(cfg.url)
     .then((img) => {
