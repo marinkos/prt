@@ -706,6 +706,7 @@
     idleMoveX: 0,
     idleMoveY: 0,
     spinRotateY: 0,
+    fitScale: 1,
     phase: 0
   };
 
@@ -739,6 +740,7 @@
 
     uniform float u_layoutX;
     uniform float u_layoutScale;
+    uniform float u_fitScale;
 
     mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
     mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
@@ -766,7 +768,7 @@
 
       float persp = u_perspective / max(0.25, u_perspective - p.z);
       vec2 clipLocal = (p.xy * persp) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
-      vec2 clip = vec2(clipLocal.x * u_layoutScale + u_layoutX, clipLocal.y);
+      vec2 clip = vec2(clipLocal.x * u_layoutScale + u_layoutX, clipLocal.y) * u_fitScale;
 
       gl_Position = vec4(clip, 0.0, 1.0);
       gl_PointSize = u_pointSize * persp;
@@ -905,6 +907,7 @@
 
     gl.uniform1f(uni("u_layoutX"), panel.layoutX);
     gl.uniform1f(uni("u_layoutScale"), panel.layoutScale);
+    gl.uniform1f(uni("u_fitScale"), panel.fitScale);
 
     gl.drawArrays(gl.POINTS, 0, panel.particleCount);
   }
@@ -920,6 +923,17 @@
     draw();
   }
 
+  function updateSpinFitScale() {
+    if (!cfg.spinYPeriodSec) {
+      panel.fitScale = 1;
+      return;
+    }
+    const rad = (panel.spinRotateY * Math.PI) / 180;
+    const depthRatio = panel.depth * 0.55;
+    const extent = Math.abs(Math.cos(rad)) + Math.abs(Math.sin(rad)) * depthRatio;
+    panel.fitScale = Math.min(1, 1 / (extent * 1.12));
+  }
+
   function animate(now) {
     const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
     lastFrameTime = now;
@@ -930,8 +944,10 @@
     if (cfg.spinYPeriodSec) {
       panel.spinRotateY = (globalTime * 360 / cfg.spinYPeriodSec) % 360;
       panel.idleRotateY = 0;
+      updateSpinFitScale();
     } else {
       panel.idleRotateY = Math.cos(t * 0.82) * IDLE.tiltDeg;
+      panel.fitScale = 1;
     }
     panel.idleRotateX = Math.sin(t * 1.05) * IDLE.tiltDeg;
     panel.idleMoveX = Math.sin(t * 0.58) * IDLE.drift;
