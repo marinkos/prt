@@ -1141,12 +1141,7 @@ void main(){
     brushRadius: 0.22,
     brushFeather: 0.16,
     brushOpacity: 1.0,
-    hoverTrailEnabled: true,
-    hoverTrailHex: "#864523",
-    hoverTrailOpacity: 0.7,
-    hoverTrailRadius: 1.0,
-    hoverTrailDecay: 0.06,
-    hoverTrailBlendMode: "add"
+    brushDecay: 0.06
   };
 
   const IDLE = {
@@ -1184,16 +1179,6 @@ void main(){
     return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
   }
 
-  function getHoverTrailBlendModeCode(mode) {
-    switch (mode) {
-      case "mix": return 1;
-      case "screen": return 2;
-      case "multiply": return 3;
-      case "overlay": return 4;
-      default: return 0;
-    }
-  }
-
   function initFigure(canvas, imageSrc, figureCfg) {
     if (!canvas || canvas.__figuresPcInit) return;
     canvas.__figuresPcInit = true;
@@ -1225,12 +1210,6 @@ void main(){
     let particleCount = 0;
     let paintTexture = null;
     let paintBuffer = null;
-    let trailCanvas = null;
-    let trailCtx = null;
-    let trailTexture = null;
-    let trailW = 1;
-    let trailH = 1;
-    let trailDirty = false;
     let hoverX = 0;
     let hoverY = 0;
     let hoverActive = 0;
@@ -1311,24 +1290,9 @@ uniform float u_rotateY;
 uniform float u_rotateZ;
 uniform float u_perspective;
 uniform sampler2D u_paintTex;
-uniform sampler2D u_trailTex;
-uniform float u_trailBlendMode;
 mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
 mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
 mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,-s,0, s,c,0, 0,0,1); }
-vec3 blendScreen(vec3 base, vec3 blend){ return 1.0 - (1.0 - base) * (1.0 - blend); }
-vec3 blendOverlay(vec3 base, vec3 blend){
-  return mix(2.0 * base * blend, 1.0 - 2.0 * (1.0 - base) * (1.0 - blend), step(0.5, base));
-}
-vec3 applyTrailBlend(vec3 baseCol, vec4 trail, float mode){
-  vec3 tint = clamp(trail.rgb, 0.0, 1.0);
-  float a = clamp(trail.a, 0.0, 1.0);
-  if (mode < 0.5) return clamp(baseCol + tint * a, 0.0, 1.0);
-  else if (mode < 1.5) return clamp(mix(baseCol, tint, a), 0.0, 1.0);
-  else if (mode < 2.5) return clamp(mix(baseCol, blendScreen(baseCol, tint), a), 0.0, 1.0);
-  else if (mode < 3.5) return clamp(mix(baseCol, baseCol * tint, a), 0.0, 1.0);
-  else return clamp(mix(baseCol, blendOverlay(baseCol, tint), a), 0.0, 1.0);
-}
 float focusMask(vec2 pt, vec2 center, float radius, float softness){
   float inner = max(0.0, radius - softness);
   float m = 1.0 - smoothstep(inner, radius, distance(pt, center));
@@ -1352,9 +1316,7 @@ void main(){
   gl_Position = vec4(clip, 0.0, 1.0);
   gl_PointSize = u_pointSize * persp;
   vec4 paint = texture2D(u_paintTex, a_uv);
-  vec3 baseCol = clamp(mix(a_col, paint.rgb, paint.a), 0.0, 1.0);
-  vec4 trail = texture2D(u_trailTex, a_uv);
-  v_col = applyTrailBlend(baseCol, trail, u_trailBlendMode);
+  v_col = clamp(mix(a_col, paint.rgb, paint.a), 0.0, 1.0);
 }
 `,
       `
@@ -1447,7 +1409,7 @@ void main(){
 
     function fadeBrushPaint(dt) {
       if (!paintBuffer) return;
-      const decayPerFrame = Math.max(0, Math.min(0.99, PARAMS.hoverTrailDecay));
+      const decayPerFrame = Math.max(0, Math.min(0.99, PARAMS.brushDecay));
       const k = 1 - Math.pow(1 - decayPerFrame, dt * 60);
       if (k <= 0) return;
       let dirty = false;
@@ -1458,75 +1420,6 @@ void main(){
         }
       }
       if (dirty) uploadPaintTexture();
-    }
-
-    function setupTrailTexture() {
-      const maxDim = 1024;
-      const scale = Math.min(1, maxDim / Math.max(1, Math.max(imgW, imgH)));
-      trailW = Math.max(1, Math.round(imgW * scale));
-      trailH = Math.max(1, Math.round(imgH * scale));
-      trailCanvas = document.createElement("canvas");
-      trailCanvas.width = trailW;
-      trailCanvas.height = trailH;
-      trailCtx = trailCanvas.getContext("2d");
-      trailCtx.clearRect(0, 0, trailW, trailH);
-      trailTexture = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, trailTexture);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      uploadTrailTexture(true);
-    }
-
-    function uploadTrailTexture(force) {
-      if (!trailTexture || !trailCanvas) return;
-      if (!trailDirty && !force) return;
-      gl.bindTexture(gl.TEXTURE_2D, trailTexture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, trailCanvas);
-      trailDirty = false;
-    }
-
-    function fadeTrail(dt) {
-      if (!trailCtx || !PARAMS.hoverTrailEnabled) return;
-      const decayPerFrame = Math.max(0, Math.min(0.99, PARAMS.hoverTrailDecay));
-      const k = 1 - Math.pow(1 - decayPerFrame, dt * 60);
-      if (k <= 0) return;
-      trailCtx.save();
-      trailCtx.globalCompositeOperation = "destination-out";
-      trailCtx.fillStyle = "rgba(0,0,0," + k + ")";
-      trailCtx.fillRect(0, 0, trailW, trailH);
-      trailCtx.restore();
-      trailDirty = true;
-    }
-
-    function depositTrail() {
-      if (!trailCtx || !PARAMS.hoverTrailEnabled) return;
-      if (hoverActive <= 0.001) return;
-      const rgb = hexToRgb01(PARAMS.hoverTrailHex).map((v) => Math.round(v * 255));
-      const alpha = Math.max(0, Math.min(1, PARAMS.hoverTrailOpacity)) * hoverActive;
-      if (alpha <= 0.001) return;
-      const aspect = W / H;
-      const duPerClip = aspect / (2 * PARAMS.zoom) / (imgW / imgH);
-      const dvPerClip = 1 / (2 * PARAMS.zoom);
-      const pxPerClipX = Math.abs(duPerClip) * trailW;
-      const pxPerClipY = Math.abs(dvPerClip) * trailH;
-      const baseRadiusPx = PARAMS.hoverRadius * Math.min(pxPerClipX, pxPerClipY);
-      const radiusPx = Math.max(1, Math.round(baseRadiusPx * PARAMS.hoverTrailRadius));
-      const x = hoverU * trailW;
-      const y = hoverV * trailH;
-      trailCtx.save();
-      trailCtx.globalCompositeOperation = "source-over";
-      const grad = trailCtx.createRadialGradient(x, y, 0, x, y, radiusPx);
-      grad.addColorStop(0, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + alpha + ")");
-      grad.addColorStop(0.35, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + (alpha * 0.6) + ")");
-      grad.addColorStop(1, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ",0)");
-      trailCtx.fillStyle = grad;
-      trailCtx.beginPath();
-      trailCtx.arc(x, y, radiusPx, 0, Math.PI * 2);
-      trailCtx.fill();
-      trailCtx.restore();
-      trailDirty = true;
     }
 
     function updateHoverUV() {
@@ -1568,7 +1461,6 @@ void main(){
       gl.bindBuffer(gl.ARRAY_BUFFER, particles);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW);
       setupPaintTexture();
-      setupTrailTexture();
       updateFocusClip();
     }
 
@@ -1612,13 +1504,9 @@ void main(){
       gl.uniform1f(uni("u_rotateY"), PARAMS.rotateY + idleRotateY);
       gl.uniform1f(uni("u_rotateZ"), PARAMS.rotateZ);
       gl.uniform1f(uni("u_perspective"), PARAMS.perspective);
-      gl.uniform1f(uni("u_trailBlendMode"), getHoverTrailBlendModeCode(PARAMS.hoverTrailBlendMode));
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, paintTexture);
       gl.uniform1i(uni("u_paintTex"), 0);
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, trailTexture);
-      gl.uniform1i(uni("u_trailTex"), 1);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.drawArrays(gl.POINTS, 0, particleCount);
@@ -1656,9 +1544,6 @@ void main(){
       updateFocusClip();
       fadeBrushPaint(dt);
       depositBrushPaint();
-      fadeTrail(dt);
-      depositTrail();
-      uploadTrailTexture(false);
 
       render();
       rafId = requestAnimationFrame(loop);
