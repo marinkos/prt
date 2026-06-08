@@ -337,8 +337,8 @@ function dreamWatchCanvas(canvas, onResize) {
   const BASE = {
     density: 1,
     threshold: 0.05,
-    pointSize: 2.5,
-    depth: 0.5,
+    pointSize: 1,
+    depth: 0.74,
     hoverRadius: 0.92,
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
@@ -348,12 +348,12 @@ function dreamWatchCanvas(canvas, onResize) {
     moveY: 0,
     rotateX: 0,
     rotateZ: 0,
-    perspective: 1.45,
+    perspective: 1.04,
     hoverTrailEnabled: true,
     hoverTrailHex: "#864523",
     hoverTrailOpacity: 0.7,
     hoverTrailRadius: 1.0,
-    hoverTrailDecay: 0.06,
+    hoverTrailDecay: 0.6,
     hoverTrailBlendMode: "add"
   };
 
@@ -825,7 +825,7 @@ function dreamWatchCanvas(canvas, onResize) {
     density: 1,
     threshold: 0.02,
     pointSize: 1,
-    depth: 1.8,
+    depth: 0.74,
     hoverRadius: 0.92,
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
@@ -836,12 +836,12 @@ function dreamWatchCanvas(canvas, onResize) {
     rotateX: 0,
     rotateY: 0,
     rotateZ: 0,
-    perspective: 1.45,
+    perspective: 1.04,
     hoverTrailEnabled: true,
     hoverTrailHex: "#864523",
     hoverTrailOpacity: 0.7,
     hoverTrailRadius: 1.0,
-    hoverTrailDecay: 0.06,
+    hoverTrailDecay: 0.6,
     hoverTrailBlendMode: "add"
   };
 
@@ -1289,9 +1289,9 @@ void main(){
   const PARAMS = {
     density: 1,
     threshold: 0.3,
-    pointSize: 1.4,
-    depth: 2,
-    hoverRadius: 0.78,
+    pointSize: 1,
+    depth: 0.74,
+    hoverRadius: 0.92,
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
     hoverEase: 0.12,
@@ -1301,7 +1301,7 @@ void main(){
     rotateX: 0,
     rotateY: 0,
     rotateZ: 0,
-    perspective: 1.22,
+    perspective: 1.04,
     focusU: 0.527,
     focusV: 0.28,
     centerFocusRadius: 0.6,
@@ -1311,7 +1311,7 @@ void main(){
     hoverTrailHex: "#864523",
     hoverTrailOpacity: 0.7,
     hoverTrailRadius: 1.0,
-    hoverTrailDecay: 0.06,
+    hoverTrailDecay: 0.6,
     hoverTrailBlendMode: "add"
   };
 
