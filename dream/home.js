@@ -819,18 +819,18 @@ function dreamWatchCanvas(canvas, onResize) {
   initCtaPointCloud(document.getElementById("cta"), CTA);
 })();
 
-/* Tool-color point cloud (engine, ship, tower) */
+/* Tool-color point cloud (engine, ship) */
 (function () {
   const PARAMS = {
     density: 1,
-    threshold: 0.02,
-    pointSize: 1.5,
+    threshold: 0.45,
+    pointSize: 0.6,
     depth: 0.74,
-    hoverRadius: 0.92,
+    hoverRadius: 0.96,
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
     hoverEase: 0.12,
-    zoom: 0.6,
+    zoom: 0.7,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
@@ -853,15 +853,14 @@ function dreamWatchCanvas(canvas, onResize) {
   const PANELS = [
     {
       id: "engine",
-      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a257dc7065980a603c06f01_engine.avif"
+      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a27293bbf44bbaadf348116_rocket.avif",
+      rotateY: -10
     },
     {
       id: "ship",
-      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a257dc7a98c22a300af463b_ship.avif"
-    },
-    {
-      id: "tower",
-      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a257dc754dbb1a98ace4451_tower.avif"
+      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.avif",
+      rotateX: -7,
+      rotateY: 6
     }
   ];
 
@@ -881,9 +880,12 @@ function dreamWatchCanvas(canvas, onResize) {
     }
   }
 
-  function initToolColorPanel(canvas, imageUrl) {
+  function initToolColorPanel(canvas, cfg) {
     if (!canvas || canvas.__toolColorPcInit) return;
     canvas.__toolColorPcInit = true;
+
+    const panel = { ...PARAMS, ...cfg };
+    const imageUrl = cfg.url;
 
     const gl = canvas.getContext("webgl", {
       alpha: true,
@@ -915,7 +917,7 @@ function dreamWatchCanvas(canvas, onResize) {
     let hoverV = 0.5;
     let lastFrameTime = performance.now();
     let globalTime = 0;
-    let idleDepth = PARAMS.depth;
+    let idleDepth = panel.depth;
     const phase = Math.random() * Math.PI * 2;
 
     function shader(type, src) {
@@ -1075,8 +1077,8 @@ void main(){
     }
 
     function fadeTrail(dt) {
-      if (!trailCtx || !PARAMS.hoverTrailEnabled) return;
-      const decayPerFrame = Math.max(0, Math.min(0.99, PARAMS.hoverTrailDecay));
+      if (!trailCtx || !panel.hoverTrailEnabled) return;
+      const decayPerFrame = Math.max(0, Math.min(0.99, panel.hoverTrailDecay));
       const k = 1 - Math.pow(1 - decayPerFrame, dt * 60);
       if (k <= 0) return;
       trailCtx.save();
@@ -1088,20 +1090,20 @@ void main(){
     }
 
     function depositTrail() {
-      if (!trailCtx || !PARAMS.hoverTrailEnabled) return;
+      if (!trailCtx || !panel.hoverTrailEnabled) return;
       if (hoverActive <= 0.001) return;
-      const rgb = hexToRgb01(PARAMS.hoverTrailHex).map(function (v) {
+      const rgb = hexToRgb01(panel.hoverTrailHex).map(function (v) {
         return Math.round(v * 255);
       });
-      const alpha = Math.max(0, Math.min(1, PARAMS.hoverTrailOpacity)) * hoverActive;
+      const alpha = Math.max(0, Math.min(1, panel.hoverTrailOpacity)) * hoverActive;
       if (alpha <= 0.001) return;
       const aspect = W / H;
-      const duPerClip = aspect / (2 * PARAMS.zoom) / (imgW / imgH);
-      const dvPerClip = 1 / (2 * PARAMS.zoom);
+      const duPerClip = aspect / (2 * panel.zoom) / (imgW / imgH);
+      const dvPerClip = 1 / (2 * panel.zoom);
       const pxPerClipX = Math.abs(duPerClip) * trailW;
       const pxPerClipY = Math.abs(dvPerClip) * trailH;
-      const baseRadiusPx = PARAMS.hoverRadius * Math.min(pxPerClipX, pxPerClipY);
-      const radiusPx = Math.max(1, Math.round(baseRadiusPx * PARAMS.hoverTrailRadius));
+      const baseRadiusPx = panel.hoverRadius * Math.min(pxPerClipX, pxPerClipY);
+      const radiusPx = Math.max(1, Math.round(baseRadiusPx * panel.hoverTrailRadius));
       const x = hoverU * trailW;
       const y = hoverV * trailH;
       trailCtx.save();
@@ -1128,7 +1130,7 @@ void main(){
       ctx.drawImage(source, 0, 0, imgW, imgH);
       const data = ctx.getImageData(0, 0, imgW, imgH).data;
       const arr = [];
-      const step = Math.max(1, Math.floor(PARAMS.density));
+      const step = Math.max(1, Math.floor(panel.density));
       for (let y = 0; y < imgH; y += step) {
         for (let x = 0; x < imgW; x += step) {
           const i = (y * imgW + x) * 4;
@@ -1137,7 +1139,7 @@ void main(){
           const b = data[i + 2] / 255;
           const a = data[i + 3] / 255;
           const bri = (0.2126 * r + 0.7152 * g + 0.0722 * b) * a;
-          if (a > 0.05 && bri >= PARAMS.threshold) {
+          if (a > 0.05 && bri >= panel.threshold) {
             arr.push(x, y, r, g, b, bri, x / imgW, y / imgH);
           }
         }
@@ -1172,22 +1174,22 @@ void main(){
       };
       gl.uniform2f(uni("u_res"), W, H);
       gl.uniform2f(uni("u_img"), imgW, imgH);
-      gl.uniform1f(uni("u_pointSize"), PARAMS.pointSize);
+      gl.uniform1f(uni("u_pointSize"), panel.pointSize);
       gl.uniform1f(uni("u_depth"), idleDepth);
       gl.uniform1f(uni("u_hoverX"), hoverX);
       gl.uniform1f(uni("u_hoverY"), hoverY);
       gl.uniform1f(uni("u_hoverActive"), hoverActive);
-      gl.uniform1f(uni("u_hoverRadius"), PARAMS.hoverRadius);
-      gl.uniform1f(uni("u_hoverSoftness"), PARAMS.hoverSoftness);
-      gl.uniform1f(uni("u_hoverStrength"), PARAMS.hoverStrength);
-      gl.uniform1f(uni("u_zoom"), PARAMS.zoom);
-      gl.uniform1f(uni("u_moveX"), PARAMS.moveX);
-      gl.uniform1f(uni("u_moveY"), PARAMS.moveY);
-      gl.uniform1f(uni("u_rotateX"), PARAMS.rotateX);
-      gl.uniform1f(uni("u_rotateY"), PARAMS.rotateY);
-      gl.uniform1f(uni("u_rotateZ"), PARAMS.rotateZ);
-      gl.uniform1f(uni("u_perspective"), PARAMS.perspective);
-      gl.uniform1f(uni("u_trailBlendMode"), getHoverTrailBlendModeCode(PARAMS.hoverTrailBlendMode));
+      gl.uniform1f(uni("u_hoverRadius"), panel.hoverRadius);
+      gl.uniform1f(uni("u_hoverSoftness"), panel.hoverSoftness);
+      gl.uniform1f(uni("u_hoverStrength"), panel.hoverStrength);
+      gl.uniform1f(uni("u_zoom"), panel.zoom);
+      gl.uniform1f(uni("u_moveX"), panel.moveX);
+      gl.uniform1f(uni("u_moveY"), panel.moveY);
+      gl.uniform1f(uni("u_rotateX"), panel.rotateX);
+      gl.uniform1f(uni("u_rotateY"), panel.rotateY);
+      gl.uniform1f(uni("u_rotateZ"), panel.rotateZ);
+      gl.uniform1f(uni("u_perspective"), panel.perspective);
+      gl.uniform1f(uni("u_trailBlendMode"), getHoverTrailBlendModeCode(panel.hoverTrailBlendMode));
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, paintTexture);
       gl.uniform1i(uni("u_paintTex"), 0);
@@ -1213,8 +1215,8 @@ void main(){
 
     function updateHoverUV() {
       const aspect = W / H;
-      const u = (((targetHoverX - PARAMS.moveX) / 2) * aspect / PARAMS.zoom) / (imgW / imgH) + 0.5;
-      const v = 0.5 - (((targetHoverY - PARAMS.moveY) / 2) / PARAMS.zoom);
+      const u = (((targetHoverX - panel.moveX) / 2) * aspect / panel.zoom) / (imgW / imgH) + 0.5;
+      const v = 0.5 - (((targetHoverY - panel.moveY) / 2) / panel.zoom);
       hoverU = Math.max(0, Math.min(1, u));
       hoverV = Math.max(0, Math.min(1, v));
     }
@@ -1222,7 +1224,7 @@ void main(){
     function loop(now) {
       const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
       lastFrameTime = now;
-      const ease = easeInOut01(PARAMS.hoverEase);
+      const ease = easeInOut01(panel.hoverEase);
       const follow = 1 - Math.pow(1 - ease, dt * 60);
       hoverX += (targetHoverX - hoverX) * follow;
       hoverY += (targetHoverY - hoverY) * follow;
@@ -1230,7 +1232,7 @@ void main(){
       globalTime += dt;
       const idleMix = 1 - hoverActive;
       const t = globalTime * IDLE.speed + phase;
-      idleDepth = PARAMS.depth * (1 + Math.sin(t) * IDLE.depthPulse * idleMix);
+      idleDepth = panel.depth * (1 + Math.sin(t) * IDLE.depthPulse * idleMix);
       fadeTrail(dt);
       depositTrail();
       uploadTrailTexture(false);
@@ -1275,7 +1277,7 @@ void main(){
   }
 
   for (const cfg of PANELS) {
-    initToolColorPanel(document.getElementById(cfg.id), cfg.url);
+    initToolColorPanel(document.getElementById(cfg.id), cfg);
   }
 })();
 
