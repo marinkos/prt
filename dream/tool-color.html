@@ -1,0 +1,1329 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Particles Tool</title>
+  <style>
+    html, body { margin:0; height:100%; background:#050505; color:#eee; font-family: system-ui, -apple-system, Segoe UI, sans-serif; overflow:hidden; }
+    #app { position:fixed; inset:0; display:grid; grid-template-columns:340px 1fr; }
+    #stage { position:relative; width:100%; height:100%; overflow:hidden; background:#141A29; }
+    #bgImageLayer { position:absolute; inset:0; z-index:0; display:none; background-position:center; background-size:cover; background-repeat:no-repeat; pointer-events:none; }
+    aside { background:rgba(12,12,15,.94); border-left:1px solid #333; padding:18px; box-sizing:border-box; overflow:auto; z-index:2; }
+    canvas { width:100%; height:100%; display:block; cursor:crosshair; background:transparent; position:relative; z-index:1; }
+    h1 { font-size:20px; margin:0 0 12px; font-weight:800; letter-spacing:.2px; }
+    h2 { font-size:13px; margin:0 0 10px; color:#f1f1f1; font-weight:800; }
+    summary { cursor:pointer; user-select:none; font-size:13px; font-weight:800; color:#f1f1f1; list-style:none; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    summary::-webkit-details-marker { display:none; }
+    summary::after { content:'▾'; direction:ltr; font-size:14px; line-height:1; color:#aaa; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; flex:0 0 18px; transition:transform .16s ease, color .16s ease; }
+    details[open] > summary::after { transform:rotate(180deg); color:#fff; }
+    details.group > .details-body { margin-top:10px; }
+    details.group.compact > .details-body { margin-top:8px; }
+    .media-panel { margin:6px 0 12px; }
+    .group { margin:14px 0; padding-top:12px; border-top:1px solid #2b2b2b; }
+    .group.compact { margin:10px 0; padding-top:10px; }
+    .compact-grid { display:grid; grid-template-columns:1fr; gap:8px; }
+    .compact-grid label { margin:0; }
+    .primary-control { background:linear-gradient(180deg, rgba(43,108,255,.18), rgba(43,108,255,.05)); border:1px solid rgba(120,160,255,.35); border-radius:14px; padding:12px; margin-top:8px; }
+    .primary-control label { margin:0; font-size:14px; font-weight:800; color:#fff; }
+    .primary-control .value { color:#bcd0ff; }
+    label { display:grid; gap:6px; font-size:13px; margin:10px 0; color:#d6d6d6; }
+    input[type="range"] { width:100%; }
+    input[type="file"] { font-size:12px; max-width:100%; }
+    input[type="text"] { width:100%; box-sizing:border-box; padding:9px 10px; border-radius:10px; border:1px solid #383842; background:#17171c; color:#eee; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction:ltr; }
+    select { width:100%; box-sizing:border-box; padding:9px 10px; border-radius:10px; border:1px solid #383842; background:#17171c; color:#eee; }
+    button { width:100%; padding:10px 12px; border:0; border-radius:12px; background:#eee; color:#111; font-weight:700; cursor:pointer; margin-top:8px; }
+    button.secondary { background:#202025; color:#eee; border:1px solid #383842; }
+    button.recording { background:#ff4d4d; color:#111; }
+    .row { display:flex; gap:8px; }
+    .row button { flex:1; }
+    .value { color:#999; font-variant-numeric:tabular-nums; }
+    .hint, #status { color:#aaa; font-size:12px; line-height:1.45; }
+    #status { margin-top:10px; color:#7ee787; direction:ltr; text-align:left; white-space:pre-wrap; }
+    #manualDownload { display:none; margin-top:10px; color:#fff; background:#2b6cff; padding:9px 10px; border-radius:10px; text-align:center; text-decoration:none; font-size:13px; font-weight:700; direction:ltr; }
+    .swatches { display:grid; grid-template-columns:repeat(5, 1fr); gap:7px; margin-top:8px; }
+    .swatch { height:24px; border-radius:999px; border:2px solid #444; cursor:pointer; margin-top:0; }
+    .swatch.active { border-color:#fff; box-shadow:0 0 0 2px #2b6cff; }
+    .mini { font-size:12px; color:#aaa; line-height:1.35; margin-top:8px; }
+    @media (max-width:780px) { #app { grid-template-columns:1fr; } aside { position:fixed; right:12px; top:12px; width:320px; max-height:calc(100vh - 24px); border:1px solid #333; border-radius:18px; } }
+
+    /* Simple color-picker modal */
+    #colorModal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); z-index:9999; }
+    #colorModal.open { display:flex; }
+    #colorModal .panel { width:min(360px, calc(100vw - 36px)); background:rgba(18,18,22,.98); border:1px solid #2b2b2b; border-radius:16px; padding:14px; box-shadow:0 18px 60px rgba(0,0,0,.55); }
+    #colorModal .title { font-size:13px; font-weight:900; margin:0 0 10px; color:#f1f1f1; }
+    #colorModal .pickerRow { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    #colorModal input[type="color"] { width:64px; height:44px; border:0; background:transparent; padding:0; }
+    #colorModal .hexPreview { flex:1; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction:ltr; background:#17171c; border:1px solid #383842; border-radius:10px; padding:10px; color:#eee; text-align:left; }
+    #colorModal .actions { display:flex; gap:8px; margin-top:12px; }
+    #colorModal .actions button { margin-top:0; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <h1>Particles Tool</h1>
+
+    <div class="media-panel">
+      <label>תמונה או וידיאו
+        <input id="file" type="file" accept="image/*,video/*" />
+      </label>
+      <div class="row">
+        <button id="reset">איפוס ל־Front</button>
+        <button id="playPause" class="secondary">Play/Pause video</button>
+      </div>
+      <div class="row">
+        <button id="downloadPng" class="secondary">Download PNG</button>
+        <button id="record" class="secondary">Record output</button>
+      </div>
+      <div class="row">
+        <button id="spin" class="secondary">Auto spin off</button>
+        <button id="seekStart" class="secondary">Restart video</button>
+      </div>
+      <div id="status">Upload an image or video to start</div>
+      <a id="manualDownload" href="#" download="point-cloud.png" target="_blank">Open PNG in new tab</a>
+    </div>
+
+    <div id="depthControls"></div>
+
+    <details class="group compact">
+      <summary>Background</summary>
+      <div class="compact-grid details-body">
+        <label>HEX
+          <input id="bgHex" type="text" value="#0D142B" placeholder="#0D142B" maxlength="7" />
+        </label>
+        <label>Image
+          <input id="bgImageFile" type="file" accept="image/*" />
+        </label>
+        <button id="toggleBgImage" class="secondary">Background image off</button>
+      </div>
+    </details>
+
+    <details class="group compact" id="brushPanel">
+      <summary>Color brush</summary>
+      <div class="details-body">
+        <label>Mode
+          <select id="paintMode">
+            <option value="off">Off</option>
+            <option value="paint">Paint only while mouse is pressed</option>
+          </select>
+        </label>
+        <label>Color HEX
+          <input id="brushHex" type="text" value="#0042E1" placeholder="#0042E1" maxlength="7" />
+        </label>
+        <div class="row">
+          <button id="addBrushColor" class="secondary">Add color</button>
+          <button id="undoPaint" class="secondary">Undo</button>
+        </div>
+        <button id="clearPaint" class="secondary">Clear paint</button>
+        <div id="brushSwatches" class="swatches"></div>
+        <label>Radius <span class="value" id="v_brushRadius"></span>
+          <input id="brushRadius" type="range" min="0.01" max="1.2" step="0.01" value="0.22" />
+        </label>
+        <label>Feather <span class="value" id="v_brushFeather"></span>
+          <input id="brushFeather" type="range" min="0" max="10" step="0.01" value="0.16" />
+        </label>
+        <label>Opacity <span class="value" id="v_brushOpacity"></span>
+          <input id="brushOpacity" type="range" min="0" max="1" step="0.01" value="1" />
+        </label>
+        <div class="mini">Undo מחזיר את פעולת הצביעה האחרונה. נשמרות עד 20 פעולות אחורה.</div>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>Particles</summary>
+      <div class="details-body" id="sampleControls"></div>
+    </details>
+    <details class="group">
+      <summary>Hover</summary>
+      <div class="details-body" id="hoverControls"></div>
+    </details>
+    <details class="group">
+      <summary>Position / Rotation / Camera</summary>
+      <div class="details-body" id="transformControls"></div>
+    </details>
+  </aside>
+
+  <div id="stage"><div id="bgImageLayer"></div><canvas id="gl"></canvas></div>
+</div>
+
+<!-- Color picker modal (used for background + hover trail) -->
+<div id="colorModal" aria-hidden="true">
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="colorModalTitle">
+    <div class="title" id="colorModalTitle">Pick color</div>
+    <div class="pickerRow">
+      <input id="colorModalPicker" type="color" value="#141A29" />
+      <div id="colorModalHex" class="hexPreview">#141A29</div>
+    </div>
+    <div class="actions">
+      <button id="colorModalOk">OK</button>
+      <button id="colorModalCancel" class="secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gl');
+const videoEl = document.createElement('video');
+videoEl.muted = true;
+videoEl.loop = true;
+videoEl.playsInline = true;
+videoEl.crossOrigin = 'anonymous';
+const statusEl = document.getElementById('status');
+const manualDownloadEl = document.getElementById('manualDownload');
+const bgHexEl = document.getElementById('bgHex');
+const stageEl = document.getElementById('stage');
+const bgImageLayerEl = document.getElementById('bgImageLayer');
+const bgImageFileEl = document.getElementById('bgImageFile');
+const toggleBgImageEl = document.getElementById('toggleBgImage');
+const paintModeEl = document.getElementById('paintMode');
+const brushHexEl = document.getElementById('brushHex');
+const addBrushColorEl = document.getElementById('addBrushColor');
+const undoPaintEl = document.getElementById('undoPaint');
+const clearPaintEl = document.getElementById('clearPaint');
+const brushSwatchesEl = document.getElementById('brushSwatches');
+
+// ------------------------
+// State (declare BEFORE first use to avoid TDZ)
+// ------------------------
+let W = 1, H = 1, imgW = 1, imgH = 1;
+let particles = null;
+let particleCount = 0;
+let currentImage = null;
+let currentVideo = null;
+let currentMediaType = 'image';
+let lastVideoBuildTime = 0;
+const VIDEO_POINT_FPS = 18;
+
+let paintBuffer = null;
+let paintTexture = null;
+
+let hoverX = 0, hoverY = 0, hoverActive = 0;
+let targetHoverX = 0, targetHoverY = 0, targetHoverActive = 0;
+let hoverU = 0.5, hoverV = 0.5;
+
+let trailCanvas = null;
+let trailCtx = null;
+let trailTexture = null;
+let trailW = 1, trailH = 1;
+let trailDirty = false;
+
+let brushColors = ['#0042E1', '#3C0E07', '#073C22', '#A0E7FF'];
+let activeBrushColor = '#0042E1';
+let isPainting = false;
+let paintUndoStack = [];
+
+let autoSpin = false;
+let recorder = null;
+let recordedChunks = [];
+let lastFrameTime = performance.now();
+
+const controlInputs = {};
+let hoverTrailEnableEl = null;
+let hoverTrailHexEl = null;
+let hoverTrailPickBtnEl = null;
+let hoverTrailBlendSelectEl = null;
+
+// Color picker modal elements
+const colorModalEl = document.getElementById('colorModal');
+const colorModalTitleEl = document.getElementById('colorModalTitle');
+const colorModalPickerEl = document.getElementById('colorModalPicker');
+const colorModalHexEl = document.getElementById('colorModalHex');
+const colorModalOkEl = document.getElementById('colorModalOk');
+const colorModalCancelEl = document.getElementById('colorModalCancel');
+
+let colorModalOnCommit = null;
+function openColorModal(opts){
+  const title = opts && opts.title ? opts.title : 'Pick color';
+  const initial = normalizeHex((opts && opts.initial) || '#0D142B') || '#0D142B';
+  colorModalTitleEl.textContent = title;
+  colorModalPickerEl.value = initial;
+  colorModalHexEl.textContent = initial;
+  colorModalOnCommit = (opts && opts.onCommit) ? opts.onCommit : null;
+  colorModalEl.classList.add('open');
+  colorModalEl.setAttribute('aria-hidden', 'false');
+}
+function closeColorModal(){
+  colorModalEl.classList.remove('open');
+  colorModalEl.setAttribute('aria-hidden', 'true');
+  colorModalOnCommit = null;
+}
+colorModalPickerEl.addEventListener('input', () => {
+  const normalized = normalizeHex(colorModalPickerEl.value) || '#141A29';
+  colorModalHexEl.textContent = normalized;
+});
+colorModalCancelEl.addEventListener('click', closeColorModal);
+colorModalEl.addEventListener('click', (e) => { if (e.target === colorModalEl) closeColorModal(); });
+colorModalOkEl.addEventListener('click', () => {
+  const normalized = normalizeHex(colorModalPickerEl.value) || '#141A29';
+  if (typeof colorModalOnCommit === 'function') colorModalOnCommit(normalized);
+  closeColorModal();
+});
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && colorModalEl.classList.contains('open')) closeColorModal(); });
+
+const gl = canvas.getContext('webgl', { alpha:true, antialias:false, preserveDrawingBuffer:true });
+if (!gl) alert('WebGL לא נתמך בדפדפן הזה');
+
+// Fallback 1x1 transparent trail texture so rendering is safe before media load.
+// IMPORTANT: trailTexture is declared above, so no TDZ/ReferenceError.
+trailTexture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, trailTexture);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0,0,0,0]));
+
+const DEFAULT_PARAMS = {
+  density: 1,
+  threshold: 0.02,
+  pointSize: 1,
+  depth: 1.8,
+  hoverRadius: 0.92,
+  hoverSoftness: 0.55,
+  hoverStrength: 1.0,
+  hoverEase: 0.12,
+  brushRadius: 0.22,
+  brushFeather: 0.16,
+  brushOpacity: 1.0,
+  zoom: 0.9,
+  moveX: 0,
+  moveY: 0,
+  rotateX: 0,
+  rotateY: 0,
+  rotateZ: 0,
+  perspective: 1.45,
+  bgColor: '#0D142B',
+  bgImageEnabled: false,
+  bgImageUrl: '',
+  spinSpeed: 0.35,
+
+  hoverTrailEnabled: true,
+  hoverTrailHex: '#864523',
+  hoverTrailOpacity: 0.7,
+  // Multiplier on the hover radius (so the trail matches the hover effect size)
+  hoverTrailRadius: 1.0,
+  // Lower = longer-lasting trail
+  hoverTrailDecay: 0.06
+  ,hoverTrailBlendMode: 'add'
+};
+const params = { ...DEFAULT_PARAMS };
+
+function setStatus(msg){ statusEl.textContent = msg; }
+function hideManualDownload(){ manualDownloadEl.style.display = 'none'; manualDownloadEl.removeAttribute('href'); }
+function showManualDownload(url, filename){ manualDownloadEl.href = url; manualDownloadEl.download = filename; manualDownloadEl.style.display = 'block'; }
+
+function assert(condition, message){ if (!condition) throw new Error('Test failed: ' + message); }
+function runSmokeTests(){
+  assert(DEFAULT_PARAMS.density === 1, 'default density should be 1');
+  assert(DEFAULT_PARAMS.pointSize === 1, 'default point size should be 1');
+  assert(DEFAULT_PARAMS.zoom === 0.9, 'default zoom should be 0.9');
+  assert(typeof downloadPNG === 'function', 'downloadPNG should exist');
+  assert(typeof undoPaint === 'function', 'undoPaint should exist');
+
+  // Added tests for hover trail initialization and helpers
+  assert(!!trailTexture, 'trailTexture should be initialized (fallback)');
+  assert(typeof setupTrailTexture === 'function', 'setupTrailTexture should exist');
+  assert(typeof uploadTrailTexture === 'function', 'uploadTrailTexture should exist');
+  assert(normalizeHex('#abcdef') === '#ABCDEF', 'normalizeHex should normalize lowercase');
+  assert(normalizeHex('ABCDEF') === '#ABCDEF', 'normalizeHex should add # and normalize');
+  assert(normalizeHex('#abcd') === null, 'normalizeHex should reject short hex');
+  assert(DEFAULT_PARAMS.hoverTrailRadius === 1.0, 'hoverTrailRadius should default to 1.0 (multiplier)');
+  assert(DEFAULT_PARAMS.depth === 1.8, 'default expand particles should be 1.8');
+  assert(DEFAULT_PARAMS.hoverTrailHex === '#864523', 'default hover trail HEX should be #864523');
+  assert(DEFAULT_PARAMS.bgColor === '#0D142B', 'default background should be #0D142B');
+  assert(!!document.getElementById('colorModal'), 'color modal should exist');
+  assert(!!document.getElementById('colorModalPicker'), 'color modal picker should exist');
+  assert(DEFAULT_PARAMS.hoverTrailBlendMode === 'add', 'default hover trail blend mode should be add');
+
+  console.log('Smoke tests passed');
+}
+
+function shader(type, src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+function program(vs, fs){
+  const p = gl.createProgram();
+  gl.attachShader(p, shader(gl.VERTEX_SHADER, vs));
+  gl.attachShader(p, shader(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  return p;
+}
+
+const pointProgram = program(`
+precision highp float;
+attribute vec2 a_pos;
+attribute vec3 a_col;
+attribute float a_bri;
+attribute vec2 a_uv;
+varying vec3 v_col;
+uniform vec2 u_res;
+uniform vec2 u_img;
+uniform float u_pointSize;
+uniform float u_depth;
+uniform float u_hoverX;
+uniform float u_hoverY;
+uniform float u_hoverActive;
+uniform float u_hoverRadius;
+uniform float u_hoverSoftness;
+uniform float u_hoverStrength;
+uniform float u_zoom;
+uniform float u_moveX;
+uniform float u_moveY;
+uniform float u_rotateX;
+uniform float u_rotateY;
+uniform float u_rotateZ;
+uniform float u_perspective;
+uniform sampler2D u_paintTex;
+uniform sampler2D u_trailTex;
+uniform float u_trailBlendMode;
+mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
+mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
+mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,-s,0, s,c,0, 0,0,1); }
+
+vec3 blendScreen(vec3 base, vec3 blend){
+  return 1.0 - (1.0 - base) * (1.0 - blend);
+}
+vec3 blendOverlay(vec3 base, vec3 blend){
+  return mix(
+    2.0 * base * blend,
+    1.0 - 2.0 * (1.0 - base) * (1.0 - blend),
+    step(0.5, base)
+  );
+}
+vec3 applyTrailBlend(vec3 baseCol, vec4 trail, float mode){
+  vec3 tint = clamp(trail.rgb, 0.0, 1.0);
+  float a = clamp(trail.a, 0.0, 1.0);
+
+  // 0 = add (default): preserves light/shadow best, glow-y
+  if (mode < 0.5) {
+    return clamp(baseCol + tint * a, 0.0, 1.0);
+  }
+  // 1 = mix: stronger recolor
+  else if (mode < 1.5) {
+    return clamp(mix(baseCol, tint, a), 0.0, 1.0);
+  }
+  // 2 = screen: bright, soft
+  else if (mode < 2.5) {
+    return clamp(mix(baseCol, blendScreen(baseCol, tint), a), 0.0, 1.0);
+  }
+  // 3 = multiply: darken
+  else if (mode < 3.5) {
+    return clamp(mix(baseCol, baseCol * tint, a), 0.0, 1.0);
+  }
+  // 4 = overlay: contrasty
+  else {
+    return clamp(mix(baseCol, blendOverlay(baseCol, tint), a), 0.0, 1.0);
+  }
+}
+
+void main(){
+  vec2 uv = a_pos / u_img;
+  vec2 xy = vec2(uv.x - 0.5, 0.5 - uv.y) * vec2(u_img.x/u_img.y, 1.0);
+  float aspect = u_res.x / u_res.y;
+  vec2 flatClip = (xy * u_zoom) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
+  float distToMouse = distance(flatClip, vec2(u_hoverX, u_hoverY));
+  float innerRadius = max(0.0, u_hoverRadius - u_hoverSoftness);
+  float hoverMask = 1.0 - smoothstep(innerRadius, u_hoverRadius, distToMouse);
+  hoverMask = hoverMask * hoverMask * (3.0 - 2.0 * hoverMask);
+  hoverMask *= u_hoverActive;
+  float depthAmount = 1.0 - hoverMask * u_hoverStrength;
+  float z = (a_bri - 0.5) * u_depth * depthAmount;
+  vec3 p = vec3(xy, z);
+  p = rotZ(radians(u_rotateZ)) * rotY(radians(u_rotateY)) * rotX(radians(u_rotateX)) * p;
+  p *= u_zoom;
+  float persp = u_perspective / max(0.25, u_perspective - p.z);
+  vec2 clip = (p.xy * persp) / vec2(aspect, 1.0) * 2.0 + vec2(u_moveX, u_moveY);
+  gl_Position = vec4(clip, 0.0, 1.0);
+  gl_PointSize = u_pointSize * persp;
+
+  vec4 paint = texture2D(u_paintTex, a_uv);
+  vec3 baseCol = clamp(mix(a_col, paint.rgb, paint.a), 0.0, 1.0);
+
+  vec4 trail = texture2D(u_trailTex, a_uv);
+  v_col = applyTrailBlend(baseCol, trail, u_trailBlendMode);
+}
+`, `
+precision mediump float;
+varying vec3 v_col;
+void main(){
+  vec2 p = gl_PointCoord - .5;
+  if(dot(p,p) > .25) discard;
+  gl_FragColor = vec4(v_col, 1.0);
+}
+`);
+
+function resize(){
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  W = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+  H = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+  if (canvas.width !== W || canvas.height !== H) {
+    canvas.width = W;
+    canvas.height = H;
+    gl.viewport(0, 0, W, H);
+  }
+}
+window.addEventListener('resize', () => { resize(); render(); });
+
+function syncControls(){
+  for (const k in controlInputs){
+    controlInputs[k].value = params[k];
+    document.getElementById('v_' + k).textContent = Number(params[k].toFixed ? params[k].toFixed(2) : params[k]);
+  }
+  syncBrushSliders();
+  if (hoverTrailEnableEl) hoverTrailEnableEl.checked = !!params.hoverTrailEnabled;
+  if (hoverTrailHexEl) hoverTrailHexEl.value = params.hoverTrailHex;
+  if (hoverTrailBlendSelectEl) hoverTrailBlendSelectEl.value = params.hoverTrailBlendMode;
+}
+function setFrontView(){ params.rotateX = 0; params.rotateY = 0; params.rotateZ = 0; syncControls(); }
+
+function loadImage(src){
+  const img = new Image();
+  img.onload = () => {
+    currentImage = img;
+    setFrontView();
+    currentVideo = null;
+    currentMediaType = 'image';
+    videoEl.pause();
+    buildParticles(img, { resetPaint:true });
+    render();
+    setStatus(`Loaded image ${img.naturalWidth}x${img.naturalHeight} | ${particleCount.toLocaleString()} pixels/points\nView reset to Front`);
+  };
+  img.onerror = () => setStatus('Image load failed. Try another file.');
+  img.src = src;
+}
+function loadFile(file){
+  if (!file) return;
+  hideManualDownload();
+  if (file.type && file.type.startsWith('video/')) { loadVideoFile(file); return; }
+  setStatus('Loading image...');
+  const reader = new FileReader();
+  reader.onload = () => loadImage(reader.result);
+  reader.onerror = () => setStatus('Could not read file.');
+  reader.readAsDataURL(file);
+}
+
+function loadVideoFile(file){
+  setStatus('Loading video...');
+  if (currentVideo && currentVideo._objectUrl) URL.revokeObjectURL(currentVideo._objectUrl);
+  const url = URL.createObjectURL(file);
+  videoEl.src = url;
+  videoEl._objectUrl = url;
+  videoEl.onloadeddata = () => {
+    currentVideo = videoEl;
+    currentImage = null;
+    currentMediaType = 'video';
+    setFrontView();
+    buildParticles(videoEl, { resetPaint:true });
+    render();
+    videoEl.play().catch(() => setStatus('Video loaded. Click Play/Pause video to start playback.'));
+    setStatus(`Loaded video ${videoEl.videoWidth}x${videoEl.videoHeight} | ${particleCount.toLocaleString()} points\nThe point cloud updates from the current video frame.`);
+  };
+  videoEl.onerror = () => setStatus('Video load failed. Try MP4/WebM in Chrome/Edge.');
+  videoEl.load();
+}
+
+function buildParticles(source, options = {}){
+  const resetPaint = options.resetPaint !== false;
+  const isVideo = source instanceof HTMLVideoElement;
+  const sourceW = isVideo ? source.videoWidth : (source.naturalWidth || source.width);
+  const sourceH = isVideo ? source.videoHeight : (source.naturalHeight || source.height);
+  if (!sourceW || !sourceH) return;
+
+  const dimensionsChanged = sourceW !== imgW || sourceH !== imgH;
+  imgW = sourceW;
+  imgH = sourceH;
+
+  const c = document.createElement('canvas');
+  c.width = imgW;
+  c.height = imgH;
+  const ctx = c.getContext('2d', { willReadFrequently:true });
+  ctx.drawImage(source, 0, 0, imgW, imgH);
+
+  const data = ctx.getImageData(0, 0, imgW, imgH).data;
+  const arr = [];
+  const step = Math.max(1, Math.floor(params.density));
+  for(let y=0; y<imgH; y+=step){
+    for(let x=0; x<imgW; x+=step){
+      const i = (y * imgW + x) * 4;
+      const r = data[i] / 255;
+      const g = data[i+1] / 255;
+      const b = data[i+2] / 255;
+      const a = data[i+3] / 255;
+      const bri = (0.2126 * r + 0.7152 * g + 0.0722 * b) * a;
+      if(a > 0.05 && bri >= params.threshold){
+        arr.push(x, y, r, g, b, bri, x / imgW, y / imgH);
+      }
+    }
+  }
+
+  particleCount = arr.length / 8;
+  particles = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, particles);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW);
+
+  if (resetPaint || dimensionsChanged || !paintTexture || !paintBuffer) setupPaintTexture();
+  else uploadPaintTexture();
+
+  if (resetPaint || dimensionsChanged || !trailTexture || !trailCanvas) setupTrailTexture();
+
+  if (particleCount === 0) setStatus('0 points. Lower Threshold to 0 and/or Density to 1.');
+}
+
+function setupPaintTexture(){
+  paintBuffer = new Uint8Array(imgW * imgH * 4);
+  paintUndoStack = [];
+  paintTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, paintTexture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  uploadPaintTexture();
+}
+
+function setupTrailTexture(){
+  // Keep trail resolution reasonable for performance while staying aligned via UVs.
+  const maxDim = 1024;
+  const scale = Math.min(1, maxDim / Math.max(1, Math.max(imgW, imgH)));
+  trailW = Math.max(1, Math.round(imgW * scale));
+  trailH = Math.max(1, Math.round(imgH * scale));
+
+  trailCanvas = document.createElement('canvas');
+  trailCanvas.width = trailW;
+  trailCanvas.height = trailH;
+  trailCtx = trailCanvas.getContext('2d');
+  trailCtx.clearRect(0, 0, trailW, trailH);
+
+  trailTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, trailTexture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  uploadTrailTexture(true);
+}
+
+function uploadTrailTexture(force){
+  if (!trailTexture || !trailCanvas) return;
+  if (!trailDirty && !force) return;
+  gl.bindTexture(gl.TEXTURE_2D, trailTexture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, trailCanvas);
+  trailDirty = false;
+}
+
+function fadeTrail(dt){
+  if (!trailCtx || !params.hoverTrailEnabled) return;
+  const decayPerFrame = Math.max(0, Math.min(0.99, params.hoverTrailDecay));
+  const k = 1 - Math.pow(1 - decayPerFrame, dt * 60);
+  if (k <= 0) return;
+  trailCtx.save();
+  trailCtx.globalCompositeOperation = 'destination-out';
+  trailCtx.fillStyle = `rgba(0,0,0,${k})`;
+  trailCtx.fillRect(0, 0, trailW, trailH);
+  trailCtx.restore();
+  trailDirty = true;
+}
+
+function depositTrail(){
+  if (!trailCtx || !params.hoverTrailEnabled) return;
+  if (hoverActive <= 0.001) return;
+
+  const hex = normalizeHex(params.hoverTrailHex) || '#2B6CFF';
+  const [r,g,b] = hexToRgb01(hex).map(v => Math.round(v * 255));
+  const alpha = Math.max(0, Math.min(1, params.hoverTrailOpacity)) * hoverActive;
+  if (alpha <= 0.001) return;
+
+  // Match trail radius to the hover effect radius in clip-space.
+  // hoverRadius is defined in the same "clip" units as targetHoverX/Y.
+  // Convert clip-space radius -> UV radius using the same inverse transform we use for hoverU/V.
+  const aspect = W / H;
+  const duPerClip = (aspect / (2 * params.zoom)) / (imgW / imgH);
+  const dvPerClip = (1 / (2 * params.zoom));
+  const pxPerClipX = Math.abs(duPerClip) * trailW;
+  const pxPerClipY = Math.abs(dvPerClip) * trailH;
+  const baseRadiusPx = params.hoverRadius * Math.min(pxPerClipX, pxPerClipY);
+  const radiusPx = Math.max(1, Math.round(baseRadiusPx * params.hoverTrailRadius));
+  const x = hoverU * trailW;
+  const y = hoverV * trailH;
+
+  trailCtx.save();
+  trailCtx.globalCompositeOperation = 'source-over';
+  const grad = trailCtx.createRadialGradient(x, y, 0, x, y, radiusPx);
+  // Make edges weaker so they disappear first -> "fade from outside to inside".
+  grad.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  grad.addColorStop(0.35, `rgba(${r},${g},${b},${alpha * 0.6})`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  trailCtx.fillStyle = grad;
+  trailCtx.beginPath();
+  trailCtx.arc(x, y, radiusPx, 0, Math.PI * 2);
+  trailCtx.fill();
+  trailCtx.restore();
+
+  trailDirty = true;
+}
+
+function uploadPaintTexture(){
+  if (!paintTexture || !paintBuffer) return;
+  gl.bindTexture(gl.TEXTURE_2D, paintTexture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, imgW, imgH, 0, gl.RGBA, gl.UNSIGNED_BYTE, paintBuffer);
+}
+
+function pushPaintUndo(){
+  if (!paintBuffer) return;
+  paintUndoStack.push(new Uint8Array(paintBuffer));
+  if (paintUndoStack.length > 20) paintUndoStack.shift();
+}
+
+function undoPaint(){
+  if (!paintUndoStack.length) { setStatus('Nothing to undo.'); return; }
+  paintBuffer = paintUndoStack.pop();
+  uploadPaintTexture();
+  render();
+  setStatus(`Undo paint. ${paintUndoStack.length} undo step(s) left.`);
+}
+
+function normalizeHex(value){
+  let clean = String(value || '').trim();
+  if (!clean.startsWith('#')) clean = '#' + clean;
+  if (/^#[0-9a-fA-F]{6}$/.test(clean)) return clean.toUpperCase();
+  return null;
+}
+
+function hexToRgb01(hex){
+  const normalized = normalizeHex(hex) || '#000000';
+  const clean = normalized.replace('#', '');
+  const num = parseInt(clean, 16);
+  return [((num >> 16) & 255)/255, ((num >> 8) & 255)/255, (num & 255)/255];
+}
+
+
+function getHoverTrailBlendModeCode(mode){
+  switch (mode) {
+    case 'mix': return 1;
+    case 'screen': return 2;
+    case 'multiply': return 3;
+    case 'overlay': return 4;
+    case 'add':
+    default:
+      return 0;
+  }
+}
+
+function applyCssBackground(){
+  stageEl.style.background = params.bgColor;
+  canvas.style.background = 'transparent';
+  if (params.bgImageEnabled && params.bgImageUrl) {
+    bgImageLayerEl.style.display = 'block';
+    bgImageLayerEl.style.backgroundImage = `url("${params.bgImageUrl}")`;
+  } else {
+    bgImageLayerEl.style.display = 'none';
+    bgImageLayerEl.style.backgroundImage = 'none';
+  }
+  toggleBgImageEl.textContent = params.bgImageEnabled ? 'Background image on' : 'Background image off';
+}
+
+function drawPoints(){
+  if(!particles || particleCount === 0) return;
+  gl.useProgram(pointProgram);
+  gl.bindBuffer(gl.ARRAY_BUFFER, particles);
+
+  const stride = 8 * 4;
+
+  const pos = gl.getAttribLocation(pointProgram, 'a_pos');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, stride, 0);
+
+  const col = gl.getAttribLocation(pointProgram, 'a_col');
+  gl.enableVertexAttribArray(col);
+  gl.vertexAttribPointer(col, 3, gl.FLOAT, false, stride, 2 * 4);
+
+  const bri = gl.getAttribLocation(pointProgram, 'a_bri');
+  gl.enableVertexAttribArray(bri);
+  gl.vertexAttribPointer(bri, 1, gl.FLOAT, false, stride, 5 * 4);
+
+  const uvAttr = gl.getAttribLocation(pointProgram, 'a_uv');
+  gl.enableVertexAttribArray(uvAttr);
+  gl.vertexAttribPointer(uvAttr, 2, gl.FLOAT, false, stride, 6 * 4);
+
+  const uni = n => gl.getUniformLocation(pointProgram, n);
+  gl.uniform2f(uni('u_res'), W, H);
+  gl.uniform2f(uni('u_img'), imgW, imgH);
+  gl.uniform1f(uni('u_pointSize'), params.pointSize);
+  gl.uniform1f(uni('u_depth'), params.depth);
+  gl.uniform1f(uni('u_hoverX'), hoverX);
+  gl.uniform1f(uni('u_hoverY'), hoverY);
+  gl.uniform1f(uni('u_hoverActive'), hoverActive);
+  gl.uniform1f(uni('u_hoverRadius'), params.hoverRadius);
+  gl.uniform1f(uni('u_hoverSoftness'), params.hoverSoftness);
+  gl.uniform1f(uni('u_hoverStrength'), params.hoverStrength);
+  gl.uniform1f(uni('u_zoom'), params.zoom);
+  gl.uniform1f(uni('u_moveX'), params.moveX);
+  gl.uniform1f(uni('u_moveY'), params.moveY);
+  gl.uniform1f(uni('u_rotateX'), params.rotateX);
+  gl.uniform1f(uni('u_rotateY'), params.rotateY);
+  gl.uniform1f(uni('u_rotateZ'), params.rotateZ);
+  gl.uniform1f(uni('u_perspective'), params.perspective);
+
+  gl.uniform1f(uni('u_trailBlendMode'), getHoverTrailBlendModeCode(params.hoverTrailBlendMode));
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, paintTexture);
+  gl.uniform1i(uni('u_paintTex'), 0);
+
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, trailTexture);
+  gl.uniform1i(uni('u_trailTex'), 1);
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.drawArrays(gl.POINTS, 0, particleCount);
+}
+
+function render(){
+  resize();
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  drawPoints();
+}
+
+function easeInOut01(t){ t = Math.max(0, Math.min(1, t)); return t*t*(3 - 2*t); }
+function loop(now){
+  if (currentMediaType === 'video' && currentVideo && !currentVideo.paused && !currentVideo.ended && currentVideo.readyState >= 2) {
+    const frameInterval = 1000 / VIDEO_POINT_FPS;
+    if (now - lastVideoBuildTime >= frameInterval) {
+      buildParticles(currentVideo, { resetPaint:false });
+      lastVideoBuildTime = now;
+    }
+  }
+
+  const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+  lastFrameTime = now;
+
+  const ease = easeInOut01(params.hoverEase);
+  const follow = 1 - Math.pow(1 - ease, dt * 60);
+  hoverX += (targetHoverX - hoverX) * follow;
+  hoverY += (targetHoverY - hoverY) * follow;
+  hoverActive += (targetHoverActive - hoverActive) * follow;
+
+  // Hover color trail (with decay)
+  fadeTrail(dt);
+  depositTrail();
+  uploadTrailTexture(false);
+
+  if (autoSpin) { params.rotateY += params.spinSpeed * 60 * dt; syncControls(); }
+  render();
+  requestAnimationFrame(loop);
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportCanvasViaReadPixels(){
+  render();
+  const pixels = new Uint8Array(W * H * 4);
+  gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+  const out = document.createElement('canvas');
+  out.width = W;
+  out.height = H;
+  const ctx = out.getContext('2d');
+  const imageData = ctx.createImageData(W, H);
+  for (let y = 0; y < H; y++) {
+    const srcStart = y * W * 4;
+    const dstStart = (H - 1 - y) * W * 4;
+    imageData.data.set(pixels.subarray(srcStart, srcStart + W * 4), dstStart);
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return out;
+}
+
+function downloadPNG(){
+  setStatus('Preparing PNG...');
+  hideManualDownload();
+  if ((!currentImage && !currentVideo) || !particles || particleCount === 0) { setStatus('Load an image or video before exporting PNG.'); return; }
+  const filename = `point-cloud-${Date.now()}.png`;
+  try {
+    const dataURL = exportCanvasViaReadPixels().toDataURL('image/png');
+    showManualDownload(dataURL, filename);
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setStatus('PNG downloaded from the current frame (transparent background).');
+  } catch (err) {
+    setStatus('PNG export failed: ' + err.message);
+  }
+}
+
+function startRecording(){
+  if (!canvas.captureStream || !window.MediaRecorder) { setStatus('Video recording is not supported in this browser. Try Chrome/Edge.'); return; }
+  recordedChunks = [];
+  const stream = canvas.captureStream(60);
+  const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+  recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12000000 });
+  recorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+  recorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type:'video/webm' });
+    downloadBlob(blob, `point-cloud-${Date.now()}.webm`);
+    document.getElementById('record').textContent = 'Start video';
+    document.getElementById('record').classList.remove('recording');
+    setStatus('Video downloaded as WEBM.');
+  };
+  recorder.start();
+  document.getElementById('record').textContent = 'Stop video';
+  document.getElementById('record').classList.add('recording');
+  setStatus('Recording video... click Stop video to download.');
+}
+
+function stopRecording(){ if (recorder && recorder.state !== 'inactive') recorder.stop(); }
+
+const controlDefs = [
+  ['depth','Expand Particles',0,1.8,0.01,false,'depth'],
+  ['density','Density / pixel step',1,10,1,true,'sample'],
+  ['threshold','Threshold',0,0.9,0.01,true,'sample'],
+  ['pointSize','Point size',0.3,5,0.05,false,'sample'],
+  ['hoverRadius','Hover radius',0.01,2.0,0.01,false,'hover'],
+  ['hoverSoftness','Hover softness',0.01,0.8,0.01,false,'hover'],
+  ['hoverStrength','Hover strength',0,1,0.01,false,'hover'],
+  ['hoverEase','Hover ease',0.01,1,0.01,false,'hover'],
+  ['hoverTrailOpacity','Hover trail opacity',0,1,0.01,false,'hover'],
+  ['hoverTrailRadius','Hover trail size (x)',0.2,2.5,0.01,false,'hover'],
+  ['hoverTrailDecay','Hover trail decay',0.01,0.5,0.01,false,'hover'],
+  ['moveX','Move X',-2,2,0.01,false,'transform'],
+  ['moveY','Move Y',-2,2,0.01,false,'transform'],
+  ['rotateX','Rotate X',-180,180,1,false,'transform'],
+  ['rotateY','Rotate Y',-180,180,1,false,'transform'],
+  ['rotateZ','Rotate Z',-180,180,1,false,'transform'],
+  ['zoom','Zoom',0.35,2.4,0.01,false,'transform'],
+  ['perspective','Perspective',0.4,4.0,0.01,false,'transform']
+];
+
+const controlGroups = {
+  depth: document.getElementById('depthControls'),
+  sample: document.getElementById('sampleControls'),
+  hover: document.getElementById('hoverControls'),
+  transform: document.getElementById('transformControls')
+};
+
+function setParamToDefault(key, rebuild){
+  params[key] = DEFAULT_PARAMS[key];
+  syncControls();
+  if(rebuild && (currentImage || currentVideo)) {
+    buildParticles(currentImage || currentVideo, { resetPaint: currentMediaType !== 'video' });
+    setStatus(`Loaded ${imgW}x${imgH} | ${particleCount.toLocaleString()} pixels/points`);
+  }
+  render();
+}
+
+for(const [key, label, min, max, step, rebuild, group] of controlDefs){
+  const el = document.createElement('label');
+  el.innerHTML = `${label} <span class="value" id="v_${key}">${params[key]}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${params[key]}" title="Double-click to reset">`;
+  if (key === 'depth') el.classList.add('primary-control');
+  const input = el.querySelector('input');
+  controlInputs[key] = input;
+  input.addEventListener('input', e => {
+    params[key] = parseFloat(e.target.value);
+    document.getElementById('v_' + key).textContent = params[key];
+    if(rebuild && (currentImage || currentVideo)) {
+      buildParticles(currentImage || currentVideo, { resetPaint: currentMediaType !== 'video' });
+      setStatus(`Loaded ${imgW}x${imgH} | ${particleCount.toLocaleString()} pixels/points`);
+    }
+    render();
+  });
+  input.addEventListener('dblclick', e => { e.preventDefault(); setParamToDefault(key, rebuild); });
+  controlGroups[group].appendChild(el);
+}
+
+// Extra hover-trail controls (enable + HEX)
+(function mountHoverTrailControls(){
+  const host = controlGroups.hover;
+  if (!host) return;
+  const wrap = document.createElement('div');
+  wrap.style.marginTop = '10px';
+
+  const enableLabel = document.createElement('label');
+  enableLabel.style.display = 'flex';
+  enableLabel.style.alignItems = 'center';
+  enableLabel.style.gap = '10px';
+  enableLabel.style.margin = '10px 0';
+  enableLabel.style.color = '#d6d6d6';
+  enableLabel.style.fontSize = '13px';
+  enableLabel.textContent = 'Hover trail';
+
+  hoverTrailEnableEl = document.createElement('input');
+  hoverTrailEnableEl.type = 'checkbox';
+  hoverTrailEnableEl.checked = !!params.hoverTrailEnabled;
+  hoverTrailEnableEl.style.transform = 'scale(1.1)';
+  hoverTrailEnableEl.addEventListener('change', e => {
+    params.hoverTrailEnabled = !!e.target.checked;
+    if (!params.hoverTrailEnabled && trailCtx) {
+      trailCtx.clearRect(0, 0, trailW, trailH);
+      trailDirty = true;
+      uploadTrailTexture(true);
+      render();
+    }
+  });
+  enableLabel.prepend(hoverTrailEnableEl);
+
+  const hexLabel = document.createElement('label');
+  hexLabel.textContent = 'Hover trail HEX';
+  hoverTrailHexEl = document.createElement('input');
+  hoverTrailHexEl.id = 'hoverTrailHex';
+  hoverTrailHexEl.type = 'text';
+  hoverTrailHexEl.value = params.hoverTrailHex;
+  hoverTrailHexEl.placeholder = '#2B6CFF';
+  hoverTrailHexEl.maxLength = 7;
+  hoverTrailHexEl.style.width = '100%';
+  hoverTrailHexEl.style.boxSizing = 'border-box';
+  hoverTrailHexEl.style.padding = '9px 10px';
+  hoverTrailHexEl.style.borderRadius = '10px';
+  hoverTrailHexEl.style.border = '1px solid #383842';
+  hoverTrailHexEl.style.background = '#17171c';
+  hoverTrailHexEl.style.color = '#eee';
+  hoverTrailHexEl.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+  hoverTrailHexEl.style.direction = 'ltr';
+  hoverTrailHexEl.addEventListener('input', e => {
+    const normalized = normalizeHex(e.target.value);
+    if (normalized) {
+      params.hoverTrailHex = normalized;
+      e.target.style.borderColor = '#383842';
+    } else {
+      e.target.style.borderColor = '#ff4d4d';
+    }
+  });
+  hoverTrailHexEl.addEventListener('blur', e => {
+    params.hoverTrailHex = normalizeHex(e.target.value) || params.hoverTrailHex;
+    e.target.value = params.hoverTrailHex;
+    e.target.style.borderColor = '#383842';
+  });
+  hexLabel.appendChild(hoverTrailHexEl);
+
+  hoverTrailPickBtnEl = document.createElement('button');
+  hoverTrailPickBtnEl.type = 'button';
+  hoverTrailPickBtnEl.className = 'secondary';
+  hoverTrailPickBtnEl.textContent = 'בחר צבע';
+  hoverTrailPickBtnEl.addEventListener('click', () => {
+    openColorModal({
+      title: 'בחר צבע לשובל (Hover trail)',
+      initial: params.hoverTrailHex,
+      onCommit: (hex) => {
+        params.hoverTrailHex = hex;
+        if (hoverTrailHexEl) {
+          hoverTrailHexEl.value = hex;
+          hoverTrailHexEl.style.borderColor = '#383842';
+        }
+      }
+    });
+  });
+  wrap.appendChild(hoverTrailPickBtnEl);
+
+
+  const blendLabel = document.createElement('label');
+  blendLabel.textContent = 'Hover trail blend';
+  hoverTrailBlendSelectEl = document.createElement('select');
+  hoverTrailBlendSelectEl.innerHTML = `
+    <option value="add">Add</option>
+    <option value="mix">Mix</option>
+    <option value="screen">Screen</option>
+    <option value="multiply">Multiply</option>
+    <option value="overlay">Overlay</option>
+  `;
+  hoverTrailBlendSelectEl.value = params.hoverTrailBlendMode || 'add';
+  hoverTrailBlendSelectEl.addEventListener('change', (e) => {
+    params.hoverTrailBlendMode = e.target.value;
+    render();
+  });
+  blendLabel.appendChild(hoverTrailBlendSelectEl);
+  wrap.appendChild(blendLabel);
+
+
+  wrap.appendChild(enableLabel);
+  wrap.appendChild(hexLabel);
+  host.appendChild(wrap);
+})();
+
+function bindBrushRange(id, key){
+  const input = document.getElementById(id);
+  const valEl = document.getElementById('v_' + id);
+  input.value = params[key];
+  valEl.textContent = params[key];
+  input.addEventListener('input', e => {
+    params[key] = parseFloat(e.target.value);
+    valEl.textContent = params[key].toFixed(2);
+    render();
+  });
+}
+
+function syncBrushSliders(){
+  for (const id of ['brushRadius','brushFeather','brushOpacity']) {
+    const input = document.getElementById(id);
+    const valEl = document.getElementById('v_' + id);
+    if (input && valEl) {
+      input.value = params[id];
+      valEl.textContent = Number(params[id].toFixed ? params[id].toFixed(2) : params[id]);
+    }
+  }
+}
+
+['brushRadius','brushFeather','brushOpacity'].forEach(id => bindBrushRange(id, id));
+
+function smoothstep(edge0, edge1, x){
+  const t = Math.max(0, Math.min(1, (x - edge0) / Math.max(0.0001, edge1 - edge0)));
+  return t*t*(3 - 2*t);
+}
+
+function paintAtCanvasPoint(clientX, clientY){
+  if (paintModeEl.value !== 'paint' || !paintBuffer || (!currentImage && !currentVideo)) return;
+  const rect = canvas.getBoundingClientRect();
+  const nx = (clientX - rect.left) / rect.width;
+  const ny = (clientY - rect.top) / rect.height;
+  const xClip = nx * 2 - 1;
+  const yClip = 1 - ny * 2;
+  const aspect = W / H;
+  const ux = (((xClip - params.moveX) / 2) * aspect / params.zoom) / (imgW / imgH) + 0.5;
+  const uy = 0.5 - (((yClip - params.moveY) / 2) / params.zoom);
+  const cx = Math.round(ux * imgW);
+  const cy = Math.round(uy * imgH);
+  if (cx < 0 || cx >= imgW || cy < 0 || cy >= imgH) return;
+
+  const color = hexToRgb01(activeBrushColor).map(v => Math.round(v * 255));
+  const radiusPx = Math.max(1, Math.round(params.brushRadius * Math.min(imgW, imgH) * 0.5));
+  const featherPx = Math.max(0, Math.round(params.brushFeather * Math.min(imgW, imgH) * 0.5));
+  const inner = Math.max(0, radiusPx - featherPx);
+  const r2 = radiusPx * radiusPx;
+  const minX = Math.max(0, cx - radiusPx);
+  const maxX = Math.min(imgW - 1, cx + radiusPx);
+  const minY = Math.max(0, cy - radiusPx);
+  const maxY = Math.min(imgH - 1, cy + radiusPx);
+
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const dx = x - cx;
+      const dy = y - cy;
+      const d2 = dx*dx + dy*dy;
+      if (d2 > r2) continue;
+      const d = Math.sqrt(d2);
+      let mask = 1 - smoothstep(inner, radiusPx, d);
+      mask = mask * mask * (3 - 2 * mask);
+      const amount = Math.round(mask * params.brushOpacity * 255);
+      if (amount <= 0) continue;
+      const i = (y * imgW + x) * 4;
+      const t = amount / 255;
+      paintBuffer[i] = Math.round(paintBuffer[i] * (1 - t) + color[0] * t);
+      paintBuffer[i+1] = Math.round(paintBuffer[i+1] * (1 - t) + color[1] * t);
+      paintBuffer[i+2] = Math.round(paintBuffer[i+2] * (1 - t) + color[2] * t);
+      paintBuffer[i+3] = Math.max(paintBuffer[i+3], amount);
+    }
+  }
+  uploadPaintTexture();
+}
+
+canvas.addEventListener('pointerdown', e => {
+  if (paintModeEl.value === 'paint') {
+    isPainting = true;
+    pushPaintUndo();
+    canvas.setPointerCapture(e.pointerId);
+    paintAtCanvasPoint(e.clientX, e.clientY);
+    render();
+  }
+});
+
+canvas.addEventListener('pointerup', e => {
+  isPainting = false;
+  try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+});
+
+canvas.addEventListener('pointermove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const nx = (e.clientX - rect.left) / rect.width;
+  const ny = (e.clientY - rect.top) / rect.height;
+  targetHoverX = nx * 2 - 1;
+  targetHoverY = 1 - ny * 2;
+  targetHoverActive = 1;
+
+  // Track UV for hover trail
+  if (currentImage || currentVideo) {
+    const xClip = targetHoverX;
+    const yClip = targetHoverY;
+    const aspect = W / H;
+    const u = (((xClip - params.moveX) / 2) * aspect / params.zoom) / (imgW / imgH) + 0.5;
+    const v = 0.5 - (((yClip - params.moveY) / 2) / params.zoom);
+    hoverU = Math.max(0, Math.min(1, u));
+    hoverV = Math.max(0, Math.min(1, v));
+  }
+
+  if (paintModeEl.value === 'paint' && isPainting) paintAtCanvasPoint(e.clientX, e.clientY);
+  render();
+});
+
+canvas.addEventListener('pointerleave', () => { targetHoverActive = 0; render(); });
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  params.zoom = Math.max(0.35, Math.min(2.4, params.zoom - e.deltaY * 0.001));
+  syncControls();
+  render();
+}, { passive:false });
+
+document.getElementById('file').addEventListener('change', e => { const f = e.target.files[0]; if(f) loadFile(f); });
+
+document.getElementById('playPause').onclick = () => {
+  if (!currentVideo) { setStatus('Load a video first.'); return; }
+  if (currentVideo.paused) { currentVideo.play(); setStatus('Video playing.'); }
+  else { currentVideo.pause(); buildParticles(currentVideo, { resetPaint:false }); render(); setStatus('Video paused.'); }
+};
+
+document.getElementById('seekStart').onclick = () => {
+  if (!currentVideo) { setStatus('Load a video first.'); return; }
+  currentVideo.currentTime = 0;
+  currentVideo.play();
+  setStatus('Video restarted.');
+};
+
+document.getElementById('reset').onclick = () => { setFrontView(); render(); };
+document.getElementById('downloadPng').onclick = downloadPNG;
+document.getElementById('record').onclick = () => { if (recorder && recorder.state === 'recording') stopRecording(); else startRecording(); };
+document.getElementById('spin').onclick = e => { autoSpin = !autoSpin; e.target.textContent = autoSpin ? 'Auto spin on' : 'Auto spin off'; };
+
+bgHexEl.addEventListener('input', e => {
+  const normalized = normalizeHex(e.target.value);
+  if (normalized) {
+    params.bgColor = normalized;
+    e.target.style.borderColor = '#383842';
+    applyCssBackground();
+    render();
+  } else {
+    e.target.style.borderColor = '#ff4d4d';
+  }
+});
+
+bgHexEl.addEventListener('blur', e => {
+  const normalized = normalizeHex(e.target.value) || params.bgColor;
+  params.bgColor = normalized;
+  e.target.value = normalized;
+  e.target.style.borderColor = '#383842';
+  applyCssBackground();
+  render();
+});
+
+// Add a native color-picker modal button for background
+(function mountBgColorPicker(){
+  const bgLabel = bgHexEl && bgHexEl.closest('label');
+  if (!bgLabel) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'secondary';
+  btn.textContent = 'בחר צבע';
+  btn.style.marginTop = '0';
+  btn.addEventListener('click', () => {
+    openColorModal({
+      title: 'בחר צבע לרקע',
+      initial: params.bgColor,
+      onCommit: (hex) => {
+        params.bgColor = hex;
+        bgHexEl.value = hex;
+        bgHexEl.style.borderColor = '#383842';
+        applyCssBackground();
+        render();
+      }
+    });
+  });
+  // Insert under the HEX input
+  bgLabel.appendChild(btn);
+})();
+
+function renderBrushSwatches(){
+  brushSwatchesEl.innerHTML = '';
+  for (const color of brushColors) {
+    const swatch = document.createElement('button');
+    swatch.type = 'button';
+    swatch.className = 'swatch' + (color === activeBrushColor ? ' active' : '');
+    swatch.style.background = color;
+    swatch.title = color;
+    swatch.addEventListener('click', () => {
+      activeBrushColor = color;
+      brushHexEl.value = color;
+      renderBrushSwatches();
+    });
+    brushSwatchesEl.appendChild(swatch);
+  }
+}
+
+addBrushColorEl.addEventListener('click', () => {
+  const normalized = normalizeHex(brushHexEl.value);
+  if (!normalized) { brushHexEl.style.borderColor = '#ff4d4d'; return; }
+  brushHexEl.style.borderColor = '#383842';
+  activeBrushColor = normalized;
+  if (!brushColors.includes(normalized)) brushColors.push(normalized);
+  renderBrushSwatches();
+});
+
+brushHexEl.addEventListener('input', e => {
+  const normalized = normalizeHex(e.target.value);
+  if (normalized) {
+    activeBrushColor = normalized;
+    e.target.style.borderColor = '#383842';
+  } else {
+    e.target.style.borderColor = '#ff4d4d';
+  }
+});
+
+undoPaintEl.addEventListener('click', undoPaint);
+
+clearPaintEl.addEventListener('click', () => {
+  if (!paintBuffer) return;
+  pushPaintUndo();
+  paintBuffer.fill(0);
+  uploadPaintTexture();
+  render();
+  setStatus('Color brush paint cleared.');
+});
+
+bgImageFileEl.addEventListener('click', () => { bgImageFileEl.value = ''; });
+
+bgImageFileEl.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  setStatus('Loading background image...');
+  const reader = new FileReader();
+  reader.onload = () => {
+    params.bgImageUrl = reader.result;
+    params.bgImageEnabled = true;
+    applyCssBackground();
+    render();
+    setStatus(`Background image updated: ${file.name}\nIt is preview-only and will not be included in transparent PNG export.`);
+  };
+  reader.onerror = () => setStatus('Could not load background image.');
+  reader.readAsDataURL(file);
+});
+
+toggleBgImageEl.addEventListener('click', () => {
+  params.bgImageEnabled = !params.bgImageEnabled;
+  applyCssBackground();
+});
+
+resize();
+syncControls();
+applyCssBackground();
+renderBrushSwatches();
+render();
+runSmokeTests();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

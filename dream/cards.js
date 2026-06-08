@@ -1,8 +1,19 @@
 (function () {
   const COMPACT_CLASS = "is-compact";
-  const ANIMATING_CLASS = "is-cards-animating";
   const SCRUB = 1.2;
-  const PIN_OFFSET = 100;
+  const PIN_OFFSET = 200;
+  const HOLD_RATIO = 0.5;
+
+  const FLIP_SELECTOR = [
+    ".ai_cards-wrapper",
+    ".ai_card",
+    ".ai_inner-large",
+    ".ai_inner-small",
+    ".ai_video-wrapper",
+  ].join(", ");
+
+  const FLIP_PROPS =
+    "opacity,padding,gap,width,height,minHeight,borderRadius,fontSize";
 
   function prefersReducedMotion() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -15,13 +26,6 @@
   function setCompact(scrollEl, compact) {
     getCards(scrollEl).forEach((card) => {
       card.classList.toggle(COMPACT_CLASS, compact);
-    });
-  }
-
-  function setAnimating(scrollEl, animating) {
-    scrollEl.classList.toggle(ANIMATING_CLASS, animating);
-    getCards(scrollEl).forEach((card) => {
-      card.classList.toggle(ANIMATING_CLASS, animating);
     });
   }
 
@@ -45,62 +49,98 @@
     return collapsed;
   }
 
-  function measureHeights(scrollEl) {
+  function measureScrollDistance(scrollEl) {
     setCompact(scrollEl, false);
-    setAnimating(scrollEl, false);
 
     const expanded = measureWrapperHeight(scrollEl);
     const collapsed = measureCollapsedHeight(scrollEl);
+    const collapseDistance = Math.max(280, expanded - collapsed);
 
-    return { expanded, collapsed, pinDistance: Math.max(240, expanded - collapsed) };
+    setCompact(scrollEl, false);
+    return collapseDistance * 2;
+  }
+
+  function clearFlipTransforms(targets) {
+    gsap.set(targets, { clearProps: "all" });
+  }
+
+  function buildFlip(scrollEl) {
+    const targets = scrollEl.querySelectorAll(FLIP_SELECTOR);
+
+    setCompact(scrollEl, false);
+    const flipState = Flip.getState(targets, { props: FLIP_PROPS });
+    setCompact(scrollEl, true);
+
+    const tween = Flip.from(flipState, {
+      ease: "power2.inOut",
+      nested: true,
+      absolute: true,
+      paused: true,
+      duration: 1,
+      onLeave: (elements) =>
+        gsap.to(elements, { opacity: 0, duration: 0.25, overwrite: "auto" }),
+      onEnter: (elements) =>
+        gsap.fromTo(
+          elements,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.25, overwrite: "auto" }
+        ),
+    });
+
+    setCompact(scrollEl, false);
+    tween.progress(0).pause();
+
+    return { targets, tween };
   }
 
   function syncProgress(scrollEl, state, progress) {
     const p = Math.max(0, Math.min(1, progress));
-    const { wrapper, cards, largeInners, smallInners, expanded, collapsed } = state;
+    const { targets, flipTween } = state;
 
     if (p <= 0) {
       setCompact(scrollEl, false);
-      setAnimating(scrollEl, false);
-      gsap.set(wrapper, { height: expanded, clearProps: "height" });
-      gsap.set(largeInners, { opacity: 1, clearProps: "opacity" });
-      gsap.set(smallInners, { opacity: 0, pointerEvents: "none", clearProps: "opacity,pointerEvents" });
+      flipTween.progress(0).pause();
+      clearFlipTransforms(targets);
       return;
     }
 
     if (p >= 1) {
-      setAnimating(scrollEl, false);
       setCompact(scrollEl, true);
-      gsap.set(wrapper, { clearProps: "height" });
-      gsap.set(largeInners, { clearProps: "opacity" });
-      gsap.set(smallInners, { clearProps: "opacity,pointerEvents" });
+      flipTween.progress(1).pause();
+      clearFlipTransforms(targets);
       return;
     }
 
-    setCompact(scrollEl, false);
-    setAnimating(scrollEl, true);
-    gsap.set(wrapper, { height: expanded + (collapsed - expanded) * p });
-    gsap.set(largeInners, { clearProps: "opacity" });
-    gsap.set(smallInners, { opacity: 1, pointerEvents: "auto", clearProps: "opacity,pointerEvents" });
+    if (p < HOLD_RATIO) {
+      setCompact(scrollEl, false);
+      flipTween.progress(0).pause();
+      clearFlipTransforms(targets);
+      return;
+    }
+
+    setCompact(scrollEl, true);
+    const morph = (p - HOLD_RATIO) / (1 - HOLD_RATIO);
+    flipTween.progress(morph).pause();
   }
 
   function initScrollSection(scrollEl, index, total) {
     const wrapper = scrollEl.querySelector(".ai_cards-wrapper");
     const cards = getCards(scrollEl);
-    const largeInners = scrollEl.querySelectorAll(".ai_inner-large");
-    const smallInners = scrollEl.querySelectorAll(".ai_inner-small");
-    if (!wrapper || !cards.length || !largeInners.length || !smallInners.length) return;
+    if (!wrapper || !cards.length) return;
+    if (!scrollEl.querySelector(".ai_inner-large, .ai_inner-small")) return;
 
-    const heights = measureHeights(scrollEl);
-    const state = { wrapper, cards, largeInners, smallInners, ...heights };
+    const scrollDistance = measureScrollDistance(scrollEl);
+    const { targets, tween: flipTween } = buildFlip(scrollEl);
+    const state = { targets, flipTween };
 
-    syncProgress(scrollEl, state, 0);
+    setCompact(scrollEl, false);
+    clearFlipTransforms(targets);
 
     const trigger = ScrollTrigger.create({
       id: total > 1 ? `dream-cards-${index}` : "dream-cards",
       trigger: scrollEl,
       start: `top ${PIN_OFFSET}px`,
-      end: `+=${heights.pinDistance}`,
+      end: `+=${scrollDistance}`,
       scrub: SCRUB,
       pin: true,
       pinSpacing: true,
@@ -114,12 +154,12 @@
   }
 
   function initDreamCards() {
-    if (!window.gsap || !window.ScrollTrigger) return;
+    if (!window.gsap || !window.ScrollTrigger || !window.Flip) return;
 
     const sections = document.querySelectorAll(".scroll-component");
     if (!sections.length) return;
 
-    gsap.registerPlugin(ScrollTrigger);
+    gsap.registerPlugin(ScrollTrigger, Flip);
 
     sections.forEach((scrollEl, index) => {
       if (scrollEl.dataset.dreamCardsInit === "true") return;
@@ -127,7 +167,6 @@
 
       if (prefersReducedMotion()) {
         setCompact(scrollEl, true);
-        setAnimating(scrollEl, false);
         return;
       }
 

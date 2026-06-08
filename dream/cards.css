@@ -1,6 +1,6 @@
 /* Supplement for dream-new.webflow.io scroll cards.
    Webflow base: dream-new.webflow.shared.49044d7d6.css
-   cards.js toggles .is-cards-animating / .is-compact on each .ai_card */
+   cards.js uses GSAP Flip + .is-compact on .ai_card */
 
 .scroll-component {
   min-height: 100vh;
@@ -10,7 +10,6 @@
 
 .scroll-component .ai_cards-wrapper {
   flex-shrink: 0;
-  overflow: hidden;
 }
 
 .scroll-component .ai_video-wrapper {
@@ -40,31 +39,16 @@
   object-fit: cover;
 }
 
-/* Initial + settled expanded: large only */
+/* Default + pre-scroll: large only */
 .ai_card .ai_inner-small {
   display: none;
 }
 
-/* Scroll shrink: hide large immediately, show small */
-.ai_card.is-cards-animating .ai_inner-large {
-  display: none;
-}
-
-.ai_card.is-cards-animating .ai_inner-small {
-  display: flex;
-  position: relative;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Settled compact: small only */
+/* Compact end state */
 .ai_card.is-compact .ai_inner-large {
   display: none;
 }
 
 .ai_card.is-compact .ai_inner-small {
   display: flex;
-  position: relative;
-  opacity: 1;
-  pointer-events: auto;
 }
