@@ -21,36 +21,18 @@
   margin-right: auto;
 }
 
-.scroll-component .ai_card,
-.scroll-component .ai_cards {
+.scroll-component .ai_card {
   position: relative;
   flex: 1;
   min-height: 28rem;
   overflow: hidden;
 }
 
-/* Future: dedicated hero layer */
-.scroll-component .ai_card-hero {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 44rem;
-  max-width: calc(100% - 2rem);
-  margin-left: -22rem;
-  transform-origin: top center;
-  z-index: 1;
-}
-
-.scroll-component .ai_card-tab {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
+.scroll-component .ai_card-inner {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.625rem;
-  opacity: 0;
-  pointer-events: none;
+  height: 100%;
 }
 
 .scroll-component .ai_video-wrapper {
@@ -74,7 +56,8 @@
   pointer-events: auto;
 }
 
-.scroll-component .ai_video-wrapper video {
+.scroll-component .ai_video-wrapper video,
+.scroll-component .ai_video-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -90,15 +73,9 @@
   border-radius: 1.25rem;
 }
 
-.scroll-component.is-compact .ai_card,
-.scroll-component.is-compact .ai_cards {
+.scroll-component.is-compact .ai_card {
   min-height: 3rem;
   border-radius: 0.625rem;
-}
-
-/* Current Webflow card content */
-.scroll-component.is-compact .ai_item-p {
-  display: none;
 }
 
 .scroll-component.is-compact .ai_card-inner {
@@ -115,30 +92,12 @@
   height: 1.25rem;
 }
 
-.scroll-component.is-compact .ai_item-title {
+.scroll-component.is-compact .ai-card-heading {
   font-size: 1rem;
   margin: 0;
   white-space: nowrap;
 }
 
-/* Transitional: separate .ai_tabs row stacks on cards until tab UI is inside each card */
-.scroll-component.is-compact {
-  position: relative;
-}
-
-.scroll-component.is-compact .ai_tabs {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 30rem;
-  max-width: calc(100vw - 2rem);
-  z-index: 5;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.scroll-component.is-compact .ai_card-tab {
-  opacity: 1;
-  pointer-events: auto;
+.scroll-component.is-compact .ai_card-sub {
+  display: none;
 }
