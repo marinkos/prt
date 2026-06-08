@@ -1,6 +1,6 @@
 /* Supplement for dream-new.webflow.io scroll cards.
    Webflow base: dream-new.webflow.shared.49044d7d6.css
-   cards.js toggles .is-compact on each .ai_card at scroll end */
+   cards.js toggles .is-cards-animating / .is-compact on each .ai_card */
 
 .scroll-component {
   min-height: 100vh;
@@ -40,22 +40,32 @@
   object-fit: cover;
 }
 
-/* Layer both inners so scroll can crossfade them */
+/* Initial + settled expanded: large only */
 .ai_card .ai_inner-small {
+  display: none;
+}
+
+/* Scroll crossfade: both layers visible, opacity driven by JS */
+.ai_card.is-cards-animating .ai_inner-large,
+.ai_card.is-cards-animating .ai_inner-small {
+  display: flex;
+}
+
+.ai_card.is-cards-animating .ai_inner-small {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  opacity: 0;
   pointer-events: none;
 }
 
-/* Settled compact state (after scroll) */
+/* Settled compact: small only */
 .ai_card.is-compact .ai_inner-large {
   display: none;
 }
 
 .ai_card.is-compact .ai_inner-small {
+  display: flex;
   position: relative;
   opacity: 1;
   pointer-events: auto;

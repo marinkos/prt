@@ -1,5 +1,6 @@
 (function () {
   const COMPACT_CLASS = "is-compact";
+  const ANIMATING_CLASS = "is-cards-animating";
   const SCRUB = 1.2;
 
   function prefersReducedMotion() {
@@ -16,20 +17,73 @@
     });
   }
 
+  function setAnimating(scrollEl, animating) {
+    scrollEl.classList.toggle(ANIMATING_CLASS, animating);
+    getCards(scrollEl).forEach((card) => {
+      card.classList.toggle(ANIMATING_CLASS, animating);
+    });
+  }
+
   function measureWrapperHeight(scrollEl) {
     const wrapper = scrollEl.querySelector(".ai_cards-wrapper");
     return wrapper ? Math.round(wrapper.getBoundingClientRect().height) : 0;
   }
 
-  function measureHeights(scrollEl) {
-    setCompact(scrollEl, false);
-    const expanded = measureWrapperHeight(scrollEl);
+  function measureCollapsedHeight(scrollEl) {
+    const largeInners = scrollEl.querySelectorAll(".ai_inner-large");
+    const smallInners = scrollEl.querySelectorAll(".ai_inner-small");
 
-    setCompact(scrollEl, true);
+    gsap.set(largeInners, { display: "none" });
+    gsap.set(smallInners, { display: "flex", position: "relative", opacity: 1 });
+
     const collapsed = measureWrapperHeight(scrollEl);
 
+    gsap.set(largeInners, { clearProps: "display,opacity" });
+    gsap.set(smallInners, { clearProps: "all" });
+
+    return collapsed;
+  }
+
+  function measureHeights(scrollEl) {
     setCompact(scrollEl, false);
+    setAnimating(scrollEl, false);
+
+    const expanded = measureWrapperHeight(scrollEl);
+    const collapsed = measureCollapsedHeight(scrollEl);
+
     return { expanded, collapsed, pinDistance: Math.max(240, expanded - collapsed) };
+  }
+
+  function syncProgress(scrollEl, state, progress) {
+    const p = Math.max(0, Math.min(1, progress));
+    const { wrapper, cards, largeInners, smallInners, expanded, collapsed } = state;
+
+    if (p <= 0) {
+      setCompact(scrollEl, false);
+      setAnimating(scrollEl, false);
+      gsap.set(wrapper, { height: expanded, clearProps: "height" });
+      gsap.set(largeInners, { opacity: 1, clearProps: "opacity" });
+      gsap.set(smallInners, { opacity: 0, pointerEvents: "none", clearProps: "opacity,pointerEvents" });
+      return;
+    }
+
+    if (p >= 1) {
+      setAnimating(scrollEl, false);
+      setCompact(scrollEl, true);
+      gsap.set(wrapper, { clearProps: "height" });
+      gsap.set(largeInners, { clearProps: "opacity" });
+      gsap.set(smallInners, { clearProps: "opacity,pointerEvents" });
+      return;
+    }
+
+    setCompact(scrollEl, false);
+    setAnimating(scrollEl, true);
+    gsap.set(wrapper, { height: expanded + (collapsed - expanded) * p });
+    gsap.set(largeInners, { opacity: 1 - p });
+    gsap.set(smallInners, {
+      opacity: p,
+      pointerEvents: p > 0.5 ? "auto" : "none",
+    });
   }
 
   function initScrollSection(scrollEl, index, total) {
@@ -39,52 +93,26 @@
     const smallInners = scrollEl.querySelectorAll(".ai_inner-small");
     if (!wrapper || !cards.length || !largeInners.length || !smallInners.length) return;
 
-    const { expanded, collapsed, pinDistance } = measureHeights(scrollEl);
+    const heights = measureHeights(scrollEl);
+    const state = { wrapper, cards, largeInners, smallInners, ...heights };
 
-    gsap.set(wrapper, { height: expanded });
-    gsap.set(largeInners, { opacity: 1 });
-    gsap.set(smallInners, { opacity: 0, pointerEvents: "none" });
+    syncProgress(scrollEl, state, 0);
 
-    ScrollTrigger.create({
+    const trigger = ScrollTrigger.create({
       id: total > 1 ? `dream-cards-${index}` : "dream-cards",
       trigger: scrollEl,
       start: "top top",
-      end: `+=${pinDistance}`,
+      end: `+=${heights.pinDistance}`,
       scrub: SCRUB,
       pin: true,
       pinSpacing: true,
       anticipatePin: 1,
       invalidateOnRefresh: true,
-      onUpdate: (self) => {
-        const p = self.progress;
-        gsap.set(wrapper, { height: expanded + (collapsed - expanded) * p });
-        gsap.set(largeInners, { opacity: 1 - p });
-        gsap.set(smallInners, {
-          opacity: p,
-          pointerEvents: p > 0.5 ? "auto" : "none",
-        });
-      },
-      onEnter: () => {
-        setCompact(scrollEl, false);
-        gsap.set(wrapper, { height: expanded, clearProps: "" });
-      },
-      onLeaveBack: () => {
-        setCompact(scrollEl, false);
-        gsap.set(wrapper, { height: expanded, clearProps: "" });
-      },
-      onLeave: () => {
-        setCompact(scrollEl, true);
-        gsap.set(wrapper, { clearProps: "height" });
-        gsap.set(largeInners, { clearProps: "opacity" });
-        gsap.set(smallInners, { clearProps: "opacity,pointerEvents" });
-      },
-      onEnterBack: () => {
-        setCompact(scrollEl, false);
-        gsap.set(wrapper, { height: expanded });
-        gsap.set(largeInners, { opacity: 1, clearProps: "" });
-        gsap.set(smallInners, { opacity: 0, pointerEvents: "none", clearProps: "" });
-      },
+      onUpdate: (self) => syncProgress(scrollEl, state, self.progress),
+      onRefresh: (self) => syncProgress(scrollEl, state, self.progress),
     });
+
+    syncProgress(scrollEl, state, trigger.progress);
   }
 
   function initDreamCards() {
@@ -101,6 +129,7 @@
 
       if (prefersReducedMotion()) {
         setCompact(scrollEl, true);
+        setAnimating(scrollEl, false);
         return;
       }
 
