@@ -337,7 +337,7 @@ function dreamWatchCanvas(canvas, onResize) {
   const BASE = {
     density: 1,
     threshold: 0.05,
-    pointSize: 1,
+    pointSize: 1.5,
     depth: 0.74,
     hoverRadius: 0.92,
     hoverSoftness: 0.55,
@@ -824,7 +824,7 @@ function dreamWatchCanvas(canvas, onResize) {
   const PARAMS = {
     density: 1,
     threshold: 0.02,
-    pointSize: 1,
+    pointSize: 1.5,
     depth: 0.74,
     hoverRadius: 0.92,
     hoverSoftness: 0.55,
@@ -1289,7 +1289,7 @@ void main(){
   const PARAMS = {
     density: 1,
     threshold: 0.3,
-    pointSize: 1,
+    pointSize: 1.5,
     depth: 0.74,
     hoverRadius: 0.92,
     hoverSoftness: 0.55,
