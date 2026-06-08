@@ -343,7 +343,7 @@ function dreamWatchCanvas(canvas, onResize) {
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
     hoverEase: 0.12,
-    zoom: 0.7,
+    zoom: 0.8,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
