@@ -45,18 +45,16 @@
   display: none;
 }
 
-/* Scroll crossfade: both layers visible, opacity driven by JS */
-.ai_card.is-cards-animating .ai_inner-large,
-.ai_card.is-cards-animating .ai_inner-small {
-  display: flex;
+/* Scroll shrink: hide large immediately, show small */
+.ai_card.is-cards-animating .ai_inner-large {
+  display: none;
 }
 
 .ai_card.is-cards-animating .ai_inner-small {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  pointer-events: none;
+  display: flex;
+  position: relative;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Settled compact: small only */

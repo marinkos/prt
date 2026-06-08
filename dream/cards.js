@@ -2,6 +2,7 @@
   const COMPACT_CLASS = "is-compact";
   const ANIMATING_CLASS = "is-cards-animating";
   const SCRUB = 1.2;
+  const PIN_OFFSET = 100;
 
   function prefersReducedMotion() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -79,11 +80,8 @@
     setCompact(scrollEl, false);
     setAnimating(scrollEl, true);
     gsap.set(wrapper, { height: expanded + (collapsed - expanded) * p });
-    gsap.set(largeInners, { opacity: 1 - p });
-    gsap.set(smallInners, {
-      opacity: p,
-      pointerEvents: p > 0.5 ? "auto" : "none",
-    });
+    gsap.set(largeInners, { clearProps: "opacity" });
+    gsap.set(smallInners, { opacity: 1, pointerEvents: "auto", clearProps: "opacity,pointerEvents" });
   }
 
   function initScrollSection(scrollEl, index, total) {
@@ -101,7 +99,7 @@
     const trigger = ScrollTrigger.create({
       id: total > 1 ? `dream-cards-${index}` : "dream-cards",
       trigger: scrollEl,
-      start: "top top",
+      start: `top ${PIN_OFFSET}px`,
       end: `+=${heights.pinDistance}`,
       scrub: SCRUB,
       pin: true,
