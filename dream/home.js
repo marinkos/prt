@@ -1137,8 +1137,12 @@ void main(){
     centerFocusRadius: 0.6,
     centerFocusSoftness: 0.35,
     centerFocusStrength: 1.0,
+    brushHex: "#0042E1",
+    brushRadius: 0.22,
+    brushFeather: 0.16,
+    brushOpacity: 1.0,
     hoverTrailEnabled: true,
-    hoverTrailHex: "#0042E1",
+    hoverTrailHex: "#864523",
     hoverTrailOpacity: 0.7,
     hoverTrailRadius: 1.0,
     hoverTrailDecay: 0.06,
@@ -1220,6 +1224,7 @@ void main(){
     let particles = null;
     let particleCount = 0;
     let paintTexture = null;
+    let paintBuffer = null;
     let trailCanvas = null;
     let trailCtx = null;
     let trailTexture = null;
@@ -1371,14 +1376,9 @@ void main(){
       updateFocusClip();
     }
 
-    function setupPaintTexture() {
-      const paintBuffer = new Uint8Array(imgW * imgH * 4);
-      paintTexture = gl.createTexture();
+    function uploadPaintTexture() {
+      if (!paintTexture || !paintBuffer) return;
       gl.bindTexture(gl.TEXTURE_2D, paintTexture);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texImage2D(
         gl.TEXTURE_2D,
         0,
@@ -1390,6 +1390,74 @@ void main(){
         gl.UNSIGNED_BYTE,
         paintBuffer
       );
+    }
+
+    function setupPaintTexture() {
+      paintBuffer = new Uint8Array(imgW * imgH * 4);
+      paintTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, paintTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      uploadPaintTexture();
+    }
+
+    function brushSmoothstep(edge0, edge1, x) {
+      const t = Math.max(0, Math.min(1, (x - edge0) / Math.max(0.0001, edge1 - edge0)));
+      return t * t * (3 - 2 * t);
+    }
+
+    function depositBrushPaint() {
+      if (!paintBuffer || hoverActive <= 0.001) return;
+      const cx = Math.round(hoverU * imgW);
+      const cy = Math.round(hoverV * imgH);
+      if (cx < 0 || cx >= imgW || cy < 0 || cy >= imgH) return;
+      const color = hexToRgb01(PARAMS.brushHex).map((v) => Math.round(v * 255));
+      const radiusPx = Math.max(1, Math.round(PARAMS.brushRadius * Math.min(imgW, imgH) * 0.5));
+      const featherPx = Math.max(0, Math.round(PARAMS.brushFeather * Math.min(imgW, imgH) * 0.5));
+      const inner = Math.max(0, radiusPx - featherPx);
+      const r2 = radiusPx * radiusPx;
+      const minX = Math.max(0, cx - radiusPx);
+      const maxX = Math.min(imgW - 1, cx + radiusPx);
+      const minY = Math.max(0, cy - radiusPx);
+      const maxY = Math.min(imgH - 1, cy + radiusPx);
+      const opacity = PARAMS.brushOpacity * hoverActive;
+      for (let y = minY; y <= maxY; y++) {
+        for (let x = minX; x <= maxX; x++) {
+          const dx = x - cx;
+          const dy = y - cy;
+          const d2 = dx * dx + dy * dy;
+          if (d2 > r2) continue;
+          const d = Math.sqrt(d2);
+          let mask = 1 - brushSmoothstep(inner, radiusPx, d);
+          mask = mask * mask * (3 - 2 * mask);
+          const amount = Math.round(mask * opacity * 255);
+          if (amount <= 0) continue;
+          const i = (y * imgW + x) * 4;
+          const t = amount / 255;
+          paintBuffer[i] = Math.round(paintBuffer[i] * (1 - t) + color[0] * t);
+          paintBuffer[i + 1] = Math.round(paintBuffer[i + 1] * (1 - t) + color[1] * t);
+          paintBuffer[i + 2] = Math.round(paintBuffer[i + 2] * (1 - t) + color[2] * t);
+          paintBuffer[i + 3] = Math.max(paintBuffer[i + 3], amount);
+        }
+      }
+      uploadPaintTexture();
+    }
+
+    function fadeBrushPaint(dt) {
+      if (!paintBuffer) return;
+      const decayPerFrame = Math.max(0, Math.min(0.99, PARAMS.hoverTrailDecay));
+      const k = 1 - Math.pow(1 - decayPerFrame, dt * 60);
+      if (k <= 0) return;
+      let dirty = false;
+      for (let i = 3; i < paintBuffer.length; i += 4) {
+        if (paintBuffer[i] > 0) {
+          paintBuffer[i] = Math.max(0, Math.round(paintBuffer[i] * (1 - k)));
+          dirty = true;
+        }
+      }
+      if (dirty) uploadPaintTexture();
     }
 
     function setupTrailTexture() {
@@ -1586,6 +1654,8 @@ void main(){
       idleMoveX = Math.sin(t * 0.58) * IDLE.drift * idleMix;
       idleMoveY = Math.cos(t * 0.71) * IDLE.drift * idleMix;
       updateFocusClip();
+      fadeBrushPaint(dt);
+      depositBrushPaint();
       fadeTrail(dt);
       depositTrail();
       uploadTrailTexture(false);
