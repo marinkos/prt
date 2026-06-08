@@ -2,6 +2,13 @@
   const COMPACT_CLASS = "is-compact";
   const SCRUB = 1;
 
+  const COMPACT_SELECTOR = [
+    ".ai_card",
+    ".ai_item-video-icon",
+    ".ai-card-heading",
+    ".ai_card-sub",
+  ].join(", ");
+
   const FLIP_SELECTOR = [
     ".ai_cards-wrapper",
     ".ai_card",
@@ -20,8 +27,14 @@
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
 
+  function getCompactElements(scrollEl) {
+    return scrollEl.querySelectorAll(COMPACT_SELECTOR);
+  }
+
   function setCompact(scrollEl, compact) {
-    scrollEl.classList.toggle(COMPACT_CLASS, compact);
+    getCompactElements(scrollEl).forEach((el) => {
+      el.classList.toggle(COMPACT_CLASS, compact);
+    });
   }
 
   function measureWrapperHeight(scrollEl) {
