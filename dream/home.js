@@ -854,13 +854,13 @@ function dreamWatchCanvas(canvas, onResize) {
     {
       id: "engine",
       url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a27293bbf44bbaadf348116_rocket.avif",
-      rotateY: -10
+      rotateX: -7,
+      rotateY: 6
     },
     {
       id: "ship",
       url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.avif",
-      rotateX: -7,
-      rotateY: 6
+      rotateY: -10
     }
   ];
 
