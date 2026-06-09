@@ -358,7 +358,7 @@ function dreamWatchCanvas(canvas, onResize) {
   };
 
   const CTA = {
-    url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a257c80f5d99b0739a7c57d_0fb03f4a06a24fe252806f3dc379d5bf_cta-new.avif",
+    url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a257c80f5d99b0739a7c57d_092657a0a2abf371908c88bc0d50256d_cta-new.avif",
     spinYPeriodSec: 50
   };
 
