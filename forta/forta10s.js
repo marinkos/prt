@@ -883,17 +883,17 @@ function initializeScript() {
                 : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
             mqlStatus = "MQL - In-Home";
         }
-        else if (asdDiagnosis.toLowerCase() === "yes") {
-            returnURL = thankYouUrlForMqlIntake(formSales);
-            mqlStatus = "MQL";
-        }
-        else if (tofuStatus === "Passing") {
+        else if (asdDiagnosis.toLowerCase() === "yes" && tofuStatus === "Passing") {
             returnURL = thankYouUrlForMqlIntake(formSales);
             mqlStatus = "MQL";
         }
         else if (tofuStatus === "Disqualify") {
             returnURL = "https://www.fortahealth.com/thank-you-2";
             mqlStatus = "DQ - Insurance not supported";
+        }
+        else if (tofuStatus === "Passing") {
+            returnURL = thankYouUrlForMqlIntake(formSales);
+            mqlStatus = "MQL";
         }
         else if (
             asdDiagnosis.toLowerCase() !== "yes" &&

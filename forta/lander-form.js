@@ -1001,20 +1001,20 @@ else if (isInHomePassing) {
         : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
     mqlStatus = "MQL - In-Home";
 }
-// MQL - If diagnosis is "Yes", always MQL (thank-you varies by expected ABA hours/week)
-else if (asdDiagnosis.toLowerCase() === "yes") {
+// MQL - Diagnosis "Yes" only when insurance TOFU Status is "Passing"
+else if (asdDiagnosis.toLowerCase() === "yes" && tofuStatus === "Passing") {
     returnURL = thankYouUrlForMqlIntake(formSales);
     mqlStatus = "MQL";
+}
+// DISQUALIFY if primary insurance's TOFU Status is "Disqualify"
+else if (tofuStatus === "Disqualify") {
+    returnURL = "https://www.fortahealth.com/thank-you-2";
+    mqlStatus = "DQ - Insurance not supported";
 }
 // MQL - Standard Pass if primary insurance's TOFU Status is "Passing"
 else if (tofuStatus === "Passing") {
     returnURL = thankYouUrlForMqlIntake(formSales);
     mqlStatus = "MQL";
-}
-// DISQUALIFY if primary insurance's TOFU Status is "Disqualify" (after MQL so diagnosis-yes + hours routing wins)
-else if (tofuStatus === "Disqualify") {
-    returnURL = "https://www.fortahealth.com/thank-you-2";
-    mqlStatus = "DQ - Insurance not supported";
 }
 // DISQUALIFY based on adjusted ASD diagnosis logic (FAIL case)
 else if (
