@@ -52,11 +52,9 @@ function isZipQualifyingForLead(zipValue) {
     return isZipDataLoaded && isZipQualified(zipValue);
 }
 
-/**
- * Parses "Expected Total ABA Hours per Week" (SF field id, optional window override, then label match).
- * Returns NaN if missing so callers default to the pre-qualified thank-you path.
- */
-function getExpectedAbaHoursPerWeekValue(formSalesEl) {
+const FORTA_FORM_VARIANT = 'lander';
+
+function findExpectedAbaHoursField(formSalesEl) {
     var fieldId = (typeof window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID === 'string' && window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID)
         ? window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID
         : EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID;
@@ -85,22 +83,60 @@ function getExpectedAbaHoursPerWeekValue(formSalesEl) {
     if (!el) {
         el = findByLabel(document);
     }
+    return el || null;
+}
+
+/**
+ * Parses "Expected Total ABA Hours per Week" (SF field id, optional window override, then label match).
+ * Returns NaN if missing so callers default to the pre-qualified thank-you path.
+ */
+function getExpectedAbaHoursPerWeekValue(formSalesEl) {
+    var el = findExpectedAbaHoursField(formSalesEl);
     if (!el) return NaN;
     var raw = String(el.value != null ? el.value : '').replace(/,/g, '').trim();
     if (raw === '' && el.options && el.selectedIndex >= 0) {
         raw = String(el.options[el.selectedIndex].text || '').replace(/,/g, '').trim();
     }
     if (raw === '') return NaN;
-    var n = parseFloat(raw);
-    return n;
+    return parseFloat(raw);
 }
 
-function thankYouUrlForMqlIntake(formSalesEl) {
+function isExpectedAbaHoursValid(formSalesEl) {
     var hours = getExpectedAbaHoursPerWeekValue(formSalesEl);
-    if (!isNaN(hours) && hours >= 15) {
-        return 'https://www.fortahealth.com/thank-you-schedule-your-call';
+    return !isNaN(hours) && hours >= 0;
+}
+
+function ensureExpectedAbaHoursRequired(formSalesEl) {
+    var el = findExpectedAbaHoursField(formSalesEl);
+    if (el) {
+        el.setAttribute('required', 'required');
     }
-    return 'https://www.fortahealth.com/thank-you-intake-pre-qualified';
+}
+
+function thankYouUrlForMqlIntake(formSalesEl, isSpanishLanguage) {
+    var hours = getExpectedAbaHoursPerWeekValue(formSalesEl);
+    var isHighVolume = !isNaN(hours) && hours >= 15;
+    var spanish = !!isSpanishLanguage;
+
+    if (FORTA_FORM_VARIANT === 'lander') {
+        if (isHighVolume) {
+            return spanish
+                ? 'https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish'
+                : 'https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call';
+        }
+        return spanish
+            ? 'https://www.fortahealth.com/es/thank-you-intake'
+            : 'https://www.fortahealth.com/thank-you-intake-pre-qualified';
+    }
+
+    if (isHighVolume) {
+        return spanish
+            ? 'https://www.fortahealth.com/es/thank-you-schedule'
+            : 'https://www.fortahealth.com/thank-you-schedule-your-call';
+    }
+    return spanish
+        ? 'https://www.fortahealth.com/es/thank-you-intake'
+        : 'https://www.fortahealth.com/thank-you-intake-pre-qualified';
 }
 
 function loadQualifyingZipData() {
@@ -422,6 +458,21 @@ function initializeScript() {
     const referralDiv = document.querySelector('.is-referral');
     const requestedServiceFieldContainer = requestedServiceSelect ? requestedServiceSelect.closest('.sf-field') : null;
 
+    ensureExpectedAbaHoursRequired(formSales);
+
+    function getStepIdForHoursField() {
+        var hoursField = findExpectedAbaHoursField(formSales);
+        if (!hoursField) return 'step02';
+        var stepEl = hoursField.closest('[id^="step"]');
+        return stepEl && stepEl.id ? stepEl.id : 'step02';
+    }
+
+    function validateExpectedAbaHoursInStep(stepElement) {
+        var hoursField = findExpectedAbaHoursField(formSales);
+        if (!hoursField || !stepElement.contains(hoursField)) return true;
+        return isExpectedAbaHoursValid(formSales);
+    }
+
     // --------------------------------
     // Form Next/Prev Buttons and Validation
     // --------------------------------
@@ -496,6 +547,10 @@ function initializeScript() {
                 isValid = false;
             }
         });
+
+        if (!validateExpectedAbaHoursInStep(stepElement)) {
+            isValid = false;
+        }
 
         return isValid;
     }
@@ -579,10 +634,15 @@ function initializeScript() {
     if (nextBtn03) {
         nextBtn03.addEventListener('click', function(e) {
             e.preventDefault();
-            const sliderDots = document.querySelectorAll('.w-slider-dot');
-            if (sliderDots[2]) {
-                sliderDots[2].click(); // Go to slide 3
-                scrollToTopOnMobile();
+            updateInHomeFieldVisibilityFromZip();
+            if (!validateStep('step02')) {
+                showErrorMessage('step02');
+            } else {
+                const sliderDots = document.querySelectorAll('.w-slider-dot');
+                if (sliderDots[2]) {
+                    sliderDots[2].click(); // Go to slide 3
+                    scrollToTopOnMobile();
+                }
             }
         });
     }
@@ -906,6 +966,11 @@ function initializeScript() {
     // Main Form Submission Logic
     // --------------------------
     formSales.addEventListener('submit', function (event) {
+        if (!isExpectedAbaHoursValid(formSales)) {
+            event.preventDefault();
+            showErrorMessage(getStepIdForHoursField());
+            return;
+        }
 
         // Update hidden fields before submission
         setExternalLeadValue(getFacebookClickId());
@@ -994,16 +1059,14 @@ else if (
     returnURL = "https://www.fortahealth.com/thank-you-2";
     mqlStatus = "DQ - No Diagnosis";
 }
-// In-Home pass route (qualified zip + insurance passing + positive Dx; SC uses same rule)
+// In-Home pass route (qualified zip + insurance passing + positive Dx; hours split for schedule vs intake)
 else if (isInHomePassing) {
-    returnURL = isSpanishLanguage
-        ? "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish"
-        : "https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call";
+    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage);
     mqlStatus = "MQL - In-Home";
 }
 // MQL - Diagnosis "Yes" only when insurance TOFU Status is "Passing"
 else if (asdDiagnosis.toLowerCase() === "yes" && tofuStatus === "Passing") {
-    returnURL = thankYouUrlForMqlIntake(formSales);
+    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage);
     mqlStatus = "MQL";
 }
 // DISQUALIFY if primary insurance's TOFU Status is "Disqualify"
@@ -1013,7 +1076,7 @@ else if (tofuStatus === "Disqualify") {
 }
 // MQL - Standard Pass if primary insurance's TOFU Status is "Passing"
 else if (tofuStatus === "Passing") {
-    returnURL = thankYouUrlForMqlIntake(formSales);
+    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage);
     mqlStatus = "MQL";
 }
 // DISQUALIFY based on adjusted ASD diagnosis logic (FAIL case)
