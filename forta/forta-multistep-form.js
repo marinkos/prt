@@ -50,8 +50,6 @@ function isZipQualifyingForLead(zipValue) {
     return isZipDataLoaded && isZipQualified(zipValue);
 }
 
-const FORTA_FORM_VARIANT = 'multistep';
-
 function findExpectedAbaHoursField(formSalesEl) {
     var fieldId = (typeof window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID === 'string' && window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID)
         ? window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID
@@ -107,23 +105,18 @@ function ensureExpectedAbaHoursRequired(formSalesEl) {
     }
 }
 
-function thankYouUrlForMqlIntake(formSalesEl, isSpanishLanguage) {
+function thankYouUrlForMqlIntake(formSalesEl, isSpanishLanguage, isInHomeQualifying) {
     var hours = getExpectedAbaHoursPerWeekValue(formSalesEl);
     var isHighVolume = !isNaN(hours) && hours >= 15;
     var spanish = !!isSpanishLanguage;
+    var inHome = !!isInHomeQualifying;
 
-    if (FORTA_FORM_VARIANT === 'lander') {
-        if (isHighVolume) {
+    if (isHighVolume) {
+        if (inHome) {
             return spanish
                 ? 'https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish'
                 : 'https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call';
         }
-        return spanish
-            ? 'https://www.fortahealth.com/es/thank-you-intake'
-            : 'https://www.fortahealth.com/thank-you-intake-pre-qualified';
-    }
-
-    if (isHighVolume) {
         return spanish
             ? 'https://www.fortahealth.com/es/thank-you-schedule'
             : 'https://www.fortahealth.com/thank-you-schedule-your-call';
@@ -1057,11 +1050,11 @@ else if (
     mqlStatus = "DQ - No Diagnosis";
 }
 else if (isInHomePassing) {
-    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage);
+    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage, isQualifyingZip);
     mqlStatus = "MQL - In-Home";
 }
 else if (asdDiagnosis.toLowerCase() === "yes" && tofuStatus === "Passing") {
-    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage);
+    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage, isQualifyingZip);
     mqlStatus = "MQL";
 }
 else if (tofuStatus === "Disqualify") {
@@ -1069,7 +1062,7 @@ else if (tofuStatus === "Disqualify") {
     mqlStatus = "DQ - Insurance not supported";
 }
 else if (tofuStatus === "Passing") {
-    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage);
+    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage, isQualifyingZip);
     mqlStatus = "MQL";
 }
 else if (

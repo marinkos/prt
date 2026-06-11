@@ -52,8 +52,6 @@ function isZipQualifyingForLead(zipValue) {
     return isZipDataLoaded && isZipQualified(zipValue);
 }
 
-const FORTA_FORM_VARIANT = 'lander';
-
 function findExpectedAbaHoursField(formSalesEl) {
     var fieldId = (typeof window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID === 'string' && window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID)
         ? window.EXPECTED_ABA_HOURS_PER_WEEK_FIELD_ID
@@ -113,23 +111,18 @@ function ensureExpectedAbaHoursRequired(formSalesEl) {
     }
 }
 
-function thankYouUrlForMqlIntake(formSalesEl, isSpanishLanguage) {
+function thankYouUrlForMqlIntake(formSalesEl, isSpanishLanguage, isInHomeQualifying) {
     var hours = getExpectedAbaHoursPerWeekValue(formSalesEl);
     var isHighVolume = !isNaN(hours) && hours >= 15;
     var spanish = !!isSpanishLanguage;
+    var inHome = !!isInHomeQualifying;
 
-    if (FORTA_FORM_VARIANT === 'lander') {
-        if (isHighVolume) {
+    if (isHighVolume) {
+        if (inHome) {
             return spanish
                 ? 'https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call-spanish'
                 : 'https://www.fortahealth.com/in-home/thank-you-intake-schedule-your-call';
         }
-        return spanish
-            ? 'https://www.fortahealth.com/es/thank-you-intake'
-            : 'https://www.fortahealth.com/thank-you-intake-pre-qualified';
-    }
-
-    if (isHighVolume) {
         return spanish
             ? 'https://www.fortahealth.com/es/thank-you-schedule'
             : 'https://www.fortahealth.com/thank-you-schedule-your-call';
@@ -1061,12 +1054,12 @@ else if (
 }
 // In-Home pass route (qualified zip + insurance passing + positive Dx; hours split for schedule vs intake)
 else if (isInHomePassing) {
-    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage);
+    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage, isQualifyingZip);
     mqlStatus = "MQL - In-Home";
 }
 // MQL - Diagnosis "Yes" only when insurance TOFU Status is "Passing"
 else if (asdDiagnosis.toLowerCase() === "yes" && tofuStatus === "Passing") {
-    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage);
+    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage, isQualifyingZip);
     mqlStatus = "MQL";
 }
 // DISQUALIFY if primary insurance's TOFU Status is "Disqualify"
@@ -1076,7 +1069,7 @@ else if (tofuStatus === "Disqualify") {
 }
 // MQL - Standard Pass if primary insurance's TOFU Status is "Passing"
 else if (tofuStatus === "Passing") {
-    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage);
+    returnURL = thankYouUrlForMqlIntake(formSales, isSpanishLanguage, isQualifyingZip);
     mqlStatus = "MQL";
 }
 // DISQUALIFY based on adjusted ASD diagnosis logic (FAIL case)
