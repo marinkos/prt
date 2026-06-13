@@ -453,8 +453,10 @@ void main(){
 (function () {
   const ITEM_SELECTOR = ".job_collection-item";
   const EMPTY_SELECTOR = ".empty-state";
+  const LOAD_MORE_SELECTOR = '[data-button="load-more"]';
   const ALL_LOCATION = "All Location";
   const ALL_TEAM = "All Team";
+  const PAGE_SIZE = 10;
 
   function normalize(value) {
     return (value || "").trim().toLowerCase();
@@ -502,6 +504,19 @@ void main(){
     };
   }
 
+  function itemMatchesFilters(item, query, location, team) {
+    const data = getItemData(item);
+    const matchesSearch = !query || data.name.includes(query);
+    const matchesLocation = !location || data.location === location;
+    const matchesTeam = !team || data.team === team;
+    return matchesSearch && matchesLocation && matchesTeam;
+  }
+
+  function setItemVisible(item, visible) {
+    item.hidden = !visible;
+    item.style.display = visible ? "" : "none";
+  }
+
   function initCareerFilters() {
     const root = document.querySelector(".job_filters-wrapper");
     if (!root || root.dataset.careerFiltersInit === "true") return;
@@ -515,8 +530,11 @@ void main(){
     const teamSelect = document.getElementById("filterDepartmen");
     const searchInput = document.getElementById("filtersSearch");
     const emptyState = document.querySelector(EMPTY_SELECTOR);
+    const loadMoreBtn = document.querySelector(LOAD_MORE_SELECTOR);
+    const loadMoreWrapper = loadMoreBtn?.closest(".load-button-wrapper");
     const searchIcon = document.querySelector('[data-icon="search"]');
     const resetIcon = document.querySelector('[data-icon="reset"]');
+    let visibleLimit = PAGE_SIZE;
 
     populateSelect(locationSelect, collectFieldValues(items, "location"), ALL_LOCATION);
     populateSelect(teamSelect, collectFieldValues(items, "team"), ALL_TEAM);
@@ -529,26 +547,32 @@ void main(){
       }
     }
 
-    function applyFilters() {
+    function applyFilters(resetPagination) {
+      if (resetPagination) visibleLimit = PAGE_SIZE;
+
       const query = normalize(searchInput?.value);
       const location = normalize(locationSelect?.value);
       const team = normalize(teamSelect?.value);
-      let visibleCount = 0;
+      let matchingCount = 0;
 
       items.forEach(function (item) {
-        const data = getItemData(item);
-        const matchesSearch = !query || data.name.includes(query);
-        const matchesLocation = !location || data.location === location;
-        const matchesTeam = !team || data.team === team;
-        const visible = matchesSearch && matchesLocation && matchesTeam;
+        const matches = itemMatchesFilters(item, query, location, team);
+        if (!matches) {
+          setItemVisible(item, false);
+          return;
+        }
 
-        item.hidden = !visible;
-        item.style.display = visible ? "" : "none";
-        if (visible) visibleCount += 1;
+        matchingCount += 1;
+        setItemVisible(item, matchingCount <= visibleLimit);
       });
 
       if (emptyState) {
-        emptyState.style.display = visibleCount === 0 ? "flex" : "none";
+        emptyState.style.display = matchingCount === 0 ? "flex" : "none";
+      }
+
+      if (loadMoreWrapper) {
+        loadMoreWrapper.style.display =
+          matchingCount > visibleLimit ? "" : "none";
       }
 
       setSearchIcons(Boolean(query));
@@ -558,12 +582,24 @@ void main(){
       if (!searchInput) return;
       searchInput.value = "";
       searchInput.focus();
-      applyFilters();
+      applyFilters(true);
     }
 
-    locationSelect?.addEventListener("change", applyFilters);
-    teamSelect?.addEventListener("change", applyFilters);
-    searchInput?.addEventListener("input", applyFilters);
+    locationSelect?.addEventListener("change", function () {
+      applyFilters(true);
+    });
+    teamSelect?.addEventListener("change", function () {
+      applyFilters(true);
+    });
+    searchInput?.addEventListener("input", function () {
+      applyFilters(true);
+    });
+
+    loadMoreBtn?.addEventListener("click", function (event) {
+      event.preventDefault();
+      visibleLimit += PAGE_SIZE;
+      applyFilters(false);
+    });
 
     resetIcon?.addEventListener("click", function (event) {
       event.preventDefault();
@@ -571,7 +607,7 @@ void main(){
     });
 
     setSearchIcons(false);
-    applyFilters();
+    applyFilters(true);
   }
 
   function boot() {
