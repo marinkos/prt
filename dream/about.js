@@ -1,15 +1,15 @@
 /* About point cloud */
 (function () {
   const PARAMS = {
-    density: 1,
-    threshold: 0.3,
-    pointSize: 0.8,
-    depth: 0.74,
+    density: 0.2,
+    threshold: 0.4,
+    pointSize: 0.6,
+    depth: 0.9,
     hoverRadius: 0.96,
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
     hoverEase: 0.12,
-    zoom: 0.7,
+    zoom: 1,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
@@ -26,7 +26,7 @@
 
   const CFG = {
     id: "about",
-    url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a272c4517cfb473023956e6_about.avif"
+    url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a272c4517cfb473023956e6_ba2931a4194a7a6c9ffbae8e447e2403_about.png"
   };
 
   const IDLE = {
