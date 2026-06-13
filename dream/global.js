@@ -46,6 +46,21 @@ function dreamWatchCanvas(canvas, onResize) {
     hoverTrailBlendMode: "add"
   };
 
+  const MOBILE_MAX_WIDTH = 479;
+  const mobileMq = window.matchMedia("(max-width: " + MOBILE_MAX_WIDTH + "px)");
+
+  function isMobileViewport() {
+    return mobileMq.matches;
+  }
+
+  function getThreshold() {
+    return isMobileViewport() ? 0.12 : params.threshold;
+  }
+
+  function getDepth() {
+    return isMobileViewport() ? 0.55 : params.depth;
+  }
+
   function hexToRgb01(hex) {
     const clean = String(hex || "#000000").replace("#", "");
     const num = parseInt(clean, 16);
@@ -343,7 +358,7 @@ function dreamWatchCanvas(canvas, onResize) {
         const b = data[i + 2] / 255;
         const a = data[i + 3] / 255;
         const bri = (0.2126 * r + 0.7152 * g + 0.0722 * b) * a;
-        if (a > 0.04 && bri >= params.threshold) {
+        if (a > 0.04 && bri >= getThreshold()) {
           arr.push(x, y, r, g, b, bri, x / imgW, y / imgH);
         }
       }
@@ -382,7 +397,7 @@ function dreamWatchCanvas(canvas, onResize) {
     gl.uniform2f(uni("u_res"), W, H);
     gl.uniform2f(uni("u_img"), imgW, imgH);
     gl.uniform1f(uni("u_pointSize"), params.pointSize);
-    gl.uniform1f(uni("u_depth"), params.depth);
+    gl.uniform1f(uni("u_depth"), getDepth());
     gl.uniform1f(uni("u_hoverX"), hoverX);
     gl.uniform1f(uni("u_hoverY"), hoverY);
     gl.uniform1f(uni("u_hoverActive"), hoverActive);
@@ -469,13 +484,20 @@ function dreamWatchCanvas(canvas, onResize) {
     targetHoverActive = 0;
   });
 
+  let sourceImg = null;
+
   const img = new Image();
   img.crossOrigin = "anonymous";
   img.onload = () => {
+    sourceImg = img;
     buildParticles(img);
     requestAnimationFrame(animate);
   };
   img.src = IMAGE_SRC;
+
+  mobileMq.addEventListener("change", () => {
+    if (sourceImg) buildParticles(sourceImg);
+  });
 
   dreamWatchCanvas(canvas, render);
 })();
