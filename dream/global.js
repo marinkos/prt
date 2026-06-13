@@ -25,28 +25,53 @@ function dreamWatchCanvas(canvas, onResize) {
 }
 
 (function () {
-  const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a2555fb6c87c45a3ac55f66_train.avif";
+  const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a2555fb6c87c45a3ac55f66_5f646b5ba339f85d2b8ad07c3250e8bf_train.png";
 
-  // Original footer params from Train_Footer.html
   const params = {
     density: 1,
-    threshold: 0.02,
+    threshold: 0.07,
     pointSize: 1.5,
-    depth: 0.5,
+    depth: 0.9,
     hoverRadius: 1,
-    hoverSoftness: 1.3,
+    hoverSoftness: 1.5,
     hoverStrength: 1,
-    hoverEase: 0.12,
-    zoom: 1.2,
-    perspective: 2
+    hoverEase: 0.2,
+    zoom: 1.1,
+    perspective: 2,
+    hoverTrailEnabled: true,
+    hoverTrailHex: "#864523",
+    hoverTrailOpacity: 0.7,
+    hoverTrailRadius: 1.0,
+    hoverTrailDecay: 0.6,
+    hoverTrailBlendMode: "add"
   };
+
+  function hexToRgb01(hex) {
+    const clean = String(hex || "#000000").replace("#", "");
+    const num = parseInt(clean, 16);
+    return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
+  }
+
+  function getHoverTrailBlendModeCode(mode) {
+    switch (mode) {
+      case "mix": return 1;
+      case "screen": return 2;
+      case "multiply": return 3;
+      case "overlay": return 4;
+      default: return 0;
+    }
+  }
 
   const canvas = document.getElementById("footer");
   if (!canvas) return;
   if (canvas.__footerPcInit) return;
   canvas.__footerPcInit = true;
 
-  const gl = canvas.getContext("webgl", { alpha: true, antialias: false });
+  const gl = canvas.getContext("webgl", {
+    alpha: true,
+    antialias: false,
+    preserveDrawingBuffer: true
+  });
   if (!gl) return;
 
   let W = 1;
@@ -55,12 +80,21 @@ function dreamWatchCanvas(canvas, onResize) {
   let imgH = 1;
   let particleCount = 0;
   let buffer = null;
+  let paintTexture = null;
+  let trailCanvas = null;
+  let trailCtx = null;
+  let trailTexture = null;
+  let trailW = 1;
+  let trailH = 1;
+  let trailDirty = false;
   let hoverX = 0;
   let hoverY = 0;
   let hoverActive = 0;
   let targetHoverX = 0;
   let targetHoverY = 0;
   let targetHoverActive = 0;
+  let hoverU = 0.5;
+  let hoverV = 0.5;
   let lastFrameTime = performance.now();
 
   const VS = `
@@ -68,6 +102,7 @@ function dreamWatchCanvas(canvas, onResize) {
     attribute vec2 a_pos;
     attribute vec3 a_col;
     attribute float a_bri;
+    attribute vec2 a_uv;
     varying vec3 v_col;
 
     uniform vec2 u_res;
@@ -88,10 +123,26 @@ function dreamWatchCanvas(canvas, onResize) {
     uniform float u_rotateY;
     uniform float u_rotateZ;
     uniform float u_perspective;
+    uniform sampler2D u_paintTex;
+    uniform sampler2D u_trailTex;
+    uniform float u_trailBlendMode;
 
     mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }
     mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }
     mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,-s,0, s,c,0, 0,0,1); }
+    vec3 blendScreen(vec3 base, vec3 blend){ return 1.0 - (1.0 - base) * (1.0 - blend); }
+    vec3 blendOverlay(vec3 base, vec3 blend){
+      return mix(2.0 * base * blend, 1.0 - 2.0 * (1.0 - base) * (1.0 - blend), step(0.5, base));
+    }
+    vec3 applyTrailBlend(vec3 baseCol, vec4 trail, float mode){
+      vec3 tint = clamp(trail.rgb, 0.0, 1.0);
+      float a = clamp(trail.a, 0.0, 1.0);
+      if (mode < 0.5) return clamp(baseCol + tint * a, 0.0, 1.0);
+      else if (mode < 1.5) return clamp(mix(baseCol, tint, a), 0.0, 1.0);
+      else if (mode < 2.5) return clamp(mix(baseCol, blendScreen(baseCol, tint), a), 0.0, 1.0);
+      else if (mode < 3.5) return clamp(mix(baseCol, baseCol * tint, a), 0.0, 1.0);
+      else return clamp(mix(baseCol, blendOverlay(baseCol, tint), a), 0.0, 1.0);
+    }
 
     void main() {
       vec2 uv = a_pos / u_img;
@@ -117,7 +168,10 @@ function dreamWatchCanvas(canvas, onResize) {
 
       gl_Position = vec4(clip, 0.0, 1.0);
       gl_PointSize = u_pointSize * persp;
-      v_col = a_col;
+      vec4 paint = texture2D(u_paintTex, a_uv);
+      vec3 baseCol = clamp(mix(a_col, paint.rgb, paint.a), 0.0, 1.0);
+      vec4 trail = texture2D(u_trailTex, a_uv);
+      v_col = applyTrailBlend(baseCol, trail, u_trailBlendMode);
     }
   `;
 
@@ -148,12 +202,124 @@ function dreamWatchCanvas(canvas, onResize) {
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
   const uni = (name) => gl.getUniformLocation(program, name);
 
+  function getFitZoom() {
+    const aspect = W / H;
+    const imgAspect = imgW / imgH;
+    return aspect / imgAspect;
+  }
+
+  function getEffectiveZoom() {
+    return params.zoom * getFitZoom();
+  }
+
   function resize() {
     const size = dreamFitCanvas(canvas);
     if (!size.changed && W === size.w && H === size.h) return;
     W = size.w;
     H = size.h;
     gl.viewport(0, 0, W, H);
+  }
+
+  function setupPaintTexture() {
+    const paintBuffer = new Uint8Array(imgW * imgH * 4);
+    paintTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, paintTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      imgW,
+      imgH,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      paintBuffer
+    );
+  }
+
+  function setupTrailTexture() {
+    const maxDim = 1024;
+    const scale = Math.min(1, maxDim / Math.max(1, Math.max(imgW, imgH)));
+    trailW = Math.max(1, Math.round(imgW * scale));
+    trailH = Math.max(1, Math.round(imgH * scale));
+    trailCanvas = document.createElement("canvas");
+    trailCanvas.width = trailW;
+    trailCanvas.height = trailH;
+    trailCtx = trailCanvas.getContext("2d");
+    trailCtx.clearRect(0, 0, trailW, trailH);
+    trailTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, trailTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    uploadTrailTexture(true);
+  }
+
+  function uploadTrailTexture(force) {
+    if (!trailTexture || !trailCanvas) return;
+    if (!trailDirty && !force) return;
+    gl.bindTexture(gl.TEXTURE_2D, trailTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, trailCanvas);
+    trailDirty = false;
+  }
+
+  function fadeTrail(dt) {
+    if (!trailCtx || !params.hoverTrailEnabled) return;
+    const decayPerFrame = Math.max(0, Math.min(0.99, params.hoverTrailDecay));
+    const k = 1 - Math.pow(1 - decayPerFrame, dt * 60);
+    if (k <= 0) return;
+    trailCtx.save();
+    trailCtx.globalCompositeOperation = "destination-out";
+    trailCtx.fillStyle = "rgba(0,0,0," + k + ")";
+    trailCtx.fillRect(0, 0, trailW, trailH);
+    trailCtx.restore();
+    trailDirty = true;
+  }
+
+  function depositTrail() {
+    if (!trailCtx || !params.hoverTrailEnabled) return;
+    if (hoverActive <= 0.001) return;
+    const rgb = hexToRgb01(params.hoverTrailHex).map(function (v) {
+      return Math.round(v * 255);
+    });
+    const alpha = Math.max(0, Math.min(1, params.hoverTrailOpacity)) * hoverActive;
+    if (alpha <= 0.001) return;
+    const aspect = W / H;
+    const zoom = getEffectiveZoom();
+    const duPerClip = aspect / (2 * zoom) / (imgW / imgH);
+    const dvPerClip = 1 / (2 * zoom);
+    const pxPerClipX = Math.abs(duPerClip) * trailW;
+    const pxPerClipY = Math.abs(dvPerClip) * trailH;
+    const baseRadiusPx = params.hoverRadius * Math.min(pxPerClipX, pxPerClipY);
+    const radiusPx = Math.max(1, Math.round(baseRadiusPx * params.hoverTrailRadius));
+    const x = hoverU * trailW;
+    const y = hoverV * trailH;
+    trailCtx.save();
+    trailCtx.globalCompositeOperation = "source-over";
+    const grad = trailCtx.createRadialGradient(x, y, 0, x, y, radiusPx);
+    grad.addColorStop(0, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + alpha + ")");
+    grad.addColorStop(0.35, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + (alpha * 0.6) + ")");
+    grad.addColorStop(1, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ",0)");
+    trailCtx.fillStyle = grad;
+    trailCtx.beginPath();
+    trailCtx.arc(x, y, radiusPx, 0, Math.PI * 2);
+    trailCtx.fill();
+    trailCtx.restore();
+    trailDirty = true;
+  }
+
+  function updateHoverUV() {
+    const aspect = W / H;
+    const zoom = getEffectiveZoom();
+    const u = ((targetHoverX / 2) * aspect / zoom) / (imgW / imgH) + 0.5;
+    const v = 0.5 - ((targetHoverY / 2) / zoom);
+    hoverU = Math.max(0, Math.min(1, u));
+    hoverV = Math.max(0, Math.min(1, v));
   }
 
   function buildParticles(img) {
@@ -177,14 +343,18 @@ function dreamWatchCanvas(canvas, onResize) {
         const b = data[i + 2] / 255;
         const a = data[i + 3] / 255;
         const bri = (0.2126 * r + 0.7152 * g + 0.0722 * b) * a;
-        if (a > 0.04 && bri >= params.threshold) arr.push(x, y, r, g, b, bri);
+        if (a > 0.04 && bri >= params.threshold) {
+          arr.push(x, y, r, g, b, bri, x / imgW, y / imgH);
+        }
       }
     }
 
-    particleCount = arr.length / 6;
+    particleCount = arr.length / 8;
     buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW);
+    setupPaintTexture();
+    setupTrailTexture();
   }
 
   function draw() {
@@ -192,10 +362,11 @@ function dreamWatchCanvas(canvas, onResize) {
     gl.useProgram(program);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-    const stride = 6 * 4;
+    const stride = 8 * 4;
     const pos = gl.getAttribLocation(program, "a_pos");
     const col = gl.getAttribLocation(program, "a_col");
     const bri = gl.getAttribLocation(program, "a_bri");
+    const uvAttr = gl.getAttribLocation(program, "a_uv");
 
     gl.enableVertexAttribArray(pos);
     gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, stride, 0);
@@ -203,10 +374,10 @@ function dreamWatchCanvas(canvas, onResize) {
     gl.vertexAttribPointer(col, 3, gl.FLOAT, false, stride, 2 * 4);
     gl.enableVertexAttribArray(bri);
     gl.vertexAttribPointer(bri, 1, gl.FLOAT, false, stride, 5 * 4);
+    gl.enableVertexAttribArray(uvAttr);
+    gl.vertexAttribPointer(uvAttr, 2, gl.FLOAT, false, stride, 6 * 4);
 
-    const aspect = W / H;
-    const imgAspect = imgW / imgH;
-    const fitZoom = aspect / imgAspect; // fills wrapper width, wrapper crops height if needed
+    const fitZoom = getFitZoom();
 
     gl.uniform2f(uni("u_res"), W, H);
     gl.uniform2f(uni("u_img"), imgW, imgH);
@@ -226,6 +397,13 @@ function dreamWatchCanvas(canvas, onResize) {
     gl.uniform1f(uni("u_rotateY"), 0);
     gl.uniform1f(uni("u_rotateZ"), 0);
     gl.uniform1f(uni("u_perspective"), params.perspective);
+    gl.uniform1f(uni("u_trailBlendMode"), getHoverTrailBlendModeCode(params.hoverTrailBlendMode));
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, paintTexture);
+    gl.uniform1i(uni("u_paintTex"), 0);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, trailTexture);
+    gl.uniform1i(uni("u_trailTex"), 1);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -254,6 +432,10 @@ function dreamWatchCanvas(canvas, onResize) {
     hoverY += (targetHoverY - hoverY) * follow;
     hoverActive += (targetHoverActive - hoverActive) * follow;
 
+    fadeTrail(dt);
+    depositTrail();
+    uploadTrailTexture(false);
+
     render();
     requestAnimationFrame(animate);
   }
@@ -262,6 +444,7 @@ function dreamWatchCanvas(canvas, onResize) {
     const rect = canvas.getBoundingClientRect();
     targetHoverX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     targetHoverY = 1 - ((e.clientY - rect.top) / rect.height) * 2;
+    updateHoverUV();
   }
 
   canvas.addEventListener("pointerdown", (e) => {
