@@ -1936,19 +1936,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!video || slide.__videoHoverInit) return;
       slide.__videoHoverInit = true;
 
+      video.loop = false;
       video.pause();
       video.currentTime = 0;
 
-      slide.addEventListener('mouseenter', function () {
-        container.querySelectorAll('.swiper-slide video').forEach(function (v) {
-          v.pause();
-        });
-        video.play().catch(function () {});
-      });
-
-      slide.addEventListener('mouseleave', function () {
+      video.addEventListener('ended', function () {
         video.pause();
         video.currentTime = 0;
+      });
+
+      slide.addEventListener('mouseenter', function () {
+        container.querySelectorAll('.swiper-slide video').forEach(function (v) {
+          if (v !== video) {
+            v.pause();
+            v.currentTime = 0;
+          }
+        });
+        video.currentTime = 0;
+        video.play().catch(function () {});
       });
     });
   }
