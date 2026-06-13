@@ -43,7 +43,7 @@ function dreamWatchCanvas(canvas, onResize) {
     "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a258a0380eb9363715e4a36_Sky.avif";
 
   const STAR_TRAVEL = {
-    speed: 0.105,
+    speed: 0.0525,
     range: 1.85
   };
 
@@ -359,7 +359,7 @@ function dreamWatchCanvas(canvas, onResize) {
 
   const CTA = {
     url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a257c80f5d99b0739a7c57d_092657a0a2abf371908c88bc0d50256d_cta-new.avif",
-    spinYPeriodSec: 50
+    spinYPeriodSec: 25
   };
 
   function hexToRgb01(hex) {
@@ -823,9 +823,9 @@ function dreamWatchCanvas(canvas, onResize) {
 (function () {
   const PARAMS = {
     density: 1,
-    threshold: 0.45,
+    threshold: 0.6,
     pointSize: 0.6,
-    depth: 0.74,
+    depth: 0.8,
     hoverRadius: 0.96,
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
@@ -1837,7 +1837,7 @@ $(".system_tabs-link").on("click", function () {
   $("#bg-video-" + tn + " video").get(0).play();
 });
 
-/* Marquee slider */
+/* Marquee slider — disabled for now
 document.addEventListener('DOMContentLoaded', () => {
   const SLIDE_DURATION  = 12;
   const TWEEN_DUR       = 0.7;
@@ -1960,3 +1960,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('.swiper').forEach(initSlider);
 });
+*/
