@@ -1925,6 +1925,32 @@ document.addEventListener('DOMContentLoaded', () => {
       if (delta < -totalW / 2) delta += totalW;
       tweenTo(-(currentNegX + delta), afterMove);
     }
+
+    initSlideVideoHover(container);
+  }
+
+  function initSlideVideoHover(container) {
+    const slides = container.querySelectorAll('.swiper-slide');
+    slides.forEach(function (slide) {
+      const video = slide.querySelector('video');
+      if (!video || slide.__videoHoverInit) return;
+      slide.__videoHoverInit = true;
+
+      video.pause();
+      video.currentTime = 0;
+
+      slide.addEventListener('mouseenter', function () {
+        container.querySelectorAll('.swiper-slide video').forEach(function (v) {
+          v.pause();
+        });
+        video.play().catch(function () {});
+      });
+
+      slide.addEventListener('mouseleave', function () {
+        video.pause();
+        video.currentTime = 0;
+      });
+    });
   }
 
   document.querySelectorAll('.swiper').forEach(initSlider);
