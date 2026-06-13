@@ -458,8 +458,27 @@ void main(){
   const ALL_TEAM = "All Team";
   const PAGE_SIZE = 10;
 
+  const LOCATION_CANONICAL = {
+    "tel aviv": "tel aviv",
+    tlv: "tel aviv",
+    "tlv - isr": "tel aviv"
+  };
+
+  const LOCATION_LABELS = {
+    "tel aviv": "Tel Aviv"
+  };
+
   function normalize(value) {
     return (value || "").trim().toLowerCase();
+  }
+
+  function canonicalLocation(value) {
+    const key = normalize(value);
+    return LOCATION_CANONICAL[key] || key;
+  }
+
+  function locationLabel(canonical) {
+    return LOCATION_LABELS[canonical] || canonical;
   }
 
   function populateSelect(select, values, allLabel) {
@@ -496,10 +515,48 @@ void main(){
     return values;
   }
 
+  function collectLocationOptions(items) {
+    const options = new Map();
+    items.forEach(function (item) {
+      const raw = item.querySelector('[data-filter="location"]')?.textContent.trim();
+      if (!raw) return;
+      const canonical = canonicalLocation(raw);
+      if (!options.has(canonical)) {
+        options.set(canonical, locationLabel(canonical));
+      }
+    });
+    return options;
+  }
+
+  function populateLocationSelect(select, items, allLabel) {
+    if (!select) return;
+
+    const fragment = document.createDocumentFragment();
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = allLabel;
+    fragment.appendChild(allOption);
+
+    Array.from(collectLocationOptions(items).entries())
+      .sort(function (a, b) {
+        return a[1].localeCompare(b[1]);
+      })
+      .forEach(function (entry) {
+        const option = document.createElement("option");
+        option.value = entry[0];
+        option.textContent = entry[1];
+        fragment.appendChild(option);
+      });
+
+    select.innerHTML = "";
+    select.appendChild(fragment);
+  }
+
   function getItemData(item) {
+    const rawLocation = item.querySelector('[data-filter="location"]')?.textContent;
     return {
       team: normalize(item.querySelector('[data-filter="team"]')?.textContent),
-      location: normalize(item.querySelector('[data-filter="location"]')?.textContent),
+      location: canonicalLocation(rawLocation),
       name: normalize(item.querySelector('[data-filter="name"]')?.textContent)
     };
   }
@@ -536,7 +593,7 @@ void main(){
     const resetIcon = document.querySelector('[data-icon="reset"]');
     let visibleLimit = PAGE_SIZE;
 
-    populateSelect(locationSelect, collectFieldValues(items, "location"), ALL_LOCATION);
+    populateLocationSelect(locationSelect, items, ALL_LOCATION);
     populateSelect(teamSelect, collectFieldValues(items, "team"), ALL_TEAM);
 
     function setSearchIcons(hasQuery) {
