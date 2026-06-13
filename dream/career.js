@@ -3,13 +3,13 @@
   const PARAMS = {
     density: 1,
     threshold: 0.45,
-    pointSize: 0.3,
-    depth: 0.74,
+    pointSize: 0.2,
+    depth: 1,
     hoverRadius: 0.96,
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
     hoverEase: 0.12,
-    zoom: 0.7,
+    zoom: 0.9,
     moveX: 0,
     moveY: 0,
     rotateX: 0,
@@ -447,4 +447,166 @@ void main(){
   }
 
   initCareerPointCloud(document.getElementById(CFG.id), CFG);
+})();
+
+/* Filters */
+(function () {
+  const ITEM_SELECTOR = ".job_collection-item";
+  const EMPTY_SELECTOR = ".empty-state";
+  const ALL_LOCATION = "All Location";
+  const ALL_TEAM = "All Team";
+
+  function normalize(value) {
+    return (value || "").trim().toLowerCase();
+  }
+
+  function getSearchInput() {
+    const wrapper = document.querySelector(".filter_search-wrapper");
+    if (!wrapper) return null;
+
+    const existing = wrapper.querySelector("input, textarea");
+    if (existing) return existing;
+
+    const searchEl = document.getElementById("filtersSearch");
+    if (searchEl?.matches("input, textarea")) return searchEl;
+
+    if (searchEl) {
+      const input = document.createElement("input");
+      input.type = "search";
+      input.id = "filtersSearch";
+      input.className = searchEl.className;
+      input.placeholder = searchEl.textContent.trim() || "Search positions";
+      input.autocomplete = "off";
+      searchEl.replaceWith(input);
+      return input;
+    }
+
+    return null;
+  }
+
+  function populateSelect(select, values, allLabel) {
+    if (!select) return;
+
+    const fragment = document.createDocumentFragment();
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = allLabel;
+    fragment.appendChild(allOption);
+
+    Array.from(values)
+      .sort(function (a, b) {
+        return a.localeCompare(b);
+      })
+      .forEach(function (value) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        fragment.appendChild(option);
+      });
+
+    select.innerHTML = "";
+    select.appendChild(fragment);
+  }
+
+  function collectFieldValues(items, filterKey) {
+    const values = new Set();
+    items.forEach(function (item) {
+      const el = item.querySelector('[data-filter="' + filterKey + '"]');
+      const text = el?.textContent.trim();
+      if (text) values.add(text);
+    });
+    return values;
+  }
+
+  function getItemData(item) {
+    return {
+      team: normalize(item.querySelector('[data-filter="team"]')?.textContent),
+      location: normalize(item.querySelector('[data-filter="location"]')?.textContent),
+      name: normalize(item.querySelector('[data-filter="name"]')?.textContent)
+    };
+  }
+
+  function initCareerFilters() {
+    const root = document.querySelector(".job_filters-wrapper");
+    if (!root || root.dataset.careerFiltersInit === "true") return;
+
+    const items = Array.from(document.querySelectorAll(ITEM_SELECTOR));
+    if (!items.length) return;
+
+    root.dataset.careerFiltersInit = "true";
+
+    const locationSelect = document.getElementById("filterLocation");
+    const teamSelect = document.getElementById("filterDepartmen");
+    const searchInput = getSearchInput();
+    const emptyState = document.querySelector(EMPTY_SELECTOR);
+    const searchIcon = document.querySelector('[data-icon="search"]');
+    const resetIcon = document.querySelector('[data-icon="reset"]');
+
+    populateSelect(locationSelect, collectFieldValues(items, "location"), ALL_LOCATION);
+    populateSelect(teamSelect, collectFieldValues(items, "team"), ALL_TEAM);
+
+    function setSearchIcons(hasQuery) {
+      if (searchIcon) searchIcon.style.display = hasQuery ? "none" : "flex";
+      if (resetIcon) {
+        resetIcon.style.display = hasQuery ? "flex" : "none";
+        resetIcon.style.cursor = hasQuery ? "pointer" : "";
+      }
+    }
+
+    function applyFilters() {
+      const query = normalize(searchInput?.value);
+      const location = normalize(locationSelect?.value);
+      const team = normalize(teamSelect?.value);
+      let visibleCount = 0;
+
+      items.forEach(function (item) {
+        const data = getItemData(item);
+        const matchesSearch = !query || data.name.includes(query);
+        const matchesLocation = !location || data.location === location;
+        const matchesTeam = !team || data.team === team;
+        const visible = matchesSearch && matchesLocation && matchesTeam;
+
+        item.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+
+      if (emptyState) {
+        emptyState.style.display = visibleCount === 0 ? "flex" : "none";
+      }
+
+      setSearchIcons(Boolean(query));
+    }
+
+    function resetSearch() {
+      if (!searchInput) return;
+      searchInput.value = "";
+      searchInput.focus();
+      applyFilters();
+    }
+
+    locationSelect?.addEventListener("change", applyFilters);
+    teamSelect?.addEventListener("change", applyFilters);
+    searchInput?.addEventListener("input", applyFilters);
+
+    resetIcon?.addEventListener("click", function (event) {
+      event.preventDefault();
+      resetSearch();
+    });
+
+    setSearchIcons(false);
+    applyFilters();
+  }
+
+  function boot() {
+    initCareerFilters();
+  }
+
+  window.Webflow ||= [];
+  window.Webflow.push(boot);
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
 })();
