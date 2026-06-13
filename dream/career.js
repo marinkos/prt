@@ -543,6 +543,7 @@ void main(){
         const visible = matchesSearch && matchesLocation && matchesTeam;
 
         item.hidden = !visible;
+        item.style.display = visible ? "" : "none";
         if (visible) visibleCount += 1;
       });
 
