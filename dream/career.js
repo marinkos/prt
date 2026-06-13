@@ -460,30 +460,6 @@ void main(){
     return (value || "").trim().toLowerCase();
   }
 
-  function getSearchInput() {
-    const wrapper = document.querySelector(".filter_search-wrapper");
-    if (!wrapper) return null;
-
-    const existing = wrapper.querySelector("input, textarea");
-    if (existing) return existing;
-
-    const searchEl = document.getElementById("filtersSearch");
-    if (searchEl?.matches("input, textarea")) return searchEl;
-
-    if (searchEl) {
-      const input = document.createElement("input");
-      input.type = "search";
-      input.id = "filtersSearch";
-      input.className = searchEl.className;
-      input.placeholder = searchEl.textContent.trim() || "Search positions";
-      input.autocomplete = "off";
-      searchEl.replaceWith(input);
-      return input;
-    }
-
-    return null;
-  }
-
   function populateSelect(select, values, allLabel) {
     if (!select) return;
 
@@ -537,7 +513,7 @@ void main(){
 
     const locationSelect = document.getElementById("filterLocation");
     const teamSelect = document.getElementById("filterDepartmen");
-    const searchInput = getSearchInput();
+    const searchInput = document.getElementById("filtersSearch");
     const emptyState = document.querySelector(EMPTY_SELECTOR);
     const searchIcon = document.querySelector('[data-icon="search"]');
     const resetIcon = document.querySelector('[data-icon="reset"]');
