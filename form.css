@@ -1,0 +1,49 @@
+/* Labels */
+label,
+.field-label,
+.apply-field-label,
+.question-title {
+  font-size: 0.875rem;
+  color: #ffffff;
+}
+
+/* Text inputs, textarea, and select */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+input[type="search"],
+textarea,
+select,
+.apply-field input,
+.apply-field textarea,
+.apply-field select {
+  font-size: 0.75rem;
+  border-radius: 20%;
+  border: 1px solid #E5E5E5;
+}
+
+/* File attach buttons (Attach Resume / Cover Letter / Portfolio) */
+.file-upload-btn,
+.attach-btn,
+.file-label,
+[class*="file-upload"],
+[class*="attach"],
+.apply-field .upload-btn,
+.upload-button {
+  background-color: #F3F3F3;
+  border-radius: 4rem;
+  color: #141A29;
+}
+
+/* Submit Application button */
+button[type="submit"],
+.apply-btn,
+.submit-btn,
+input[type="submit"],
+.apply-application-btn {
+  background-color: #F3F3F3;
+  border-radius: 4rem;
+  color: #141A29;
+}
