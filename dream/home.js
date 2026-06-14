@@ -1985,3 +1985,39 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.swiper').forEach(initSlider);
 });
 */
+
+document.addEventListener('DOMContentLoaded', function () {
+  const COLOR_HERO_INITIAL = '#0d142b';
+  const COLOR_HERO_DARK    = '#ffffff';
+
+  const heroEls = document.querySelectorAll('.hero_banner-heading');
+  const darkSections = document.querySelectorAll('[data-color="dark"]');
+
+  function isOverDark(el) {
+    const r = el.getBoundingClientRect();
+    const line = r.top + r.height / 2;
+    for (let i = 0; i < darkSections.length; i++) {
+      const rect = darkSections[i].getBoundingClientRect();
+      if (rect.top <= line && rect.bottom >= line) return true;
+    }
+    return false;
+  }
+
+  function update() {
+    heroEls.forEach(function (el) {
+      el.style.color = isOverDark(el) ? COLOR_HERO_DARK : COLOR_HERO_INITIAL;
+    });
+  }
+
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(function () { update(); ticking = false; });
+      ticking = true;
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', update);
+
+  update();
+});
