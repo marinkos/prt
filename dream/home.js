@@ -860,7 +860,7 @@ function dreamWatchCanvas(canvas, onResize) {
     {
       id: "ship",
       url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.avif",
-      rotateY: -10,
+      rotateY: -15,
       threshold: 0.5,
       filterIsolatedSpecks: true
     }
