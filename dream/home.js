@@ -43,7 +43,7 @@ function dreamWatchCanvas(canvas, onResize) {
     "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a258a0380eb9363715e4a36_Sky.avif";
 
   const STAR_TRAVEL = {
-    speed: 0.0525,
+    speed: 0.02625,
     range: 1.85
   };
 
@@ -857,6 +857,7 @@ function dreamWatchCanvas(canvas, onResize) {
       rotateX: 0,
       rotateY: 15,
       threshold: 0.5
+      zoom: 0.6
     },
     {
       id: "ship",
