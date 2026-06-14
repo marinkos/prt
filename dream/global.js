@@ -569,3 +569,46 @@ document.addEventListener('DOMContentLoaded', function () {
 
   update();
 });
+
+/* Nav background + border on scroll — .nav_component (desktop) */
+var Webflow = Webflow || [];
+Webflow.push(function () {
+  if (window.innerWidth < 992) return;
+
+  var navSelector = '.nav_component';
+  var startPct = 0.04;
+  var endPct = 0.10;
+  var maxBgAlpha = 0.01;
+  var maxBorderAlpha = 0.10;
+
+  var nav = document.querySelector(navSelector);
+  if (!nav) return;
+
+  function clamp(v, min, max) {
+    return Math.min(max, Math.max(min, v));
+  }
+
+  function onScroll() {
+    var doc = document.documentElement;
+    var scrollable = (doc.scrollHeight - window.innerHeight) || 1;
+    var progress = window.scrollY / scrollable;
+    var t = clamp((progress - startPct) / (endPct - startPct), 0, 1);
+
+    nav.style.backgroundColor = 'rgba(20, 26, 41, ' + (t * maxBgAlpha) + ')';
+    nav.style.borderBottom = '1px solid rgba(20, 26, 41, ' + (t * maxBorderAlpha) + ')';
+  }
+
+  var ticking = false;
+  window.addEventListener('scroll', function () {
+    if (!ticking) {
+      requestAnimationFrame(function () {
+        onScroll();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  window.addEventListener('resize', onScroll);
+  onScroll();
+});
