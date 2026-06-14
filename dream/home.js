@@ -846,7 +846,7 @@ function dreamWatchCanvas(canvas, onResize) {
   };
 
   const IDLE = {
-    depthPulse: 0.22,
+    depthPulse: 0.1,
     speed: 0.45
   };
 
@@ -854,14 +854,15 @@ function dreamWatchCanvas(canvas, onResize) {
     {
       id: "engine",
       url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a27293bbf44bbaadf348116_723edc1c9cc4c4795b2cb39718ada458_rocket.avif",
-      rotateX: -15,
-      rotateY: 6
+      rotateX: -7,
+      rotateY: -15,
+      threshold: 0.5
     },
     {
       id: "ship",
       url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.avif",
       rotateY: -10,
-      threshold: 0.5,
+      threshold: 0.3,
       filterIsolatedSpecks: true
     }
   ];
