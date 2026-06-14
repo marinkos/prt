@@ -823,9 +823,9 @@ function dreamWatchCanvas(canvas, onResize) {
 (function () {
   const PARAMS = {
     density: 1,
-    threshold: 0.6,
+    threshold: 0.2,
     pointSize: 0.6,
-    depth: 6,
+    depth: 2,
     hoverRadius: 0.96,
     hoverSoftness: 0.55,
     hoverStrength: 1.0,
