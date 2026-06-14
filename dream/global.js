@@ -514,11 +514,17 @@ document.addEventListener('DOMContentLoaded', function () {
   const COLOR_BUTTON_INITIAL = '#0d142b';
   const COLOR_BUTTON_DARK    = 'rgba(244, 247, 255, 0.08)'; // 8% of #F4F7FF
 
-  const BG_SCROLLED  = 'rgba(20, 26, 41, 0.01)';
-  const BORDER_SCROLLED = '1px solid rgba(20, 26, 41, 0.10)';
+  const BG_SCROLLED_ALPHA = 0.01;
+  const BORDER_SCROLLED_ALPHA = 0.10;
+  const MAX_BLUR = 12;
 
   const scope = document.querySelector(NAV_SELECTOR) || document;
-  const navShell = document.querySelector(NAV_SHELL_SELECTOR) || scope;
+  const navShells = [];
+  const navComponent = document.querySelector(NAV_SHELL_SELECTOR);
+  const navbarEl = document.querySelector(NAV_SELECTOR);
+  if (navComponent) navShells.push(navComponent);
+  if (navbarEl && navbarEl !== navComponent) navShells.push(navbarEl);
+  if (!navShells.length && scope !== document) navShells.push(scope);
   const brandEls  = scope.querySelectorAll('.nav_brand');
   const linkEls   = scope.querySelectorAll('.nav_menu_link');
   const buttonEls = scope.querySelectorAll('.button');
@@ -543,22 +549,70 @@ document.addEventListener('DOMContentLoaded', function () {
     return false;
   }
 
+  function clamp(v, min, max) {
+    return Math.min(max, Math.max(min, v));
+  }
+
+  function getVisualScrollTop() {
+    var y = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    var wrapper = document.querySelector('.page-wrapper');
+    if (wrapper) {
+      y = Math.max(y, -wrapper.getBoundingClientRect().top);
+    }
+    return y;
+  }
+
+  function getNavShellProgress() {
+    var scrollTop = getVisualScrollTop();
+    if (scrollTop <= 0) return 0;
+    var doc = document.documentElement;
+    var scrollable = (doc.scrollHeight - window.innerHeight) || 1;
+    var progress = scrollTop / scrollable;
+    var startPct = 0.04;
+    var endPct = 0.10;
+    return clamp((progress - startPct) / (endPct - startPct), 0, 1);
+  }
+
+  function setNavShellStyle(el, prop, value) {
+    if (value) {
+      el.style.setProperty(prop, value, 'important');
+    } else {
+      el.style.removeProperty(prop);
+    }
+  }
+
   function updateNavShell() {
-    if (!navShell || !isDesktop.matches) {
-      if (navShell) {
-        navShell.style.backgroundColor = '';
-        navShell.style.borderBottom = '';
-      }
+    if (!navShells.length) return;
+
+    if (!isDesktop.matches) {
+      navShells.forEach(function (el) {
+        setNavShellStyle(el, 'background-color', '');
+        setNavShellStyle(el, 'border-bottom', '');
+        setNavShellStyle(el, 'backdrop-filter', '');
+        setNavShellStyle(el, '-webkit-backdrop-filter', '');
+      });
       return;
     }
 
-    if (window.scrollY > 0) {
-      navShell.style.backgroundColor = BG_SCROLLED;
-      navShell.style.borderBottom = BORDER_SCROLLED;
-    } else {
-      navShell.style.backgroundColor = 'transparent';
-      navShell.style.borderBottom = '1px solid transparent';
-    }
+    var t = getNavShellProgress();
+    navShells.forEach(function (el) {
+      if (t <= 0) {
+        setNavShellStyle(el, 'background-color', 'transparent');
+        setNavShellStyle(el, 'border-bottom', '1px solid transparent');
+        setNavShellStyle(el, 'backdrop-filter', 'none');
+        setNavShellStyle(el, '-webkit-backdrop-filter', 'none');
+        return;
+      }
+
+      var alpha = t * BG_SCROLLED_ALPHA;
+      var borderAlpha = t * BORDER_SCROLLED_ALPHA;
+      var blur = t * MAX_BLUR;
+
+      setNavShellStyle(el, 'background-color', 'rgba(20, 26, 41, ' + alpha + ')');
+      setNavShellStyle(el, 'border-bottom', '1px solid rgba(20, 26, 41, ' + borderAlpha + ')');
+      setNavShellStyle(el, 'backdrop-filter', 'blur(' + blur + 'px)');
+      setNavShellStyle(el, '-webkit-backdrop-filter', 'blur(' + blur + 'px)');
+    });
   }
 
   function update() {
@@ -586,6 +640,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
   window.addEventListener('scroll', onScroll, { passive: true });
+  document.addEventListener('scroll', onScroll, { passive: true });
+  if (window.lenis && typeof window.lenis.on === 'function') {
+    window.lenis.on('scroll', onScroll);
+  }
   window.addEventListener('resize', update);
   if (isDesktop.addEventListener) {
     isDesktop.addEventListener('change', update);
