@@ -856,7 +856,7 @@ function dreamWatchCanvas(canvas, onResize) {
       url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a27293bbf44bbaadf348116_723edc1c9cc4c4795b2cb39718ada458_rocket.avif",
       rotateX: 0,
       rotateY: 15,
-      threshold: 0.5
+      threshold: 0.5,
       zoom: 0.6
     },
     {
