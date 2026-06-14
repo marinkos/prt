@@ -823,7 +823,7 @@ function dreamWatchCanvas(canvas, onResize) {
 (function () {
   const PARAMS = {
     density: 1,
-    threshold: 0.2,
+    threshold: 0.3,
     pointSize: 0.6,
     depth: 2,
     hoverRadius: 0.96,
@@ -853,14 +853,14 @@ function dreamWatchCanvas(canvas, onResize) {
   const PANELS = [
     {
       id: "engine",
-      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a27293bbf44bbaadf348116_rocket.avif",
-      rotateX: -7,
+      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a27293bbf44bbaadf348116_723edc1c9cc4c4795b2cb39718ada458_rocket.avif",
+      rotateX: -15,
       rotateY: 6
     },
     {
       id: "ship",
       url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.avif",
-      rotateY: -15,
+      rotateY: -10,
       threshold: 0.5,
       filterIsolatedSpecks: true
     }
