@@ -43,7 +43,9 @@ function dreamWatchCanvas(canvas, onResize) {
     "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a258a0380eb9363715e4a36_Sky.avif";
 
   const STAR_TRAVEL = {
-    speed: 0.02625,
+    speedStart: 0.105,
+    speedEnd: 0.02625,
+    rampSec: 10,
     range: 1.85
   };
 
@@ -284,11 +286,17 @@ function dreamWatchCanvas(canvas, onResize) {
     draw();
   }
 
+  function getTravelSpeed(t) {
+    const ramp = Math.min(1, t / STAR_TRAVEL.rampSec);
+    const ease = 1 - Math.pow(1 - ramp, 3);
+    return STAR_TRAVEL.speedStart + (STAR_TRAVEL.speedEnd - STAR_TRAVEL.speedStart) * ease;
+  }
+
   function animate(now) {
     const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
     lastFrameTime = now;
     globalTime += dt;
-    starTravel = (starTravel + dt * STAR_TRAVEL.speed) % STAR_TRAVEL.range;
+    starTravel = (starTravel + dt * getTravelSpeed(globalTime)) % STAR_TRAVEL.range;
 
     const t = globalTime * IDLE.speed + panel.phase;
 
