@@ -501,3 +501,71 @@ function dreamWatchCanvas(canvas, onResize) {
 
   dreamWatchCanvas(canvas, render);
 })();
+
+document.addEventListener('DOMContentLoaded', function () {
+
+  const NAV_SELECTOR = '.navbar';
+
+  const COLOR_TEXT_INITIAL   = '#0d142b';
+  const COLOR_TEXT_DARK      = '#ffffff';
+  const COLOR_BUTTON_INITIAL = '#0d142b';
+  const COLOR_BUTTON_DARK    = 'rgba(244, 247, 255, 0.08)'; // 8% of #F4F7FF
+
+  const scope = document.querySelector(NAV_SELECTOR) || document;
+  const brandEls  = scope.querySelectorAll('.nav_brand');
+  const linkEls   = scope.querySelectorAll('.nav_menu_link');
+  const buttonEls = scope.querySelectorAll('.button');
+  const darkSections = document.querySelectorAll('[data-color="dark"]');
+
+  // Desktop only = above Webflow's 991px tablet breakpoint
+  const isDesktop = window.matchMedia('(min-width: 992px)');
+
+  function getNavLine() {
+    const ref = brandEls[0] || linkEls[0] || buttonEls[0] ||
+                (scope.getBoundingClientRect ? scope : null);
+    if (!ref) return 0;
+    const rect = ref.getBoundingClientRect();
+    return rect.top + rect.height / 2; // center of the nav element
+  }
+
+  function isOverDark() {
+    const line = getNavLine();
+    for (let i = 0; i < darkSections.length; i++) {
+      const rect = darkSections[i].getBoundingClientRect();
+      if (rect.top <= line && rect.bottom >= line) return true;
+    }
+    return false;
+  }
+
+  function update() {
+    const onDark  = isOverDark();
+    const desktop = isDesktop.matches;
+
+    brandEls.forEach(function (el) {
+      el.style.color = (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL;
+    });
+    linkEls.forEach(function (el) {
+      el.style.color = (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL;
+    });
+    buttonEls.forEach(function (el) {
+      el.style.backgroundColor = (onDark && desktop) ? COLOR_BUTTON_DARK : COLOR_BUTTON_INITIAL;
+    });
+  }
+
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(function () { update(); ticking = false; });
+      ticking = true;
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', update);
+  if (isDesktop.addEventListener) {
+    isDesktop.addEventListener('change', update);
+  } else {
+    isDesktop.addListener(update);
+  }
+
+  update();
+});
