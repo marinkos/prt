@@ -1,3 +1,4 @@
+/* Footer particle effect */
 function dreamFitCanvas(canvas) {
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
@@ -502,22 +503,27 @@ function dreamWatchCanvas(canvas, onResize) {
   dreamWatchCanvas(canvas, render);
 })();
 
+/* Nav: text color over dark sections + bg/border on scroll (desktop) */
 document.addEventListener('DOMContentLoaded', function () {
 
   const NAV_SELECTOR = '.navbar';
+  const NAV_SHELL_SELECTOR = '.nav_component';
 
   const COLOR_TEXT_INITIAL   = '#0d142b';
   const COLOR_TEXT_DARK      = '#ffffff';
   const COLOR_BUTTON_INITIAL = '#0d142b';
   const COLOR_BUTTON_DARK    = 'rgba(244, 247, 255, 0.08)'; // 8% of #F4F7FF
 
+  const BG_SCROLLED  = 'rgba(20, 26, 41, 0.01)';
+  const BORDER_SCROLLED = '1px solid rgba(20, 26, 41, 0.10)';
+
   const scope = document.querySelector(NAV_SELECTOR) || document;
+  const navShell = document.querySelector(NAV_SHELL_SELECTOR) || scope;
   const brandEls  = scope.querySelectorAll('.nav_brand');
   const linkEls   = scope.querySelectorAll('.nav_menu_link');
   const buttonEls = scope.querySelectorAll('.button');
   const darkSections = document.querySelectorAll('[data-color="dark"]');
 
-  // Desktop only = above Webflow's 991px tablet breakpoint
   const isDesktop = window.matchMedia('(min-width: 992px)');
 
   function getNavLine() {
@@ -525,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 (scope.getBoundingClientRect ? scope : null);
     if (!ref) return 0;
     const rect = ref.getBoundingClientRect();
-    return rect.top + rect.height / 2; // center of the nav element
+    return rect.top + rect.height / 2;
   }
 
   function isOverDark() {
@@ -535,6 +541,24 @@ document.addEventListener('DOMContentLoaded', function () {
       if (rect.top <= line && rect.bottom >= line) return true;
     }
     return false;
+  }
+
+  function updateNavShell() {
+    if (!navShell || !isDesktop.matches) {
+      if (navShell) {
+        navShell.style.backgroundColor = '';
+        navShell.style.borderBottom = '';
+      }
+      return;
+    }
+
+    if (window.scrollY > 0) {
+      navShell.style.backgroundColor = BG_SCROLLED;
+      navShell.style.borderBottom = BORDER_SCROLLED;
+    } else {
+      navShell.style.backgroundColor = 'transparent';
+      navShell.style.borderBottom = '1px solid transparent';
+    }
   }
 
   function update() {
@@ -550,6 +574,8 @@ document.addEventListener('DOMContentLoaded', function () {
     buttonEls.forEach(function (el) {
       el.style.backgroundColor = (onDark && desktop) ? COLOR_BUTTON_DARK : COLOR_BUTTON_INITIAL;
     });
+
+    updateNavShell();
   }
 
   let ticking = false;
@@ -568,47 +594,4 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   update();
-});
-
-/* Nav background + border on scroll — .nav_component (desktop) */
-var Webflow = Webflow || [];
-Webflow.push(function () {
-  if (window.innerWidth < 992) return;
-
-  var navSelector = '.nav_component';
-  var startPct = 0.04;
-  var endPct = 0.10;
-  var maxBgAlpha = 0.01;
-  var maxBorderAlpha = 0.10;
-
-  var nav = document.querySelector(navSelector);
-  if (!nav) return;
-
-  function clamp(v, min, max) {
-    return Math.min(max, Math.max(min, v));
-  }
-
-  function onScroll() {
-    var doc = document.documentElement;
-    var scrollable = (doc.scrollHeight - window.innerHeight) || 1;
-    var progress = window.scrollY / scrollable;
-    var t = clamp((progress - startPct) / (endPct - startPct), 0, 1);
-
-    nav.style.backgroundColor = 'rgba(20, 26, 41, ' + (t * maxBgAlpha) + ')';
-    nav.style.borderBottom = '1px solid rgba(20, 26, 41, ' + (t * maxBorderAlpha) + ')';
-  }
-
-  var ticking = false;
-  window.addEventListener('scroll', function () {
-    if (!ticking) {
-      requestAnimationFrame(function () {
-        onScroll();
-        ticking = false;
-      });
-      ticking = true;
-    }
-  }, { passive: true });
-
-  window.addEventListener('resize', onScroll);
-  onScroll();
 });
