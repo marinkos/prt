@@ -860,7 +860,9 @@ function dreamWatchCanvas(canvas, onResize) {
     {
       id: "ship",
       url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.avif",
-      rotateY: -10
+      rotateY: -10,
+      threshold: 0.5,
+      filterIsolatedSpecks: true
     }
   ];
 
@@ -1131,6 +1133,7 @@ void main(){
       const data = ctx.getImageData(0, 0, imgW, imgH).data;
       const arr = [];
       const step = Math.max(1, Math.floor(panel.density));
+      const candidates = [];
       for (let y = 0; y < imgH; y += step) {
         for (let x = 0; x < imgW; x += step) {
           const i = (y * imgW + x) * 4;
@@ -1140,9 +1143,28 @@ void main(){
           const a = data[i + 3] / 255;
           const bri = (0.2126 * r + 0.7152 * g + 0.0722 * b) * a;
           if (a > 0.05 && bri >= panel.threshold) {
-            arr.push(x, y, r, g, b, bri, x / imgW, y / imgH);
+            candidates.push({ x, y, r, g, b, bri });
           }
         }
+      }
+
+      const passSet = new Set(candidates.map(function (c) {
+        return c.y * imgW + c.x;
+      }));
+      const minNeighbors = panel.filterIsolatedSpecks ? 2 : 0;
+
+      for (const c of candidates) {
+        if (minNeighbors > 0) {
+          let neighbors = 0;
+          for (let dy = -step; dy <= step; dy += step) {
+            for (let dx = -step; dx <= step; dx += step) {
+              if (!dx && !dy) continue;
+              if (passSet.has((c.y + dy) * imgW + (c.x + dx))) neighbors++;
+            }
+          }
+          if (neighbors < minNeighbors) continue;
+        }
+        arr.push(c.x, c.y, c.r, c.g, c.b, c.bri, c.x / imgW, c.y / imgH);
       }
       particleCount = arr.length / 8;
       particles = gl.createBuffer();
