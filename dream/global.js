@@ -26,7 +26,7 @@ function dreamWatchCanvas(canvas, onResize) {
 }
 
 (function () {
-  const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a2555fb6c87c45a3ac55f66_5f646b5ba339f85d2b8ad07c3250e8bf_train.png";
+  const IMAGE_SRC = "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a2fa4a5edf2fb294e08c904_train.png";
 
   const params = {
     density: 1,
