@@ -625,6 +625,7 @@ document.addEventListener('DOMContentLoaded', function () {
       el.style.color = (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL;
     });
     buttonEls.forEach(function (el) {
+      el.style.color = (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL;
       el.style.backgroundColor = (onDark && desktop) ? COLOR_BUTTON_DARK : COLOR_BUTTON_INITIAL;
     });
 
