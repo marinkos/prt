@@ -1,5 +1,7 @@
 /* About point cloud */
 (function () {
+  if (!window.matchMedia("(min-width: 768px)").matches) return;
+
   const PARAMS = {
     density: 0.2,
     threshold: 0.4,

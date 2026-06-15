@@ -322,6 +322,7 @@ function dreamWatchCanvas(canvas, onResize) {
   }
 
   function bootHeroSkyStarfield() {
+    if (!window.matchMedia("(min-width: 768px)").matches) return;
     const seen = new Set();
     const hero = document.getElementById("hero");
     if (hero) {
@@ -342,6 +343,8 @@ function dreamWatchCanvas(canvas, onResize) {
 
 /* CTA point cloud */
 (function () {
+  if (!window.matchMedia("(min-width: 768px)").matches) return;
+
   const BASE = {
     density: 1,
     threshold: 0.05,
@@ -829,6 +832,8 @@ function dreamWatchCanvas(canvas, onResize) {
 
 /* Tool-color point cloud (engine, ship) */
 (function () {
+  if (!window.matchMedia("(min-width: 768px)").matches) return;
+
   const PARAMS = {
     density: 1,
     threshold: 0.3,
@@ -1834,6 +1839,7 @@ void main(){
   }
 
   function initAll() {
+    if (!window.matchMedia("(min-width: 768px)").matches) return;
     for (const cfg of FIGURES) {
       const canvas = document.getElementById(cfg.id);
       if (canvas) initFigure(canvas, cfg.image, cfg);

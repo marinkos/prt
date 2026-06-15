@@ -1,5 +1,7 @@
 /* Careers point cloud */
 (function () {
+  if (!window.matchMedia("(min-width: 768px)").matches) return;
+
   const PARAMS = {
     density: 1,
     threshold: 0.45,
