@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const MOBILE_COLOR_DARK    = '#ffffff';
   const MOBILE_BG_DARK       = '#0D142B';
   const MOBILE_BG_LIGHT      = '#ffffff';
-  const DESKTOP_BG_SCROLLED  = '#ffffff';
+  const DESKTOP_BG_SCROLLED  = 'rgba(255, 255, 255, 0.02)';
   const BORDER_SCROLLED_ALPHA = 0.10;
 
   const scope = document.querySelector(NAV_SELECTOR) || document;
