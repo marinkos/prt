@@ -580,6 +580,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function setNavTextColor(el, color) {
+    setNavShellStyle(el, 'color', color);
+    el.querySelectorAll('*').forEach(function (child) {
+      setNavShellStyle(child, 'color', color);
+    });
+  }
+
+  function setNavButtonBg(el, color) {
+    setNavShellStyle(el, 'background-color', color);
+  }
+
   function updateNavShell() {
     if (!navShells.length) return;
 
@@ -619,14 +630,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const desktop = isDesktop.matches;
 
     brandEls.forEach(function (el) {
-      el.style.color = (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL;
+      setNavTextColor(el, (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
     });
     linkEls.forEach(function (el) {
-      el.style.color = (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL;
+      setNavTextColor(el, (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
     });
     buttonEls.forEach(function (el) {
-      el.style.color = (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL;
-      el.style.backgroundColor = (onDark && desktop) ? COLOR_BUTTON_DARK : COLOR_BUTTON_INITIAL;
+      setNavTextColor(el, (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
+      setNavButtonBg(el, (onDark && desktop) ? COLOR_BUTTON_DARK : COLOR_BUTTON_INITIAL);
     });
 
     updateNavShell();
