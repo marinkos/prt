@@ -526,7 +526,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!navShells.length && scope !== document) navShells.push(scope);
   const brandEls  = scope.querySelectorAll('.nav_brand');
   const linkEls   = scope.querySelectorAll('.nav_menu_link');
-  const buttonEls = scope.querySelectorAll('.button');
+  const buttonEls = scope.querySelectorAll('.nav-button');
   const darkSections = document.querySelectorAll('[data-color="dark"]');
 
   const isDesktop = window.matchMedia('(min-width: 992px)');
