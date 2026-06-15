@@ -521,6 +521,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const MOBILE_BG_LIGHT      = '#ffffff';
   const DESKTOP_BG_SCROLLED  = 'rgba(255, 255, 255, 0.02)';
   const BORDER_SCROLLED_ALPHA = 0.10;
+  const MAX_BLUR = 12;
 
   const scope = document.querySelector(NAV_SELECTOR) || document;
   const navShells = [];
@@ -634,10 +635,11 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       var borderAlpha = t * BORDER_SCROLLED_ALPHA;
+      var blur = t * MAX_BLUR;
       setNavShellStyle(el, 'background-color', DESKTOP_BG_SCROLLED);
       setNavShellStyle(el, 'border-bottom', '0.5px solid rgba(20, 26, 41, ' + borderAlpha + ')');
-      setNavShellStyle(el, 'backdrop-filter', 'none');
-      setNavShellStyle(el, '-webkit-backdrop-filter', 'none');
+      setNavShellStyle(el, 'backdrop-filter', 'blur(' + blur + 'px)');
+      setNavShellStyle(el, '-webkit-backdrop-filter', 'blur(' + blur + 'px)');
     });
   }
 
