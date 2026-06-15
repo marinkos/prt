@@ -455,7 +455,7 @@ void main(){
   const EMPTY_SELECTOR = ".empty-state";
   const LOAD_MORE_SELECTOR = '[data-button="load-more"]';
   const ALL_LOCATION = "All Location";
-  const ALL_TEAM = "All teams";
+  const ALL_TEAM = "All Teams";
   const PAGE_SIZE = 10;
 
   const LOCATION_CANONICAL = {
