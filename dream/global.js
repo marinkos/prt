@@ -530,13 +530,14 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!navShells.length && scope !== document) navShells.push(scope);
   const brandEls  = scope.querySelectorAll('.nav_brand');
   const linkEls   = scope.querySelectorAll('.nav_menu_link');
-  const buttonEls = scope.querySelectorAll('.nav_button');
+  const desktopButtonEls = scope.querySelectorAll('.nav-button');
+  const mobileButtonEls  = scope.querySelectorAll('.nav_button');
   const darkSections = document.querySelectorAll('[data-color="dark"]');
 
   const isDesktop = window.matchMedia('(min-width: 992px)');
 
   function getNavLine() {
-    const ref = brandEls[0] || linkEls[0] || buttonEls[0] ||
+    const ref = brandEls[0] || linkEls[0] || desktopButtonEls[0] || mobileButtonEls[0] ||
                 (scope.getBoundingClientRect ? scope : null);
     if (!ref) return 0;
     const rect = ref.getBoundingClientRect();
@@ -606,6 +607,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  function clearNavButton(el) {
+    clearNavTextColor(el);
+    setNavButtonBg(el, '');
+  }
+
   function updateMobileNavShell(onDark) {
     if (!navComponent) return;
     setNavShellStyle(navComponent, 'background-color', onDark ? MOBILE_BG_DARK : MOBILE_BG_LIGHT);
@@ -648,10 +654,11 @@ document.addEventListener('DOMContentLoaded', function () {
       linkEls.forEach(function (el) {
         setNavTextColor(el, onDark ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
       });
-      buttonEls.forEach(function (el) {
+      desktopButtonEls.forEach(function (el) {
         setNavTextColor(el, onDark ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
         setNavButtonBg(el, onDark ? COLOR_BUTTON_DARK : COLOR_BUTTON_INITIAL);
       });
+      mobileButtonEls.forEach(clearNavButton);
       updateNavShell();
       return;
     }
@@ -659,10 +666,11 @@ document.addEventListener('DOMContentLoaded', function () {
     brandEls.forEach(function (el) {
       setNavTextColor(el, onDark ? MOBILE_COLOR_DARK : MOBILE_COLOR_LIGHT);
     });
-    buttonEls.forEach(function (el) {
+    mobileButtonEls.forEach(function (el) {
       setNavTextColor(el, onDark ? MOBILE_COLOR_DARK : MOBILE_COLOR_LIGHT);
       setNavButtonBg(el, '');
     });
+    desktopButtonEls.forEach(clearNavButton);
     linkEls.forEach(function (el) {
       clearNavTextColor(el);
     });
