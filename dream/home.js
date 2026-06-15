@@ -2029,3 +2029,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
   update();
 });
+
+/* Play videos on hover — .ai_inner-large only */
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.ai_inner-large').forEach(function (inner) {
+    const videos = inner.querySelectorAll('video');
+    if (!videos.length || inner.__videoHoverInit) return;
+    inner.__videoHoverInit = true;
+
+    videos.forEach(function (video) {
+      video.loop = false;
+      video.autoplay = false;
+      video.pause();
+    });
+
+    inner.addEventListener('mouseenter', function () {
+      document.querySelectorAll('.ai_inner-large video').forEach(function (v) {
+        if (!inner.contains(v)) {
+          v.pause();
+          v.loop = false;
+        }
+      });
+      videos.forEach(function (video) {
+        video.loop = true;
+        video.play().catch(function () {});
+      });
+    });
+
+    inner.addEventListener('mouseleave', function () {
+      videos.forEach(function (video) {
+        video.loop = false;
+      });
+    });
+  });
+});
