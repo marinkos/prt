@@ -503,7 +503,7 @@ function dreamWatchCanvas(canvas, onResize) {
   dreamWatchCanvas(canvas, render);
 })();
 
-/* Nav: text color over dark sections + bg/border on scroll (desktop) */
+/* Nav: desktop scroll + dark-section colors; mobile dark-section theme */
 document.addEventListener('DOMContentLoaded', function () {
 
   const NAV_SELECTOR = '.navbar';
@@ -513,6 +513,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const COLOR_TEXT_DARK      = '#ffffff';
   const COLOR_BUTTON_INITIAL = 'rgba(20, 26, 41, 0.08)';
   const COLOR_BUTTON_DARK    = 'rgba(244, 247, 255, 0.08)'; // 8% of #F4F7FF
+  const MOBILE_COLOR_LIGHT   = '#0D142B';
+  const MOBILE_COLOR_DARK    = '#ffffff';
+  const MOBILE_BG_DARK       = '#0D142B';
+  const MOBILE_BG_LIGHT      = '#ffffff';
   const BG_SCROLLED_ALPHA = 0.01;
   const BORDER_SCROLLED_ALPHA = 0.10;
   const MAX_BLUR = 12;
@@ -588,22 +592,30 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function setNavButtonBg(el, color) {
-    setNavShellStyle(el, 'background-color', color);
+    if (color) {
+      setNavShellStyle(el, 'background-color', color);
+    } else {
+      el.style.removeProperty('background-color');
+    }
+  }
+
+  function clearNavTextColor(el) {
+    el.style.removeProperty('color');
+    el.querySelectorAll('*').forEach(function (child) {
+      child.style.removeProperty('color');
+    });
+  }
+
+  function updateMobileNavShell(onDark) {
+    if (!navComponent) return;
+    setNavShellStyle(navComponent, 'background-color', onDark ? MOBILE_BG_DARK : MOBILE_BG_LIGHT);
+    setNavShellStyle(navComponent, 'border-bottom', '');
+    setNavShellStyle(navComponent, 'backdrop-filter', '');
+    setNavShellStyle(navComponent, '-webkit-backdrop-filter', '');
   }
 
   function updateNavShell() {
-    if (!navShells.length) return;
-
-    if (!isDesktop.matches) {
-      navShells.forEach(function (el) {
-        setNavShellStyle(el, 'background-color', '');
-        setNavShellStyle(el, 'border-bottom', '');
-        setNavShellStyle(el, 'backdrop-filter', '');
-        setNavShellStyle(el, '-webkit-backdrop-filter', '');
-      });
-      return;
-    }
-
+    if (!navShells.length || !isDesktop.matches) return;
     var t = getNavShellProgress();
     navShells.forEach(function (el) {
       if (t <= 0) {
@@ -629,18 +641,32 @@ document.addEventListener('DOMContentLoaded', function () {
     const onDark  = isOverDark();
     const desktop = isDesktop.matches;
 
+    if (desktop) {
+      brandEls.forEach(function (el) {
+        setNavTextColor(el, onDark ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
+      });
+      linkEls.forEach(function (el) {
+        setNavTextColor(el, onDark ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
+      });
+      buttonEls.forEach(function (el) {
+        setNavTextColor(el, onDark ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
+        setNavButtonBg(el, onDark ? COLOR_BUTTON_DARK : COLOR_BUTTON_INITIAL);
+      });
+      updateNavShell();
+      return;
+    }
+
     brandEls.forEach(function (el) {
-      setNavTextColor(el, (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
-    });
-    linkEls.forEach(function (el) {
-      setNavTextColor(el, (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
+      setNavTextColor(el, onDark ? MOBILE_COLOR_DARK : MOBILE_COLOR_LIGHT);
     });
     buttonEls.forEach(function (el) {
-      setNavTextColor(el, (onDark && desktop) ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
-      setNavButtonBg(el, (onDark && desktop) ? COLOR_BUTTON_DARK : COLOR_BUTTON_INITIAL);
+      setNavTextColor(el, onDark ? MOBILE_COLOR_DARK : MOBILE_COLOR_LIGHT);
+      setNavButtonBg(el, '');
     });
-
-    updateNavShell();
+    linkEls.forEach(function (el) {
+      clearNavTextColor(el);
+    });
+    updateMobileNavShell(onDark);
   }
 
   let ticking = false;
