@@ -2029,24 +2029,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
   update();
 });
-
-/* Video icons play on hover — [data-video-hover] */
-document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('[data-video-hover]').forEach(function (wrap) {
-    const video = wrap.querySelector('video');
-    if (!video) return;
-
-    video.loop = false;
-    video.autoplay = false;
-    video.pause();
-
-    wrap.addEventListener('mouseenter', function () {
-      video.loop = true;
-      video.play().catch(function () {});
-    });
-
-    wrap.addEventListener('mouseleave', function () {
-      video.loop = false;
-    });
-  });
-});
