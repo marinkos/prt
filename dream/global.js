@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const NAV_SELECTOR = '.navbar';
   const NAV_SHELL_SELECTOR = '.nav_component';
 
-  const COLOR_TEXT_INITIAL   = '#0d142b';
+  const COLOR_TEXT_INITIAL   = 'rgba(20, 26, 41, 0.08)';
   const COLOR_TEXT_DARK      = '#ffffff';
   const COLOR_BUTTON_INITIAL = '#0d142b';
   const COLOR_BUTTON_DARK    = 'rgba(244, 247, 255, 0.08)'; // 8% of #F4F7FF
