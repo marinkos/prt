@@ -513,13 +513,14 @@ document.addEventListener('DOMContentLoaded', function () {
   const COLOR_TEXT_DARK      = '#ffffff';
   const COLOR_BUTTON_INITIAL = 'rgba(20, 26, 41, 0.08)';
   const COLOR_BUTTON_DARK    = 'rgba(244, 247, 255, 0.08)'; // 8% of #F4F7FF
+  const COLOR_BUTTON_INITIAL_HOVER = 'rgba(20, 26, 41, 0.12)';
+  const COLOR_BUTTON_DARK_HOVER    = 'rgba(244, 247, 255, 0.12)';
   const MOBILE_COLOR_LIGHT   = '#0D142B';
   const MOBILE_COLOR_DARK    = '#ffffff';
   const MOBILE_BG_DARK       = '#0D142B';
   const MOBILE_BG_LIGHT      = '#ffffff';
-  const BG_SCROLLED_ALPHA = 0.01;
+  const DESKTOP_BG_SCROLLED  = '#ffffff';
   const BORDER_SCROLLED_ALPHA = 0.10;
-  const MAX_BLUR = 12;
 
   const scope = document.querySelector(NAV_SELECTOR) || document;
   const navShells = [];
@@ -626,20 +627,43 @@ document.addEventListener('DOMContentLoaded', function () {
     navShells.forEach(function (el) {
       if (t <= 0) {
         setNavShellStyle(el, 'background-color', 'transparent');
-        setNavShellStyle(el, 'border-bottom', '1px solid transparent');
+        setNavShellStyle(el, 'border-bottom', '0.5px solid transparent');
         setNavShellStyle(el, 'backdrop-filter', 'none');
         setNavShellStyle(el, '-webkit-backdrop-filter', 'none');
         return;
       }
 
-      var alpha = t * BG_SCROLLED_ALPHA;
       var borderAlpha = t * BORDER_SCROLLED_ALPHA;
-      var blur = t * MAX_BLUR;
+      setNavShellStyle(el, 'background-color', DESKTOP_BG_SCROLLED);
+      setNavShellStyle(el, 'border-bottom', '0.5px solid rgba(20, 26, 41, ' + borderAlpha + ')');
+      setNavShellStyle(el, 'backdrop-filter', 'none');
+      setNavShellStyle(el, '-webkit-backdrop-filter', 'none');
+    });
+  }
 
-      setNavShellStyle(el, 'background-color', 'rgba(20, 26, 41, ' + alpha + ')');
-      setNavShellStyle(el, 'border-bottom', '1px solid rgba(20, 26, 41, ' + borderAlpha + ')');
-      setNavShellStyle(el, 'backdrop-filter', 'blur(' + blur + 'px)');
-      setNavShellStyle(el, '-webkit-backdrop-filter', 'blur(' + blur + 'px)');
+  function applyDesktopButtonStyles(onDark) {
+    desktopButtonEls.forEach(function (el) {
+      setNavTextColor(el, onDark ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
+      var hovered = el.matches(':hover');
+      var bg = onDark
+        ? (hovered ? COLOR_BUTTON_DARK_HOVER : COLOR_BUTTON_DARK)
+        : (hovered ? COLOR_BUTTON_INITIAL_HOVER : COLOR_BUTTON_INITIAL);
+      setNavButtonBg(el, bg);
+    });
+  }
+
+  function initDesktopButtonHover() {
+    desktopButtonEls.forEach(function (el) {
+      if (el.__navButtonHoverInit) return;
+      el.__navButtonHoverInit = true;
+      el.addEventListener('mouseenter', function () {
+        if (!isDesktop.matches) return;
+        applyDesktopButtonStyles(isOverDark());
+      });
+      el.addEventListener('mouseleave', function () {
+        if (!isDesktop.matches) return;
+        applyDesktopButtonStyles(isOverDark());
+      });
     });
   }
 
@@ -654,10 +678,7 @@ document.addEventListener('DOMContentLoaded', function () {
       linkEls.forEach(function (el) {
         setNavTextColor(el, onDark ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
       });
-      desktopButtonEls.forEach(function (el) {
-        setNavTextColor(el, onDark ? COLOR_TEXT_DARK : COLOR_TEXT_INITIAL);
-        setNavButtonBg(el, onDark ? COLOR_BUTTON_DARK : COLOR_BUTTON_INITIAL);
-      });
+      applyDesktopButtonStyles(onDark);
       mobileButtonEls.forEach(clearNavButton);
       updateNavShell();
       return;
@@ -696,5 +717,6 @@ document.addEventListener('DOMContentLoaded', function () {
     isDesktop.addListener(update);
   }
 
+  initDesktopButtonHover();
   update();
 });
