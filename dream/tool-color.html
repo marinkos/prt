@@ -299,7 +299,7 @@ const DEFAULT_PARAMS = {
   spinSpeed: 0.35,
 
   hoverTrailEnabled: true,
-  hoverTrailHex: '#e4829b',
+  hoverTrailHex: '#863123',
   hoverTrailOpacity: 0.7,
   // Multiplier on the hover radius (so the trail matches the hover effect size)
   hoverTrailRadius: 1.0,
@@ -330,7 +330,7 @@ function runSmokeTests(){
   assert(normalizeHex('#abcd') === null, 'normalizeHex should reject short hex');
   assert(DEFAULT_PARAMS.hoverTrailRadius === 1.0, 'hoverTrailRadius should default to 1.0 (multiplier)');
   assert(DEFAULT_PARAMS.depth === 1.8, 'default expand particles should be 1.8');
-  assert(DEFAULT_PARAMS.hoverTrailHex === '#e4829b', 'default hover trail HEX should be #e4829b');
+  assert(DEFAULT_PARAMS.hoverTrailHex === '#863123', 'default hover trail HEX should be #863123');
   assert(DEFAULT_PARAMS.bgColor === '#0D142B', 'default background should be #0D142B');
   assert(!!document.getElementById('colorModal'), 'color modal should exist');
   assert(!!document.getElementById('colorModalPicker'), 'color modal picker should exist');

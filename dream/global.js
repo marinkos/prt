@@ -42,7 +42,7 @@ function dreamWatchCanvas(canvas, onResize) {
     zoom: 1.1,
     perspective: 2,
     hoverTrailEnabled: true,
-    hoverTrailHex: "#e4829b",
+    hoverTrailHex: "#863123",
     hoverTrailOpacity: 0.7,
     hoverTrailRadius: 1.0,
     hoverTrailDecay: 0.6,
