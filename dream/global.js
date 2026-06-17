@@ -511,15 +511,15 @@ document.addEventListener('DOMContentLoaded', function () {
   const NAV_SELECTOR = '.navbar';
   const NAV_SHELL_SELECTOR = '.nav_component';
 
-  const COLOR_TEXT_INITIAL   = '#141A29';
+  const COLOR_TEXT_INITIAL   = '#040324';
   const COLOR_TEXT_DARK      = '#ffffff';
   const COLOR_BUTTON_INITIAL = 'rgba(20, 26, 41, 0.08)';
   const COLOR_BUTTON_DARK    = 'rgba(244, 247, 255, 0.08)'; // 8% of #F4F7FF
   const COLOR_BUTTON_INITIAL_HOVER = 'rgba(20, 26, 41, 0.12)';
   const COLOR_BUTTON_DARK_HOVER    = 'rgba(244, 247, 255, 0.12)';
-  const MOBILE_COLOR_LIGHT   = '#0D142B';
+  const MOBILE_COLOR_LIGHT   = '#040324';
   const MOBILE_COLOR_DARK    = '#ffffff';
-  const MOBILE_BG_DARK       = '#0D142B';
+  const MOBILE_BG_DARK       = '#040324';
   const MOBILE_BG_LIGHT      = '#ffffff';
   const DESKTOP_BG_SCROLLED  = 'rgba(255, 255, 255, 0.02)';
   const BORDER_SCROLLED_ALPHA = 0.10;
