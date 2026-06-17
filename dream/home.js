@@ -2036,9 +2036,9 @@ document.addEventListener('DOMContentLoaded', function () {
   update();
 });
 
-/* Play videos on hover — .ai_inner-large only */
+/* Play videos on hover — card inner wrappers */
 document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('.ai_inner-large').forEach(function (inner) {
+  document.querySelectorAll('.ai_inner-large, .ai_inner-small').forEach(function (inner) {
     const videos = inner.querySelectorAll('video');
     if (!videos.length || inner.__videoHoverInit) return;
     inner.__videoHoverInit = true;
@@ -2050,7 +2050,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     inner.addEventListener('mouseenter', function () {
-      document.querySelectorAll('.ai_inner-large video').forEach(function (v) {
+      document.querySelectorAll('.ai_inner-large video, .ai_inner-small video').forEach(function (v) {
         if (!inner.contains(v)) {
           v.pause();
           v.loop = false;
