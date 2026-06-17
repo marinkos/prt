@@ -19,7 +19,7 @@
     rotateZ: 0,
     perspective: 1.04,
     hoverTrailEnabled: true,
-    hoverTrailHex: "#864523",
+    hoverTrailHex: "#e4829b",
     hoverTrailOpacity: 0.7,
     hoverTrailRadius: 1.0,
     hoverTrailDecay: 0.6,
