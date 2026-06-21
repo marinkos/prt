@@ -28,7 +28,7 @@ function dreamWatchCanvas(canvas, onResize) {
 (function () {
   if (!window.matchMedia("(min-width: 768px)").matches) return;
 
-  const IMAGE_SRC = "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/train_footer.avif";
+  const IMAGE_SRC = "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/train_footer.png";
 
   const params = {
     density: 1,
