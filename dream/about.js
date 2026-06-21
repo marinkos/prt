@@ -28,7 +28,7 @@
 
   const CFG = {
     id: "about",
-    url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a272c4517cfb473023956e6_ba2931a4194a7a6c9ffbae8e447e2403_about.png"
+    url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a272c4517cfb473023956e6_ba2931a4194a7a6c9ffbae8e447e2403_about.avif"
   };
 
   const IDLE = {
