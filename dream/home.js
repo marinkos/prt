@@ -40,7 +40,7 @@ function dreamWatchCanvas(canvas, onResize) {
   };
 
   const SKY_URL =
-    "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a258a0380eb9363715e4a36_Sky.avif";
+    "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/Sky.avif";
 
   const STAR_TRAVEL = {
     speedStart: 0.105,
@@ -369,7 +369,7 @@ function dreamWatchCanvas(canvas, onResize) {
   };
 
   const CTA = {
-    url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a257c80f5d99b0739a7c57d_092657a0a2abf371908c88bc0d50256d_cta-new.avif",
+    url: "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/cta-new.avif",
     spinYPeriodSec: 25
   };
 
@@ -866,7 +866,7 @@ function dreamWatchCanvas(canvas, onResize) {
   const PANELS = [
     {
       id: "engine",
-      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a27293bbf44bbaadf348116_723edc1c9cc4c4795b2cb39718ada458_rocket.avif",
+      url: "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/rocket.avif",
       rotateX: 0,
       rotateY: 15,
       threshold: 0.5,
@@ -874,7 +874,7 @@ function dreamWatchCanvas(canvas, onResize) {
     },
     {
       id: "ship",
-      url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a25716d6cf1e9b343dc94e3_cta.avif",
+      url: "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/satelite.avif",
       rotateY: -10,
       threshold: 0.3,
       filterIsolatedSpecks: true
@@ -1363,23 +1363,23 @@ void main(){
   const FIGURES = [
     {
       id: "olama",
-      image: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a2700b2408e60322e1a3df3_olama.avif"
+      image: "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/olama.avif"
     },
     {
       id: "ursula",
-      image: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a2700b2e9046210ac27c7a1_ursula.avif"
+      image: "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/ursula.avif"
     },
     {
       id: "eric",
-      image: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a2700b204627659a64b1b32_eric.avif"
+      image: "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/eric.avif"
     },
     {
       id: "wong",
-      image: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a1c777055af9680ca6b278b_wong.avif"
+      image: "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/wong.avif"
     },
     {
       id: "modi",
-      image: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a1c776f0e4017306f06426b_modi.avif"
+      image: "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/modi.avif"
     }
   ];
 

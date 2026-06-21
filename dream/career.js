@@ -28,7 +28,7 @@
 
   const CFG = {
     id: "careers",
-    url: "https://cdn.prod.website-files.com/6a1324866930e66fe78a27d6/6a272c7b0dbc23803bd0f3a9_careers.avif"
+    url: "https://pub-a386b1b1254143e98d23d7534fc68b25.r2.dev/images/careers.avif"
   };
 
   const IDLE = {
