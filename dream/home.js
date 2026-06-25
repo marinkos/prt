@@ -362,10 +362,10 @@ function dreamWatchCanvas(canvas, onResize) {
     perspective: 1.04,
     hoverTrailEnabled: true,
     hoverTrailHex: "#612200",
-    hoverTrailOpacity: 0.9,
+    hoverTrailOpacity: 0.7,
     hoverTrailRadius: 1.0,
-    hoverTrailDecay: 0.5,
-    hoverTrailBlendMode: "multiply"
+    hoverTrailDecay: 0.6,
+    hoverTrailBlendMode: "add"
   };
 
   const CTA = {
@@ -852,10 +852,10 @@ function dreamWatchCanvas(canvas, onResize) {
     perspective: 1.04,
     hoverTrailEnabled: true,
     hoverTrailHex: "#612200",
-    hoverTrailOpacity: 0.9,
+    hoverTrailOpacity: 0.7,
     hoverTrailRadius: 1.0,
-    hoverTrailDecay: 0.5,
-    hoverTrailBlendMode: "multiply"
+    hoverTrailDecay: 0.6,
+    hoverTrailBlendMode: "add"
   };
 
   const IDLE = {
@@ -1348,10 +1348,10 @@ void main(){
     centerFocusStrength: 1.0,
     hoverTrailEnabled: true,
     hoverTrailHex: "#612200",
-    hoverTrailOpacity: 0.9,
+    hoverTrailOpacity: 0.7,
     hoverTrailRadius: 1.0,
-    hoverTrailDecay: 0.5,
-    hoverTrailBlendMode: "multiply"
+    hoverTrailDecay: 0.6,
+    hoverTrailBlendMode: "add"
   };
 
   const IDLE = {

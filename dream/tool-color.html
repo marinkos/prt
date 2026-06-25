@@ -300,12 +300,12 @@ const DEFAULT_PARAMS = {
 
   hoverTrailEnabled: true,
   hoverTrailHex: '#612200',
-  hoverTrailOpacity: 0.9,
+  hoverTrailOpacity: 0.7,
   // Multiplier on the hover radius (so the trail matches the hover effect size)
   hoverTrailRadius: 1.0,
   // Lower = longer-lasting trail
-  hoverTrailDecay: 0.5
-  ,hoverTrailBlendMode: 'multiply'
+  hoverTrailDecay: 0.06
+  ,hoverTrailBlendMode: 'add'
 };
 const params = { ...DEFAULT_PARAMS };
 
@@ -334,7 +334,7 @@ function runSmokeTests(){
   assert(DEFAULT_PARAMS.bgColor === '#0D142B', 'default background should be #0D142B');
   assert(!!document.getElementById('colorModal'), 'color modal should exist');
   assert(!!document.getElementById('colorModalPicker'), 'color modal picker should exist');
-  assert(DEFAULT_PARAMS.hoverTrailBlendMode === 'multiply', 'default hover trail blend mode should be multiply');
+  assert(DEFAULT_PARAMS.hoverTrailBlendMode === 'add', 'default hover trail blend mode should be add');
 
   console.log('Smoke tests passed');
 }
