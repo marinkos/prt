@@ -43,10 +43,10 @@ function dreamWatchCanvas(canvas, onResize) {
     perspective: 2,
     hoverTrailEnabled: true,
     hoverTrailHex: "#612200",
-    hoverTrailOpacity: 0.7,
+    hoverTrailOpacity: 0.9,
     hoverTrailRadius: 1.0,
-    hoverTrailDecay: 0.6,
-    hoverTrailBlendMode: "add"
+    hoverTrailDecay: 0.5,
+    hoverTrailBlendMode: "multiply"
   };
 
   const MOBILE_MAX_WIDTH = 479;
