@@ -7,7 +7,7 @@
  * Dev: open any page with ?dev=1 to load the bundles from `npm run dev` on this computer instead
  * (only in your browser; it reloads the page on every save). ?dev=0, or the DEV badge, switches back. */
 (() => {
-  const VERSION = 'v17';
+  const VERSION = 'v18';
   const NEEDED = {
     global: () => true,
     home: () => document.querySelector('[data-car-scene], [data-safety-stage], [data-slider], [data-burst-logo]'),
@@ -54,6 +54,24 @@
       document.body.append(badge);
     }
   };
+  // Finsweet filter dropdowns filled from a CMS list (<select fs-list-field> with a Collection List of <option>s):
+  // one option per item repeats values, so repeats are removed, and the first option is the label ("Location"),
+  // which needs an empty value or Finsweet filters by it and shows nothing. Done here, before Finsweet starts
+  // (it starts once the page has loaded; the bundles above load too late for it).
+  const tidyFilters = () => {
+    for (const select of document.querySelectorAll('select[fs-list-field]')) {
+      const seen = new Set();
+      [...select.options].forEach((option, i) => {
+        if (i === 0) { if (!option.hasAttribute('value')) option.value = ''; return; }
+        const text = option.text.trim();
+        if (!text || seen.has(text)) (option.closest('.w-dyn-item') || option).remove();
+        else seen.add(text);
+      });
+      select.selectedIndex = 0;
+    }
+  };
+
   // in the footer the page is already there; anywhere earlier (head, async), wait for it
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { tidyFilters(); run(); });
+  else { tidyFilters(); run(); }
 })();
