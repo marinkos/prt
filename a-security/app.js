@@ -7,7 +7,7 @@
  * Dev: open any page with ?dev=1 to load the bundles from `npm run dev` on this computer instead
  * (only in your browser; it reloads the page on every save). ?dev=0, or the DEV badge, switches back. */
 (() => {
-  const VERSION = 'v27';
+  const VERSION = 'v28';
   const NEEDED = {
     global: () => true,
     home: () => document.querySelector('[data-car-scene], [data-safety-stage], [data-slider], [data-burst-logo]'),
