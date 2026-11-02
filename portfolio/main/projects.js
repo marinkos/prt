@@ -72,9 +72,20 @@ images.forEach((imageUrl, idx) => {
 let target = 0;
 
 function getProjectIndex(linkEl, fallbackIndex) {
-    const text = (linkEl.textContent || '').toLowerCase();
-    const mappedIndex = projectOrder.findIndex((name) => text.includes(name));
-    return mappedIndex >= 0 ? mappedIndex : fallbackIndex;
+    // Prefer the visible project title so body copy mentioning "security"
+    // (or other names) cannot steal the match from short names like "pi".
+    const titleEl = linkEl.querySelector('h1, h2, h3, h4, .heading, [class*="heading"], [class*="title"], [class*="name"]');
+    const text = ((titleEl && titleEl.textContent) || linkEl.textContent || '').toLowerCase().trim();
+
+    // Longest match first so "security" wins over accidental short substrings.
+    const ranked = [...projectOrder].sort((a, b) => b.length - a.length);
+    for (const name of ranked) {
+        const re = new RegExp(`(?:^|[^a-z0-9])${name}(?:[^a-z0-9]|$)`, 'i');
+        if (re.test(text)) {
+            return projectOrder.indexOf(name);
+        }
+    }
+    return fallbackIndex;
 }
 
 function drawImage(idx) {
